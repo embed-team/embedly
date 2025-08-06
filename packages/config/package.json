@@ -1,0 +1,13 @@
+{
+  "name": "@embedly/config",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./typescript": "./tsconfig.json",
+    "./biome": "./biome.json"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.1"
+  }
+}

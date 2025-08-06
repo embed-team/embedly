@@ -1,0 +1,5 @@
+{
+  "extends": "@embedly/config/typescript",
+  "exclude": ["node_modules"],
+  "include": ["src"],
+}

@@ -1,0 +1,8 @@
+{
+  "extends": "@embedly/config/typescript",
+  "exclude": ["node_modules"],
+  "include": ["src"],
+  "compilerOptions": {
+    "types": ["./worker-configuration.d.ts"]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@embedly/types",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "module": "./dist/main.js",
+  "types": "./dist/main.d.ts",
+  "exports": {
+    "import": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    }
+  },
+  "scripts": {
+    "lint": "biome ci ./src/*",
+    "build": "pkgroll"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.1",
+    "@embedly/config": "workspace:*",
+    "pkgroll": "^2.14.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "discord-api-types": "^0.38.16"
+  }
+}

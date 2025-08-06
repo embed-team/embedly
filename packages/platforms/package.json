@@ -1,0 +1,38 @@
+{
+  "name": "@embedly/platforms",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "module": "./dist/main.js",
+  "types": "./dist/main.d.ts",
+  "exports": {
+    "import": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    }
+  },
+  "scripts": {
+    "lint": "biome ci ./src/*",
+    "build": "pkgroll"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.1",
+    "@cloudflare/workers-types": "^4.20250719.0",
+    "@embedly/config": "workspace:*",
+    "@types/node": "^24.0.14",
+    "pkgroll": "^2.14.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@embedly/builder": "workspace:*",
+    "@embedly/logging": "workspace:*",
+    "@embedly/parser": "workspace:*",
+    "@embedly/types": "workspace:*",
+    "@types/he": "^1.2.3",
+    "he": "^1.2.0",
+    "rehype-parse": "^9.0.1",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0"
+  }
+}

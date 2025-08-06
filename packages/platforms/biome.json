@@ -1,0 +1,12 @@
+{
+  "root": false,
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["@embedly/config/biome"],
+  "linter": {
+    "rules": {
+      "complexity": {
+        "useLiteralKeys": "off"
+      }
+    }
+  }
+}

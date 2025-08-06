@@ -1,0 +1,45 @@
+{
+	"name": "@embedly/api",
+	"version": "0.1.1",
+	"private": true,
+	"type": "module",
+	"main": "./dist/main.js",
+	"module": "./dist/main.js",
+	"types": "./dist/main.d.ts",
+	"exports": {
+		"import": {
+			"types": "./dist/main.d.ts",
+			"default": "./dist/main.js"
+		}
+	},
+	"scripts": {
+		"dev": "wrangler dev",
+		"lint": "biome ci ./src/*",
+		"build": "pkgroll && wrangler deploy --dry-run",
+		"deploy": "wrangler deploy --minify",
+		"cf-typegen": "wrangler types"
+	},
+	"dependencies": {
+		"@discordjs/rest": "^2.5.1",
+		"@elysiajs/node": "^1.3.0",
+		"@embedly/builder": "workspace:*",
+		"@embedly/logging": "workspace:*",
+		"@embedly/parser": "workspace:*",
+		"@embedly/platforms": "workspace:*",
+		"@embedly/types": "workspace:*",
+		"@logtail/edge": "^0.5.5",
+		"@logtail/node": "^0.5.5",
+		"discord-verify": "^1.2.0",
+		"elysia": "^1.3.5",
+		"wrangler": "^4.25.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.1.1",
+		"@embedly/config": "workspace:*",
+		"@types/node": "^24.0.14",
+		"discord-api-types": "^0.38.16",
+		"pkgroll": "^2.14.3",
+		"tsx": "^4.20.3",
+		"typescript": "^5.8.3"
+	}
+}
