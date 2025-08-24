@@ -1,5 +1,16 @@
 # @embedly/platforms
 
+## 0.1.2
+
+### Patch Changes
+
+- rewrote api and bot embed handling to make the api only handle scraping
+- Updated dependencies
+  - @embedly/builder@0.1.2
+  - @embedly/logging@0.1.2
+  - @embedly/parser@0.1.2
+  - @embedly/types@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
