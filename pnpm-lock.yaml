@@ -115,12 +115,21 @@ importers:
       '@embedly/api':
         specifier: workspace:*
         version: link:../api
+      '@embedly/builder':
+        specifier: workspace:*
+        version: link:../../packages/builder
       '@embedly/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@embedly/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
       '@embedly/parser':
         specifier: workspace:*
         version: link:../../packages/parser
+      '@embedly/platforms':
+        specifier: workspace:*
+        version: link:../../packages/platforms
       '@types/node':
         specifier: ^24.0.14
         version: 24.0.14

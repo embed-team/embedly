@@ -1,12 +1,10 @@
-import { Embed } from "@embedly/builder";
 import {
   EMBEDLY_CACHED_POST,
   EMBEDLY_CACHING_POST,
   EMBEDLY_NO_LINK_IN_MESSAGE,
   EMBEDLY_NO_VALID_LINK,
   type EmbedlyPostContext,
-  formatBetterStack,
-  formatDiscord
+  formatBetterStack
 } from "@embedly/logging";
 import {
   GENERIC_LINK_REGEX,
@@ -16,15 +14,10 @@ import {
 import Platforms from "@embedly/platforms";
 import { EmbedlyPlatformType } from "@embedly/types";
 import { Logtail } from "@logtail/edge";
-import {
-  type APIInteractionResponseChannelMessageWithSource,
-  InteractionResponseType,
-  MessageFlags
-} from "discord-api-types/v10";
 import { Elysia, t } from "elysia";
 
 const app = (env: Env, ctx: ExecutionContext) =>
-  new Elysia({ aot: false })
+  new Elysia({ aot: false, normalize: false })
     .onError(({ error }) => {
       console.error(error);
     })
@@ -60,6 +53,72 @@ const app = (env: Env, ctx: ExecutionContext) =>
       }
     })
     .post(
+      "/api/scrape",
+      async ({ body: { platform, url }, status, logger, set }) => {
+        const handler = Platforms[platform as keyof typeof Platforms];
+        const post_id = handler.parsePostId(url);
+        const post_log_ctx: EmbedlyPostContext = {
+          platform: handler.name,
+          post_url: url,
+          post_id
+        };
+        let post_data = await handler.getPostFromCache(
+          post_id,
+          env.STORAGE
+        );
+        if (!post_data) {
+          logger.debug(
+            ...formatBetterStack(
+              handler.log_messages.fetching,
+              post_log_ctx
+            )
+          );
+
+          try {
+            post_data = await handler.fetchPost(post_id, env);
+          } catch (error: any) {
+            post_log_ctx.resp_status = error.code;
+            post_log_ctx.resp_message = error.message;
+
+            const err = handler.log_messages.failed;
+            err.context = post_log_ctx;
+
+            logger.error(...formatBetterStack(err, err.context));
+
+            return status(err.status!, err);
+          }
+
+          if (!post_data) {
+            const err = handler.log_messages.failed;
+            return status(err.status!, err);
+          }
+
+          if (handler.name === EmbedlyPlatformType.Instagram) {
+            post_data!.url = url;
+          }
+
+          handler.addPostToCache(post_id, post_data, env.STORAGE);
+          logger.debug(
+            ...formatBetterStack(EMBEDLY_CACHING_POST, post_log_ctx)
+          );
+        } else {
+          logger.debug(
+            ...formatBetterStack(EMBEDLY_CACHED_POST, post_log_ctx)
+          );
+        }
+
+        set.headers["content-type"] = "application/json";
+        return post_data as Record<string, any>;
+      },
+      {
+        body: t.Object({
+          platform: t.String(),
+          url: t.String()
+        }),
+        auth: true
+      }
+    )
+    .post(
       "/api/url/validatate",
       async ({ body, status }) => {
         const message = body;
@@ -81,101 +140,6 @@ const app = (env: Env, ctx: ExecutionContext) =>
           { additionalProperties: true }
         )
       }
-    )
-    .post(
-      "/api/embed",
-      async ({ body, headers, logger, set, status }) => {
-        const message = body as Record<string, any>;
-        const log_ctx: Record<string, any> = {
-          user_id: message.author?.id
-        };
-        log_ctx.message_id = message.id;
-
-        if (!hasLink(message.content)) {
-          const err = EMBEDLY_NO_LINK_IN_MESSAGE;
-          logger.warn(...formatBetterStack(err, log_ctx));
-          return status(err.status!, {
-            type: InteractionResponseType.ChannelMessageWithSource,
-            data: {
-              content: formatDiscord(err, log_ctx),
-              flags: MessageFlags.Ephemeral
-            }
-          } satisfies APIInteractionResponseChannelMessageWithSource);
-        }
-        const url = GENERIC_LINK_REGEX.exec(message.content)?.[0]!;
-
-        const platform = getPlatformFromURL(url);
-        if (!platform) {
-          const err = EMBEDLY_NO_VALID_LINK;
-          logger.warn(...formatBetterStack(err, log_ctx));
-          return status(err.status!, {
-            type: InteractionResponseType.ChannelMessageWithSource,
-            data: {
-              content: formatDiscord(err, log_ctx),
-              flags: MessageFlags.Ephemeral
-            }
-          } satisfies APIInteractionResponseChannelMessageWithSource);
-        }
-        const handler = Object.values(Platforms).find(
-          (p) => p.name === platform.type
-        );
-        if (!handler) {
-          throw new Error();
-        }
-        const post_id = handler.parsePostId(url);
-        const post_log_ctx: EmbedlyPostContext = {
-          platform: handler.name,
-          post_url: url,
-          post_id
-        };
-
-        let post_data = await handler.getPostFromCache(
-          post_id,
-          env.STORAGE
-        );
-        if (!post_data) {
-          logger.debug(
-            ...formatBetterStack(
-              handler.log_messages.fetching,
-              post_log_ctx
-            )
-          );
-
-          try {
-            post_data = await handler.fetchPost(post_id, env);
-          } catch (error: any) {
-            post_log_ctx.resp_status = error.code;
-            post_log_ctx.resp_message = error.message;
-
-            logger.error(
-              ...formatBetterStack(
-                handler.log_messages.failed,
-                post_log_ctx
-              )
-            );
-          }
-
-          // handler.addPostToCache(post_id, post_data, env.STORAGE);
-          logger.debug(
-            ...formatBetterStack(EMBEDLY_CACHING_POST, post_log_ctx)
-          );
-        } else {
-          logger.debug(
-            ...formatBetterStack(EMBEDLY_CACHED_POST, post_log_ctx)
-          );
-        }
-
-        if (handler.name === EmbedlyPlatformType.Instagram) {
-          post_data!.url = url;
-        }
-
-        const embed = handler.createEmbed(post_data);
-        set.headers["content-type"] = "application/json";
-        return headers.accept === "application/vnd.embedly.container"
-          ? [Embed.getDiscordEmbed(embed)]
-          : embed;
-      },
-      { auth: true }
     );
 
 export default {

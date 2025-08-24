@@ -1,10 +1,12 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
+import { Embed } from "@embedly/builder";
 import {
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
   hasLink
 } from "@embedly/parser";
+import Platforms from "@embedly/platforms";
 import { Events, Listener } from "@sapphire/framework";
 import { type Message, MessageFlags } from "discord.js";
 
@@ -33,24 +35,31 @@ export class MessageListener extends Listener<
     const platform = getPlatformFromURL(url);
     if (!platform) return;
 
-    const { data, error } = await app.api.embed.post(message, {
-      headers: {
-        authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
-        accept: "application/vnd.embedly.container"
+    const { data, error } = await app.api.scrape.post(
+      {
+        platform: platform.type,
+        url
+      },
+      {
+        headers: {
+          authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
+        }
       }
-    });
+    );
     if (error) return;
 
-    if (Array.isArray(data)) {
-      await message.reply({
-        components: data,
+    const embed = Platforms[platform.type].createEmbed(data);
+
+    await Promise.all([
+      message.reply({
+        components: [Embed.getDiscordEmbed(embed)],
         flags: MessageFlags.IsComponentsV2,
         allowedMentions: {
           parse: [],
           repliedUser: false
         }
-      });
-      await message.edit({ flags: ["SuppressEmbeds"] });
-    }
+      }),
+      message.edit({ flags: MessageFlags.SuppressEmbeds })
+    ]);
   }
 }

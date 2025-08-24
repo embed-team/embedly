@@ -50,7 +50,7 @@ export class Instagram extends EmbedlyPlatform {
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
-    const { data } = JSON.parse(await resp.text());
+    const { data } = (await resp.json()) as Record<string, any>;
     return data.xdt_shortcode_media;
   }
 
@@ -104,7 +104,8 @@ export class Instagram extends EmbedlyPlatform {
         comments: raw_data.edge_media_to_comment.count,
         likes: raw_data.edge_media_preview_like.count
       },
-      description: raw_data.edge_media_to_caption.edges[0].node.text
+      description:
+        raw_data.edge_media_to_caption.edges[0]?.node?.text ?? ""
     };
   }
 

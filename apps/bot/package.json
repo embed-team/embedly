@@ -20,8 +20,11 @@
   "devDependencies": {
     "@biomejs/biome": "2.1.1",
     "@embedly/api": "workspace:*",
+    "@embedly/builder": "workspace:*",
     "@embedly/config": "workspace:*",
+    "@embedly/logging": "workspace:*",
     "@embedly/parser": "workspace:*",
+    "@embedly/platforms": "workspace:*",
     "@types/node": "^24.0.14",
     "discord-api-types": "^0.38.16",
     "pkgroll": "^2.14.3",

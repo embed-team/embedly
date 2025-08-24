@@ -1,5 +1,18 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
+import { Embed } from "@embedly/builder";
+import {
+  EMBEDLY_NO_LINK_IN_MESSAGE,
+  EMBEDLY_NO_VALID_LINK,
+  type EmbedlyInteractionContext,
+  formatDiscord
+} from "@embedly/logging";
+import {
+  GENERIC_LINK_REGEX,
+  getPlatformFromURL,
+  hasLink
+} from "@embedly/parser";
+import Platforms from "@embedly/platforms";
 import { Command } from "@sapphire/framework";
 import {
   type APIInteractionResponseChannelMessageWithSource,
@@ -28,11 +41,16 @@ export class EmbedCommand extends Command {
         command
           .setName(this.name)
           .setDescription(this.description)
-          .addStringOption((string) =>
-            string
+          .addStringOption((opt) =>
+            opt
               .setName("url")
               .setDescription("Link to content")
               .setRequired(true)
+          )
+          .addBooleanOption((opt) =>
+            opt
+              .setName("media_only")
+              .setDescription("Display the media only")
           )
       )
       .registerContextMenuCommand((command) =>
@@ -55,63 +73,69 @@ export class EmbedCommand extends Command {
     interaction:
       | Command.ChatInputCommandInteraction
       | Command.ContextMenuCommandInteraction,
-    content: string
+    content: string,
+    flags?: {
+      MediaOnly: boolean;
+    }
   ) {
-    await interaction.deferReply({ flags: ["Ephemeral"] });
+    const log_ctx = {
+      interaction_id: interaction.id,
+      user_id: interaction.user.id
+    } satisfies EmbedlyInteractionContext;
+    if (!hasLink(content)) {
+      return await interaction.reply({
+        content: formatDiscord(EMBEDLY_NO_LINK_IN_MESSAGE, log_ctx),
+        flags: ["Ephemeral"]
+      });
+    }
+    const url = GENERIC_LINK_REGEX.exec(content)?.[0]!;
+    const platform = getPlatformFromURL(url);
+    if (!platform) {
+      return await interaction.reply({
+        content: formatDiscord(EMBEDLY_NO_VALID_LINK, log_ctx),
+        flags: ["Ephemeral"]
+      });
+    }
 
-    const { data, error } = await app.api.embed.post(
+    await interaction.deferReply();
+
+    const { data, error } = await app.api.scrape.post(
       {
-        author: interaction.user,
-        id: interaction.id,
-        content
+        platform: platform.type,
+        url
       },
       {
         headers: {
-          authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
-          accept: "application/vnd.embedly.container"
+          authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
         }
       }
     );
 
-    if (error && error.status === 400) {
-      if (this.isInteractionResponse(error.value)) {
-        return await interaction.editReply({
-          content: error.value.data.content
-        });
-      }
-    }
-
-    if (Array.isArray(data)) {
-      const blurbs = [
-        "*happy robot noises* embed fixed! ✨",
-        "*excited beeping* your link is now pretty! :D",
-        "*mechanical purring* embed enhanced ~ enjoy! ✨",
-        "*whirrs with pride* fixed that social link for ya! ✨",
-        "*robot dance* embed upgraded successfully! 🎉",
-        "*contented humming* your message is now shareable! ✨",
-        "*cheerful chirping* embed repaired with love! 💕",
-        "*satisfied beep boop* social link beautified! ✨",
-        "*happy buzzing* embed transformation complete! :3",
-        "*delighted whirring* your link got the premium treatment! ✨",
-        "*joyful mechanical sounds* embed fixed ~ you're welcome! :)",
-        "*pleased robot giggles* social media link enhanced! ✨",
-        "*excited servo noises* embed upgraded for maximum sharing! 🚀",
-        "*warm robot hum* your link is now conversation-ready! ✨",
-        "*triumphant beeping* another embed saved from the void! 🎯"
-      ];
-      await interaction.editReply(
-        blurbs[Math.floor(Math.random() * blurbs.length)]
-      );
-      return await interaction.followUp({
-        components: data,
-        flags: ["IsComponentsV2"],
-        allowedMentions: {
-          parse: [],
-          repliedUser: false
-        }
+    if (error?.status === 400 || error?.status === 500) {
+      return await interaction.editReply({
+        content: formatDiscord(error.value, {
+          ...log_ctx,
+          ...error.value.context!
+        })
       });
     }
-    return;
+
+    const embed = Platforms[platform.type].createEmbed(data);
+
+    if (flags?.MediaOnly) {
+      return await interaction.editReply({
+        components: [{ type: 12, items: embed.media }],
+        flags: ["IsComponentsV2"]
+      });
+    }
+    return await interaction.editReply({
+      components: [Embed.getDiscordEmbed(embed)],
+      flags: ["IsComponentsV2"],
+      allowedMentions: {
+        parse: [],
+        repliedUser: false
+      }
+    });
   }
 
   public override async contextMenuRun(
@@ -126,6 +150,8 @@ export class EmbedCommand extends Command {
     interaction: Command.ChatInputCommandInteraction
   ) {
     const url = interaction.options.getString("url", true);
-    this.fetchEmbed(interaction, url);
+    this.fetchEmbed(interaction, url, {
+      MediaOnly: interaction.options.getBoolean("media_only") ?? false
+    });
   }
 }
