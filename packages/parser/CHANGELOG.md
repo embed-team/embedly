@@ -1,5 +1,13 @@
 # @embedly/parser
 
+## 0.1.4
+
+### Patch Changes
+
+- added a fallback error for random failures and added multi-embedding for messages
+- Updated dependencies
+  - @embedly/types@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes

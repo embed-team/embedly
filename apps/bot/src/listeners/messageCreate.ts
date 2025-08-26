@@ -31,35 +31,43 @@ export class MessageListener extends Listener<
     if (message.author.bot) return;
     if (message.author.id === this.container.client.id) return;
     if (!hasLink(message.content)) return;
-    const url = GENERIC_LINK_REGEX.exec(message.content)?.[0]!;
-    const platform = getPlatformFromURL(url);
-    if (!platform) return;
 
-    const { data, error } = await app.api.scrape.post(
-      {
-        platform: platform.type,
-        url
-      },
-      {
-        headers: {
-          authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
-        }
-      }
+    const urls = message.content.match(
+      new RegExp(GENERIC_LINK_REGEX, "g")
     );
-    if (error) return;
+    if (!urls) return;
+    for (const [ind, url] of urls.entries()) {
+      const platform = getPlatformFromURL(url);
+      if (!platform) return;
 
-    const embed = Platforms[platform.type].createEmbed(data);
+      const { data, error } = await app.api.scrape.post(
+        {
+          platform: platform.type,
+          url
+        },
+        {
+          headers: {
+            authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
+          }
+        }
+      );
+      if (error) return;
 
-    await Promise.all([
-      message.reply({
+      const embed = Platforms[platform.type].createEmbed(data);
+      const msg = {
         components: [Embed.getDiscordEmbed(embed)],
         flags: MessageFlags.IsComponentsV2,
         allowedMentions: {
           parse: [],
           repliedUser: false
         }
-      }),
-      message.edit({ flags: MessageFlags.SuppressEmbeds })
-    ]);
+      } as const;
+      if (ind > 0 && message.channel.isSendable()) {
+        await message.channel.send(msg);
+      } else {
+        await message.reply(msg);
+      }
+    }
+    await message.edit({ flags: MessageFlags.SuppressEmbeds });
   }
 }

@@ -1,5 +1,11 @@
 # @embedly/bot
 
+## 0.1.4
+
+### Patch Changes
+
+- added a fallback error for random failures and added multi-embedding for messages
+
 ## 0.1.3
 
 ### Patch Changes

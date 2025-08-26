@@ -120,24 +120,36 @@ export class EmbedCommand extends Command {
       });
     }
 
-    const embed = Platforms[platform.type].createEmbed(data);
+    try {
+      const embed = Platforms[platform.type].createEmbed(data);
 
-    console.log(embed);
-
-    if (flags?.MediaOnly) {
+      if (flags?.MediaOnly) {
+        return await interaction.editReply({
+          components: [{ type: 12, items: embed.media }],
+          flags: ["IsComponentsV2"]
+        });
+      }
       return await interaction.editReply({
-        components: [{ type: 12, items: embed.media }],
-        flags: ["IsComponentsV2"]
+        components: [Embed.getDiscordEmbed(embed)],
+        flags: ["IsComponentsV2"],
+        allowedMentions: {
+          parse: [],
+          repliedUser: false
+        }
+      });
+    } catch (_error) {
+      return await interaction.editReply({
+        content: formatDiscord(
+          Platforms[platform.type].log_messages.failed,
+          {
+            ...log_ctx,
+            platform: platform.type,
+            post_id: await Platforms[platform.type].parsePostId(url),
+            post_url: url
+          }
+        )
       });
     }
-    return await interaction.editReply({
-      components: [Embed.getDiscordEmbed(embed)],
-      flags: ["IsComponentsV2"],
-      allowedMentions: {
-        parse: [],
-        repliedUser: false
-      }
-    });
   }
 
   public override async contextMenuRun(
