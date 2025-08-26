@@ -1,5 +1,16 @@
 # @embedly/platforms
 
+## 0.1.3
+
+### Patch Changes
+
+- fixed tiktok embeds and added new instagram share link handling
+- Updated dependencies
+  - @embedly/parser@0.1.3
+  - @embedly/builder@0.1.3
+  - @embedly/logging@0.1.3
+  - @embedly/types@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes

@@ -19,7 +19,7 @@ export class Twitter extends EmbedlyPlatform {
     });
   }
 
-  parsePostId(url: string): string {
+  async parsePostId(url: string): Promise<string> {
     const match = TWITTER_REGEX.exec(url)!;
     const { tweet_id } = match.groups!;
     return tweet_id;

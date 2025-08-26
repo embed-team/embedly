@@ -122,6 +122,8 @@ export class EmbedCommand extends Command {
 
     const embed = Platforms[platform.type].createEmbed(data);
 
+    console.log(embed);
+
     if (flags?.MediaOnly) {
       return await interaction.editReply({
         components: [{ type: 12, items: embed.media }],

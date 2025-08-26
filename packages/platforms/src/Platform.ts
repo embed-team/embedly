@@ -22,7 +22,7 @@ export abstract class EmbedlyPlatform {
     public log_messages: EmbedlyPlatformLogMessages
   ) {}
 
-  abstract parsePostId(url: string): string;
+  abstract parsePostId(url: string): Promise<string>;
   public async getPostFromCache(
     post_id: string,
     cache_store: KVNamespace

@@ -21,7 +21,7 @@ export class TikTok extends EmbedlyPlatform {
     });
   }
 
-  parsePostId(url: string): string {
+  async parsePostId(url: string): Promise<string> {
     const match = TIKTOK_REGEX.exec(url)!;
     const { tiktok_user, tiktok_id } = match.groups!;
     return `${tiktok_user}/${tiktok_id}`;
@@ -73,7 +73,7 @@ export class TikTok extends EmbedlyPlatform {
       username: raw_data.author.uniqueId,
       profile_url: `https://tiktok.com/@${raw_data.author.uniqueId}`,
       avatar_url: raw_data.author.avatarMedium,
-      timestamp: raw_data.createTime,
+      timestamp: +raw_data.createTime,
       url: `https://tiktok.com/@${raw_data.author.uniqueId}/video/${raw_data.video.id}`,
       stats: {
         comments: raw_data.statsV2.commentCount,

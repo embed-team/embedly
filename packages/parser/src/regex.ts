@@ -3,7 +3,7 @@ export const GENERIC_LINK_REGEX =
 export const TWITTER_REGEX =
   /(?:twitter|x).com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
 export const IG_REGEX =
-  /instagram.com\/(?:[A-Za-z0-9_.]+\/)?(p|reels|reel|stories)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
+  /instagram.com\/(?:[A-Za-z0-9_.]+\/)?(p|share|reels|reel|stories)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
 export const TIKTOK_REGEX_MAIN =
   /(https?:\/\/)?(?:[\w-]+\.)*tiktok\.com/;
 export const TIKTOK_REGEX =

@@ -56,7 +56,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
       "/api/scrape",
       async ({ body: { platform, url }, status, logger, set }) => {
         const handler = Platforms[platform as keyof typeof Platforms];
-        const post_id = handler.parsePostId(url);
+        const post_id = await handler.parsePostId(url);
         const post_log_ctx: EmbedlyPostContext = {
           platform: handler.name,
           post_url: url,

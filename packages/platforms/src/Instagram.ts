@@ -18,7 +18,16 @@ export class Instagram extends EmbedlyPlatform {
     });
   }
 
-  parsePostId(url: string): string {
+  async parsePostId(url: string): Promise<string> {
+    if (url.includes("share")) {
+      const req = await fetch(url.endsWith("/") ? url : `${url}/`, {
+        redirect: "follow",
+        headers: {
+          "User-Agent": "curl/8.7.1"
+        }
+      });
+      url = req.url;
+    }
     const match = IG_REGEX.exec(url)!;
     const { ig_shortcode } = match.groups!;
     return ig_shortcode;
