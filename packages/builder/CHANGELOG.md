@@ -1,5 +1,17 @@
 # @embedly/builder
 
+## 0.2.0
+
+### Minor Changes
+
+- added cbc.ca, fixed tiktok, added media proxy
+
+### Patch Changes
+
+- Updated dependencies
+  - @embedly/parser@0.2.0
+  - @embedly/types@0.2.0
+
 ## 0.1.4
 
 ### Patch Changes
