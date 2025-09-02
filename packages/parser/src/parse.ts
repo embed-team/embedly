@@ -1,5 +1,6 @@
 import { EmbedlyPlatformType } from "@embedly/types";
 import {
+  CBC_REGEX,
   GENERIC_LINK_REGEX,
   IG_REGEX,
   TIKTOK_REGEX_MAIN,
@@ -19,5 +20,8 @@ export function getPlatformFromURL(
     return { type: EmbedlyPlatformType.Instagram };
   if (TIKTOK_REGEX_MAIN.test(url))
     return { type: EmbedlyPlatformType.TikTok };
+  if (CBC_REGEX.test(url)) {
+    return { type: EmbedlyPlatformType.CBC };
+  }
   return null;
 }

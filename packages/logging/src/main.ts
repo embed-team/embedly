@@ -114,6 +114,21 @@ export const EMBEDLY_FAILED_THREADS: EmbedlyErrorBase<
   detail: "Failed to fetch this Threads post from the API."
 };
 
+export const EMBEDLY_FETCH_CBC: EmbedlyErrorBase<EmbedlyPostContext> = {
+  type: "EMBEDLY_FETCH_CBC",
+  title: "Fetching CBC.ca.",
+  detail: "Fetching CBC.ca post from the API."
+};
+
+export const EMBEDLY_FAILED_CBC: EmbedlyErrorBase<
+  EmbedlyInteractionContext & EmbedlyPostContext
+> = {
+  type: "EMBEDLY_FAILED_CBC",
+  status: 500,
+  title: "Failed to fetch CBC.ca.",
+  detail: "Failed to fetch this CBC.ca post from the API."
+};
+
 export const EMBEDLY_CACHED_POST: EmbedlyErrorBase<EmbedlyPostContext> =
   {
     type: "EMBEDLY_CACHED_POST",

@@ -22,7 +22,8 @@ export class TikTok extends EmbedlyPlatform {
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = TIKTOK_REGEX.exec(url)!;
+    const req = await fetch(url, { redirect: "follow" });
+    const match = TIKTOK_REGEX.exec(req.url)!;
     const { tiktok_user, tiktok_id } = match.groups!;
     return `${tiktok_user}/${tiktok_id}`;
   }

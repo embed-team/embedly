@@ -31,8 +31,8 @@ export interface EmbedData extends BaseEmbedData {
 export class Embed implements EmbedData {
   public platform!: EmbedlyPlatformType;
   public name!: string;
-  public username!: string;
-  public profile_url!: string;
+  public username?: string;
+  public profile_url?: string;
   public avatar_url!: string;
   public url!: string;
   public timestamp!: number;
@@ -73,10 +73,10 @@ export class Embed implements EmbedData {
       .addTextDisplayComponents((builder) =>
         builder.setContent(
           heading(
-            `${embed.name} (${hyperlink(
-              `@${embed.username}`,
-              embed.profile_url
-            )})`,
+            `${embed.name} ${
+              embed.username &&
+              `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
+            }`,
             HeadingLevel.Three
           )
         )
@@ -111,7 +111,7 @@ export class Embed implements EmbedData {
           builder.setContent(
             heading(
               `<:reply:1386639619768058007> ${reply_tweet.name} (${hyperlink(
-                reply_tweet.username,
+                reply_tweet.username!,
                 reply_tweet.profile_url
               )})`,
               HeadingLevel.Three
@@ -141,7 +141,7 @@ export class Embed implements EmbedData {
           builder.setContent(
             heading(
               `<:reply:1386639619768058007> ${quote_tweet.name} (${hyperlink(
-                quote_tweet.username,
+                quote_tweet.username!,
                 quote_tweet.profile_url
               )})`,
               HeadingLevel.Three
@@ -166,32 +166,37 @@ export class Embed implements EmbedData {
       }
     }
 
-    const stats = Object.entries(
-      embed.reply ? embed.reply.stats : embed.stats
-    ).map(
-      ([key, val]) =>
-        `${emojis[key as keyof Emojis]} ${Embed.NumberFormatter.format(val)}`
-    );
-    container.addSectionComponents((builder) =>
-      builder
-        .addTextDisplayComponents(
-          (builder) =>
-            builder.setContent(subtext(stats.join("      "))),
-          (builder) =>
-            builder.setContent(
-              `${emojis[embed.platform]} • ${time(
-                embed.timestamp,
-                TimestampStyles.ShortDateTime
-              )}`
-            )
+    let stats: string[] = [];
+    if (embed.stats || embed.reply?.stats) {
+      stats = Object.entries(
+        embed.reply ? embed.reply.stats! : embed.stats
+      ).map(
+        ([key, val]) =>
+          `${emojis[key as keyof Emojis]} ${Embed.NumberFormatter.format(val)}`
+      );
+    }
+    container.addSectionComponents((builder) => {
+      if (stats.length > 0) {
+        builder.addTextDisplayComponents((builder) =>
+          builder.setContent(subtext(stats.join("      ")))
+        );
+      }
+      return builder
+        .addTextDisplayComponents((builder) =>
+          builder.setContent(
+            `${emojis[embed.platform]} • ${time(
+              embed.timestamp,
+              TimestampStyles.ShortDateTime
+            )}`
+          )
         )
         .setButtonAccessory((builder) =>
           builder
             .setStyle(ButtonStyle.Link)
             .setURL(embed.url)
             .setLabel(`View on ${embed.platform}`)
-        )
-    );
+        );
+    });
 
     return container.toJSON();
   }
