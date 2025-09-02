@@ -140,6 +140,42 @@ const app = (env: Env, ctx: ExecutionContext) =>
           { additionalProperties: true }
         )
       }
+    )
+    .get(
+      "/api/_image",
+      async ({ query: { url, sig }, status, env }) => {
+        if (!url || !sig) {
+          return status(400);
+        }
+
+        const key = await crypto.subtle.importKey(
+          "raw",
+          new TextEncoder().encode(env.DISCORD_BOT_TOKEN),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"]
+        );
+
+        const expected_sig = await crypto.subtle.sign(
+          "HMAC",
+          key,
+          new TextEncoder().encode(url)
+        );
+        const expected_hex = Array.from(new Uint8Array(expected_sig))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (expected_hex !== sig) {
+          return status(403);
+        }
+        const res = await fetch(url);
+        return new Response(res.body, {
+          headers: {
+            "Content-Type":
+              res.headers.get("Content-Type") || "image/*",
+            "Cache-Control": "public, max-age=3600"
+          }
+        });
+      }
     );
 
 export default {

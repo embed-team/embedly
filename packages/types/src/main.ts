@@ -3,7 +3,8 @@ import type { APIMediaGalleryItem } from "discord-api-types/v10";
 export enum EmbedlyPlatformType {
   Twitter = "Twitter",
   Instagram = "Instagram",
-  TikTok = "TikTok"
+  TikTok = "TikTok",
+  CBC = "cbc.ca"
 }
 
 export const EmbedlyPlatformColors: Record<
@@ -12,7 +13,8 @@ export const EmbedlyPlatformColors: Record<
 > = {
   [EmbedlyPlatformType.Twitter]: [29, 161, 242],
   [EmbedlyPlatformType.Instagram]: [225, 48, 108],
-  [EmbedlyPlatformType.TikTok]: [57, 118, 132]
+  [EmbedlyPlatformType.TikTok]: [57, 118, 132],
+  [EmbedlyPlatformType.CBC]: [215, 36, 42]
 };
 
 export interface StatsData {
@@ -26,12 +28,12 @@ export interface StatsData {
 export interface BaseEmbedData {
   platform: EmbedlyPlatformType;
   name: string;
-  username: string;
-  profile_url: string;
+  username?: string;
+  profile_url?: string;
   avatar_url: string;
   url: string;
   timestamp: number;
-  stats: StatsData;
+  stats?: StatsData;
   description?: string;
   media?: APIMediaGalleryItem[];
 }
@@ -52,5 +54,6 @@ export const emojis: Emojis = {
   views: "<:view:1386639685237084292>",
   Twitter: "<:twitter:1386639732179599481>",
   Instagram: "<:instagram:1386639712013254748>",
-  TikTok: "<:tiktok:1386641825963708446>"
+  TikTok: "<:tiktok:1386641825963708446>",
+  "cbc.ca": "<:cbc:1409997044495683674>"
 };

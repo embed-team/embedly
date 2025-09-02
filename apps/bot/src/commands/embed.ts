@@ -137,7 +137,8 @@ export class EmbedCommand extends Command {
           repliedUser: false
         }
       });
-    } catch (_error) {
+    } catch (error) {
+      console.error(error);
       return await interaction.editReply({
         content: formatDiscord(
           Platforms[platform.type].log_messages.failed,
