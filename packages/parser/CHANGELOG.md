@@ -1,5 +1,16 @@
 # @embedly/parser
 
+## 0.3.0
+
+### Minor Changes
+
+- added threads and fixed a few emoji issues
+
+### Patch Changes
+
+- Updated dependencies
+  - @embedly/types@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

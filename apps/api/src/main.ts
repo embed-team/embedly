@@ -84,6 +84,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
             err.context = post_log_ctx;
 
             logger.error(...formatBetterStack(err, err.context));
+            console.error(error);
 
             return status(err.status!, err);
           }
