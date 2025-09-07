@@ -1,5 +1,17 @@
 # @embedly/logging
 
+## 0.3.2
+
+### Patch Changes
+
+- fixed title for cbc embeds where username doesn't exist
+
+## 0.3.1
+
+### Patch Changes
+
+- escape markdown in embed description
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,6 +1,7 @@
 import {
   ContainerBuilder,
   escapeHeading,
+  escapeMarkdown,
   HeadingLevel,
   heading,
   hyperlink,
@@ -76,8 +77,9 @@ export class Embed implements EmbedData {
           heading(
             escapeHeading(
               `${embed.quote ? emojis.quote : ""} ${embed.name} ${
-                embed.username &&
-                `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
+                embed.username
+                  ? `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
+                  : ""
               }`
             ),
             HeadingLevel.Three
@@ -89,7 +91,7 @@ export class Embed implements EmbedData {
       );
     if (embed.description) {
       text_section.addTextDisplayComponents((builder) =>
-        builder.setContent(embed.description!)
+        builder.setContent(escapeMarkdown(embed.description!))
       );
     }
 
@@ -128,7 +130,7 @@ export class Embed implements EmbedData {
         );
       if (reply_tweet.description) {
         reply_text_section.addTextDisplayComponents((builder) =>
-          builder.setContent(reply_tweet.description!)
+          builder.setContent(escapeMarkdown(reply_tweet.description!))
         );
       }
 
@@ -160,7 +162,7 @@ export class Embed implements EmbedData {
         );
       if (quote_tweet.description) {
         quote_text_section.addTextDisplayComponents((builder) =>
-          builder.setContent(quote_tweet.description!)
+          builder.setContent(escapeMarkdown(quote_tweet.description!))
         );
       }
 
