@@ -35,7 +35,7 @@ export class Instagram extends EmbedlyPlatform {
 
   async fetchPost(
     ig_shortcode: string,
-    env: { EMBED_USER_AGENT: string; IG_APP_ID: string }
+    env: { EMBED_USER_AGENT: string }
   ): Promise<any> {
     const graphql = new URL(`https://www.instagram.com/api/graphql`);
     graphql.searchParams.set(
@@ -50,7 +50,7 @@ export class Instagram extends EmbedlyPlatform {
       headers: {
         "User-Agent": env.EMBED_USER_AGENT,
         "Content-Type": "application/x-www-form-urlencoded",
-        "X-IG-App-ID": env.IG_APP_ID,
+        "X-IG-App-ID": "936619743392459",
         "X-FB-LSD": "AVqbxe3J_YA",
         "X-ASBD-ID": "129477",
         "Sec-Fetch-Site": "same-origin"
@@ -63,7 +63,9 @@ export class Instagram extends EmbedlyPlatform {
     return data.xdt_shortcode_media;
   }
 
-  parsePostMedia(post_data: Record<string, any>) {
+  parsePostMedia(
+    post_data: Record<string, any>
+  ): Parameters<Embed["setMedia"]>[0] {
     switch (post_data.__typename) {
       case "XDTGraphSidecar": {
         return post_data.edge_sidecar_to_children.edges.map(
@@ -96,6 +98,9 @@ export class Instagram extends EmbedlyPlatform {
             description: post_data.accessibility_caption
           }
         ];
+      }
+      default: {
+        return [];
       }
     }
   }

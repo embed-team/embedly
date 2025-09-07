@@ -3,6 +3,7 @@ import {
   CBC_REGEX,
   GENERIC_LINK_REGEX,
   IG_REGEX,
+  THREADS_REGEX,
   TIKTOK_REGEX_MAIN,
   TWITTER_REGEX
 } from "./regex.ts";
@@ -22,6 +23,9 @@ export function getPlatformFromURL(
     return { type: EmbedlyPlatformType.TikTok };
   if (CBC_REGEX.test(url)) {
     return { type: EmbedlyPlatformType.CBC };
+  }
+  if (THREADS_REGEX.test(url)) {
+    return { type: EmbedlyPlatformType.Threads };
   }
   return null;
 }

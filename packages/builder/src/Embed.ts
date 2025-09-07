@@ -1,5 +1,6 @@
 import {
   ContainerBuilder,
+  escapeHeading,
   HeadingLevel,
   heading,
   hyperlink,
@@ -73,10 +74,12 @@ export class Embed implements EmbedData {
       .addTextDisplayComponents((builder) =>
         builder.setContent(
           heading(
-            `${embed.name} ${
-              embed.username &&
-              `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
-            }`,
+            escapeHeading(
+              `${embed.quote ? emojis.quote : ""} ${embed.name} ${
+                embed.username &&
+                `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
+              }`
+            ),
             HeadingLevel.Three
           )
         )
@@ -110,10 +113,12 @@ export class Embed implements EmbedData {
         .addTextDisplayComponents((builder) =>
           builder.setContent(
             heading(
-              `<:reply:1386639619768058007> ${reply_tweet.name} (${hyperlink(
-                reply_tweet.username!,
-                reply_tweet.profile_url
-              )})`,
+              escapeHeading(
+                `${emojis.reply} ${reply_tweet.name} (${hyperlink(
+                  reply_tweet.username!,
+                  reply_tweet.profile_url
+                )})`
+              ),
               HeadingLevel.Three
             )
           )
@@ -140,10 +145,12 @@ export class Embed implements EmbedData {
         .addTextDisplayComponents((builder) =>
           builder.setContent(
             heading(
-              `<:reply:1386639619768058007> ${quote_tweet.name} (${hyperlink(
-                quote_tweet.username!,
-                quote_tweet.profile_url
-              )})`,
+              escapeHeading(
+                `${quote_tweet.name} (${hyperlink(
+                  quote_tweet.username!,
+                  quote_tweet.profile_url
+                )})`
+              ),
               HeadingLevel.Three
             )
           )
