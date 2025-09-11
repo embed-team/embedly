@@ -64,11 +64,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Get Release Version
+        id: versioning
+        run: |
+          pnpm changeset status --output release.json
+          echo "VERSION=$(jq '.releases.[0].newVersion') release.json" >> $GITHUB_OUTPUT
+          rm release.json
+
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
         with:
           publish: pnpm changeset publish
-          title: '🔖 chore(release): v${{ fromJson(steps.changesets.output.publishedPackages)[0].version }}'
+          title: '🔖 chore(release): v${{ steps.versioning.outputs.VERSION }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
