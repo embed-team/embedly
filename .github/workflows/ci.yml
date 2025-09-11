@@ -68,7 +68,7 @@ jobs:
         id: versioning
         run: |
           if pnpm changeset status --output release.json; then
-            echo "VERSION=$(jq '.releases.[0].newVersion' release.json)" >> $GITHUB_OUTPUT
+            echo "VERSION=$(jq -r '.releases.[0].newVersion' release.json)" >> $GITHUB_OUTPUT
             rm release.json
           fi
 
