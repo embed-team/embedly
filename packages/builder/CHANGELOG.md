@@ -1,5 +1,15 @@
 # @embedly/builder
 
+## 0.3.3
+
+### Patch Changes
+
+- [`6d3fccd`](https://github.com/embed-team/embedly/commit/6d3fccd8190a8b697e0ee93edc8c81affb036f01) Thanks [@ItsRauf](https://github.com/ItsRauf)! - added DX and CI tooling
+
+- Updated dependencies [[`6d3fccd`](https://github.com/embed-team/embedly/commit/6d3fccd8190a8b697e0ee93edc8c81affb036f01)]:
+  - @embedly/parser@0.3.3
+  - @embedly/types@0.3.3
+
 ## 0.3.2
 
 ### Patch Changes
