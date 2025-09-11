@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "embedly-api",
+  "main": "src/main.ts",
+  "compatibility_date": "2025-06-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    {
+      "binding": "STORAGE",
+      "id": "2f1be495eed84c819a9b57a7d6735fb8"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "route": {
+    "pattern": "embedly.embed.team",
+    "custom_domain": true
+  },
+  "workers_dev": false
+}

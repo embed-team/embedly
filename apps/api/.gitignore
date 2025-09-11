@@ -1,4 +1,4 @@
-wrangler.jsonc
+wrangler.local.jsonc
 .env
 .dev.vars
 .wrangler

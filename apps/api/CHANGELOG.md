@@ -1,5 +1,29 @@
 # @embedly/api
 
+## 0.3.2
+
+### Patch Changes
+
+- fixed title for cbc embeds where username doesn't exist
+- Updated dependencies
+  - @embedly/platforms@0.3.2
+  - @embedly/builder@0.3.2
+  - @embedly/logging@0.3.2
+  - @embedly/parser@0.3.2
+  - @embedly/types@0.3.2
+
+## 0.3.1
+
+### Patch Changes
+
+- escape markdown in embed description
+- Updated dependencies
+  - @embedly/builder@0.3.1
+  - @embedly/logging@0.3.1
+  - @embedly/parser@0.3.1
+  - @embedly/platforms@0.3.1
+  - @embedly/types@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes

@@ -5,17 +5,29 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
+  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67",
   "devDependencies": {
-    "@biomejs/biome": "2.1.1",
-    "@changesets/cli": "2.29.5",
+    "@biomejs/biome": "2.2.4",
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "2.29.7",
+    "@changesets/config": "^3.1.1",
+    "@commitlint/cli": "^19.8.1",
     "@embedly/config": "workspace:*",
-    "turbo": "^2.5.4",
-    "typescript": "^5.8.3"
+    "commitlint": "^19.8.1",
+    "commitlint-config-gitmoji": "^2.3.1",
+    "gitmoji-cli": "^9.7.0",
+    "lefthook": "^1.12.4",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2"
   },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "commit": "gitmoji -c",
+    "validate": "turbo run lint build",
+    "prepare": "lefthook install",
+    "deploy:api": "pnpm --filter=@embedly/api deploy",
+    "clean": "turbo clean && rm -rf node_modules"
   }
 }
