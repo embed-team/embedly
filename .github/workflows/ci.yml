@@ -67,9 +67,10 @@ jobs:
       - name: Get Release Version
         id: versioning
         run: |
-          pnpm changeset status --output release.json
-          echo "VERSION=$(jq '.releases.[0].newVersion') release.json" >> $GITHUB_OUTPUT
-          rm release.json
+          if pnpm changeset status --output release.json; then
+            echo "VERSION=$(jq '.releases.[0].newVersion' release.json)" >> $GITHUB_OUTPUT
+            rm release.json
+          fi
 
       - name: Create Release Pull Request or Publish
         id: changesets
