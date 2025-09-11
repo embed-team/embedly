@@ -77,6 +77,6 @@ jobs:
         with:
           publish: pnpm changeset publish
           title: '🔖 chore(release): v${{ steps.versioning.outputs.VERSION }}'
-          message: '🔖 chore(release): v${{ steps.versioning.outputs.VERSION }}'
+          commit: '🔖 chore(release): v${{ steps.versioning.outputs.VERSION }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
