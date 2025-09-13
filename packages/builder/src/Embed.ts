@@ -30,6 +30,11 @@ export interface EmbedData extends BaseEmbedData {
   reply?: BaseEmbedDataWithoutPlatform;
 }
 
+export enum EmbedFlags {
+  MediaOnly = "MediaOnly",
+  Spoiler = "Spoiler"
+}
+
 export class Embed implements EmbedData {
   public platform!: EmbedlyPlatformType;
   public name!: string;
@@ -68,9 +73,18 @@ export class Embed implements EmbedData {
     this.reply = reply_tweet;
   }
 
-  static getDiscordEmbed(embed: Embed) {
+  static getDiscordEmbed(
+    embed: Embed,
+    flags?: Partial<Record<EmbedFlags, boolean>>
+  ) {
+    const media_only = flags?.[EmbedFlags.MediaOnly];
+    const hidden = flags?.[EmbedFlags.Spoiler];
+
     const container = new ContainerBuilder();
     container.setAccentColor(EmbedlyPlatformColors[embed.platform]);
+    if (hidden) {
+      container.setSpoiler(true);
+    }
     const text_section = new SectionBuilder()
       .addTextDisplayComponents((builder) =>
         builder.setContent(
@@ -95,12 +109,18 @@ export class Embed implements EmbedData {
       );
     }
 
-    container.addSectionComponents(text_section);
+    if (!media_only) {
+      container.addSectionComponents(text_section);
+    }
 
     if (embed.media) {
       container.addMediaGalleryComponents((builder) =>
         builder.addItems(embed.media!)
       );
+    }
+
+    if (media_only) {
+      return container.toJSON();
     }
 
     if (embed.reply || embed.quote) {

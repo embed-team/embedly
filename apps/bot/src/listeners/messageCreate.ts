@@ -1,10 +1,11 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
-import { Embed } from "@embedly/builder";
+import { Embed, EmbedFlags } from "@embedly/builder";
 import {
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
-  hasLink
+  hasLink,
+  isSpoiler
 } from "@embedly/parser";
 import Platforms from "@embedly/platforms";
 import { Events, Listener } from "@sapphire/framework";
@@ -55,7 +56,11 @@ export class MessageListener extends Listener<
 
       const embed = Platforms[platform.type].createEmbed(data);
       const msg = {
-        components: [Embed.getDiscordEmbed(embed)],
+        components: [
+          Embed.getDiscordEmbed(embed, {
+            [EmbedFlags.Spoiler]: isSpoiler(url, message.content)
+          })
+        ],
         flags: MessageFlags.IsComponentsV2,
         allowedMentions: {
           parse: [],
