@@ -1,5 +1,11 @@
 # @embedly/config
 
+## 0.4.1
+
+### Patch Changes
+
+- [#8](https://github.com/embed-team/embedly/pull/8) [`4386504`](https://github.com/embed-team/embedly/commit/438650487368ec722bc75801ccf5f495be62a485) Thanks [@ItsRauf](https://github.com/ItsRauf)! - fix broken spoiler regex
+
 ## 0.4.0
 
 ### Minor Changes
