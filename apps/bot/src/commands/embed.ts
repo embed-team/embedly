@@ -1,6 +1,6 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
-import { Embed } from "@embedly/builder";
+import { Embed, EmbedFlags } from "@embedly/builder";
 import {
   EMBEDLY_NO_LINK_IN_MESSAGE,
   EMBEDLY_NO_VALID_LINK,
@@ -14,11 +14,7 @@ import {
 } from "@embedly/parser";
 import Platforms from "@embedly/platforms";
 import { Command } from "@sapphire/framework";
-import {
-  type APIInteractionResponseChannelMessageWithSource,
-  ApplicationCommandType,
-  InteractionResponseType
-} from "discord.js";
+import { ApplicationCommandType } from "discord.js";
 
 const app = treaty<App>(process.env.EMBEDLY_API_DOMAIN!);
 
@@ -52,6 +48,11 @@ export class EmbedCommand extends Command {
               .setName("media_only")
               .setDescription("Display the media only")
           )
+          .addBooleanOption((opt) =>
+            opt
+              .setName("spoiler")
+              .setDescription("Hide embed content behind spoiler")
+          )
       )
       .registerContextMenuCommand((command) =>
         command
@@ -60,23 +61,12 @@ export class EmbedCommand extends Command {
       );
   }
 
-  isInteractionResponse(
-    data: Record<string, any>
-  ): data is APIInteractionResponseChannelMessageWithSource {
-    return (
-      data.type &&
-      data.type === InteractionResponseType.ChannelMessageWithSource
-    );
-  }
-
   async fetchEmbed(
     interaction:
       | Command.ChatInputCommandInteraction
       | Command.ContextMenuCommandInteraction,
     content: string,
-    flags?: {
-      MediaOnly: boolean;
-    }
+    flags?: Partial<Record<EmbedFlags, boolean>>
   ) {
     const log_ctx = {
       interaction_id: interaction.id,
@@ -122,15 +112,8 @@ export class EmbedCommand extends Command {
 
     try {
       const embed = Platforms[platform.type].createEmbed(data);
-
-      if (flags?.MediaOnly) {
-        return await interaction.editReply({
-          components: [{ type: 12, items: embed.media }],
-          flags: ["IsComponentsV2"]
-        });
-      }
       return await interaction.editReply({
-        components: [Embed.getDiscordEmbed(embed)],
+        components: [Embed.getDiscordEmbed(embed, flags)],
         flags: ["IsComponentsV2"],
         allowedMentions: {
           parse: [],
@@ -166,7 +149,10 @@ export class EmbedCommand extends Command {
   ) {
     const url = interaction.options.getString("url", true);
     this.fetchEmbed(interaction, url, {
-      MediaOnly: interaction.options.getBoolean("media_only") ?? false
+      [EmbedFlags.MediaOnly]:
+        interaction.options.getBoolean("media_only") ?? false,
+      [EmbedFlags.Spoiler]:
+        interaction.options.getBoolean("spoiler") ?? false
     });
   }
 }
