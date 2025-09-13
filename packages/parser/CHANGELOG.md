@@ -1,5 +1,16 @@
 # @embedly/parser
 
+## 0.4.0
+
+### Minor Changes
+
+- [#6](https://github.com/embed-team/embedly/pull/6) [`14785b7`](https://github.com/embed-team/embedly/commit/14785b70759445b7d402a3d63bca72993239f5b3) Thanks [@ItsRauf](https://github.com/ItsRauf)! - add a spoiler flag and support masked links in messages
+
+### Patch Changes
+
+- Updated dependencies [[`14785b7`](https://github.com/embed-team/embedly/commit/14785b70759445b7d402a3d63bca72993239f5b3)]:
+  - @embedly/types@0.4.0
+
 ## 0.3.3
 
 ### Patch Changes
