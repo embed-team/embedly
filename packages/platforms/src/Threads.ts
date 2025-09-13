@@ -96,7 +96,6 @@ export class Threads extends EmbedlyPlatform {
     post_data: Record<string, any>
   ): Parameters<Embed["setMedia"]>[0] {
     if (post_data.carousel_media) {
-      console.log(JSON.stringify(post_data.carousel_media, null, 2));
       return post_data.carousel_media.map((media: any) => ({
         media: {
           url: media.image_versions2.candidates[0].url
