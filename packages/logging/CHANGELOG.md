@@ -1,5 +1,11 @@
 # @embedly/logging
 
+## 0.5.0
+
+### Minor Changes
+
+- [#10](https://github.com/embed-team/embedly/pull/10) [`fc21052`](https://github.com/embed-team/embedly/commit/fc21052b89e65f5fd4d6a2dcdda4179516ca81e6) Thanks [@ItsRauf](https://github.com/ItsRauf)! - added 'Delete Embeds' command and cleaned up error messages
+
 ## 0.4.1
 
 ### Patch Changes
