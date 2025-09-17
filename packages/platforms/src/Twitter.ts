@@ -1,7 +1,7 @@
 import { Embed } from "@embedly/builder";
 import {
-  EMBEDLY_FAILED_TWEET,
-  EMBEDLY_FETCH_TWEET
+  EMBEDLY_FAILED_PLATFORM,
+  EMBEDLY_FETCH_PLATFORM
 } from "@embedly/logging";
 import { TWITTER_REGEX } from "@embedly/parser";
 import {
@@ -14,8 +14,8 @@ import { EmbedlyPlatform } from "./Platform.ts";
 export class Twitter extends EmbedlyPlatform {
   constructor() {
     super(EmbedlyPlatformType.Twitter, "tweet", {
-      fetching: EMBEDLY_FETCH_TWEET,
-      failed: EMBEDLY_FAILED_TWEET
+      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.Twitter),
+      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.Twitter)
     });
   }
 
