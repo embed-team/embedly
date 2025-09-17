@@ -112,7 +112,7 @@ export class Threads extends EmbedlyPlatform {
         }
       ];
     }
-    if (post_data.image_versions2) {
+    if (post_data.image_versions2?.candidates?.length > 0) {
       return [
         {
           media: {
@@ -146,10 +146,12 @@ export class Threads extends EmbedlyPlatform {
   createEmbed(post_data: any): Embed {
     const embed = new Embed(this.transformRawData(post_data));
     const media = this.parsePostMedia(post_data);
-    if (media.length > 10) {
-      media.length = 10;
+    if (media.length > 0) {
+      if (media.length > 10) {
+        media.length = 10;
+      }
+      embed.setMedia(media);
     }
-    embed.setMedia(media);
 
     return embed;
   }
