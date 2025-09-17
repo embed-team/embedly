@@ -1,7 +1,7 @@
 import { Embed } from "@embedly/builder";
 import {
-  EMBEDLY_FAILED_INSTAGRAM,
-  EMBEDLY_FETCH_INSTAGRAM
+  EMBEDLY_FAILED_PLATFORM,
+  EMBEDLY_FETCH_PLATFORM
 } from "@embedly/logging";
 import { THREADS_REGEX } from "@embedly/parser";
 import {
@@ -16,8 +16,8 @@ const alphabet =
 export class Threads extends EmbedlyPlatform {
   constructor() {
     super(EmbedlyPlatformType.Threads, "threads", {
-      fetching: EMBEDLY_FETCH_INSTAGRAM,
-      failed: EMBEDLY_FAILED_INSTAGRAM
+      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.Threads),
+      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.Threads)
     });
   }
 

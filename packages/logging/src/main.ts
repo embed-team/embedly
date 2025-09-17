@@ -50,84 +50,25 @@ export interface EmbedlyPostContext {
   resp_data?: any;
 }
 
-export const EMBEDLY_FETCH_TWEET: EmbedlyErrorBase<EmbedlyPostContext> =
-  {
-    type: "EMBEDLY_FETCH_TWEET",
-    title: "Fetching tweet.",
-    detail: "Fetching tweet from the FixTweet API."
-  };
+export const EMBEDLY_FETCH_PLATFORM: (
+  platform: EmbedlyPlatformType
+) => EmbedlyErrorBase<EmbedlyPostContext> = (
+  platform: EmbedlyPlatformType
+) => ({
+  type: `EMBEDLY_FETCH_${platform}`,
+  title: `Fetching ${platform}.`,
+  detail: `Fetching ${platform} from the ${platform} API.`
+});
 
-export const EMBEDLY_FAILED_TWEET: EmbedlyErrorBase<
-  EmbedlyInteractionContext & EmbedlyPostContext
-> = {
-  type: "EMBEDLY_FAILED_TWEET",
-  status: 500,
-  title: "Failed to fetch tweet.",
-  detail: "Failed to fetch this tweet from the FixTweet API."
-};
-
-export const EMBEDLY_FETCH_INSTAGRAM: EmbedlyErrorBase<EmbedlyPostContext> =
-  {
-    type: "EMBEDLY_FETCH_INSTAGRAM",
-    title: "Fetching Instagram.",
-    detail: "Fetching Instagram post from the API."
-  };
-
-export const EMBEDLY_FAILED_INSTAGRAM: EmbedlyErrorBase<
-  EmbedlyInteractionContext & EmbedlyPostContext
-> = {
-  type: "EMBEDLY_FAILED_INSTAGRAM",
-  status: 500,
-  title: "Failed to fetch Instagram.",
-  detail: "Failed to fetch this Instagram post from the API."
-};
-
-export const EMBEDLY_FETCH_TIKTOK: EmbedlyErrorBase<EmbedlyPostContext> =
-  {
-    type: "EMBEDLY_FETCH_TIKTOK",
-    title: "Fetching TikTok.",
-    detail: "Fetching TikTok post from the API."
-  };
-
-export const EMBEDLY_FAILED_TIKTOK: EmbedlyErrorBase<
-  EmbedlyInteractionContext & EmbedlyPostContext
-> = {
-  type: "EMBEDLY_FAILED_TIKTOK",
-  status: 500,
-  title: "Failed to fetch TikTok.",
-  detail: "Failed to fetch this TikTok post from the API."
-};
-
-export const EMBEDLY_FETCH_THREADS: EmbedlyErrorBase<EmbedlyPostContext> =
-  {
-    type: "EMBEDLY_FETCH_THREADS",
-    title: "Fetching Threads.",
-    detail: "Fetching Threads post from the API."
-  };
-
-export const EMBEDLY_FAILED_THREADS: EmbedlyErrorBase<
-  EmbedlyInteractionContext & EmbedlyPostContext
-> = {
-  type: "EMBEDLY_FAILED_THREADS",
-  status: 500,
-  title: "Failed to fetch Threads.",
-  detail: "Failed to fetch this Threads post from the API."
-};
-
-export const EMBEDLY_FETCH_CBC: EmbedlyErrorBase<EmbedlyPostContext> = {
-  type: "EMBEDLY_FETCH_CBC",
-  title: "Fetching CBC.ca.",
-  detail: "Fetching CBC.ca post from the API."
-};
-
-export const EMBEDLY_FAILED_CBC: EmbedlyErrorBase<
-  EmbedlyInteractionContext & EmbedlyPostContext
-> = {
-  type: "EMBEDLY_FAILED_CBC",
-  status: 500,
-  title: "Failed to fetch CBC.ca.",
-  detail: "Failed to fetch this CBC.ca post from the API."
-};
+export const EMBEDLY_FAILED_PLATFORM: (
+  platform: EmbedlyPlatformType
+) => EmbedlyErrorBase<EmbedlyInteractionContext & EmbedlyPostContext> =
+  (platform: EmbedlyPlatformType) => ({
+    type: `EMBEDLY_FAILED_${platform}`,
+    status: 500,
+    title: "Failed to fetch tweet.",
+    detail: "Failed to fetch this tweet from the FixTweet API."
+  });
 
 export const EMBEDLY_CACHED_POST: EmbedlyErrorBase<EmbedlyPostContext> =
   {
@@ -153,6 +94,32 @@ export const EMBEDLY_MESSAGE_UPDATE_FAILED: EmbedlyErrorBase<EmbedlyDeferContext
     type: "EMBEDLY_MESSAGE_UPDATE_FAILED",
     title: "Update Failed.",
     detail: "Failed to update the message."
+  };
+
+export const EMBEDLY_DELETE_FAILED: EmbedlyErrorBase<EmbedlyInteractionContext> =
+  {
+    type: "EMBEDLY_DELETE_FAILED",
+    title: "Deletion Failed.",
+    detail:
+      "Failed to delete the message.\n-# (This only works if you are the original poster or have `MANAGE_MESSAGES` permission)"
+  };
+
+const DELETE_SUCCESS_MESSAGES = [
+  "embed successfully yeeted into the void! ✨",
+  "👋 bye bye embed! deletion complete!",
+  "your embed has left the building! ✨",
+  "poof~ your embed has vanished! ✨",
+  "🧹 all tidy! embed removed as requested~"
+];
+
+export const EMBEDLY_DELETE_SUCCESS: EmbedlyErrorBase<EmbedlyInteractionContext> =
+  {
+    type: "EMBEDLY_DELETE_SUCCESS",
+    title: "Deletion Successful.",
+    detail:
+      DELETE_SUCCESS_MESSAGES[
+        ~~(DELETE_SUCCESS_MESSAGES.length * Math.random())
+      ]
   };
 
 export function formatBetterStack<T extends EmbedlyErrorBase>(

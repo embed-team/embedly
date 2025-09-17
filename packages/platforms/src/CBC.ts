@@ -1,8 +1,8 @@
 import { createHmac } from "node:crypto";
 import { Embed } from "@embedly/builder";
 import {
-  EMBEDLY_FAILED_CBC,
-  EMBEDLY_FETCH_CBC
+  EMBEDLY_FAILED_PLATFORM,
+  EMBEDLY_FETCH_PLATFORM
 } from "@embedly/logging";
 import { CBC_REGEX } from "@embedly/parser";
 import {
@@ -18,8 +18,8 @@ import { EmbedlyPlatform } from "./Platform.ts";
 export class CBC extends EmbedlyPlatform {
   constructor() {
     super(EmbedlyPlatformType.CBC, "cbc.ca", {
-      fetching: EMBEDLY_FETCH_CBC,
-      failed: EMBEDLY_FAILED_CBC
+      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.CBC),
+      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.CBC)
     });
   }
 

@@ -1,7 +1,7 @@
 import { Embed } from "@embedly/builder";
 import {
-  EMBEDLY_FAILED_TIKTOK,
-  EMBEDLY_FETCH_TIKTOK
+  EMBEDLY_FAILED_PLATFORM,
+  EMBEDLY_FETCH_PLATFORM
 } from "@embedly/logging";
 import { TIKTOK_REGEX } from "@embedly/parser";
 import {
@@ -16,8 +16,8 @@ import { EmbedlyPlatform } from "./Platform.ts";
 export class TikTok extends EmbedlyPlatform {
   constructor() {
     super(EmbedlyPlatformType.TikTok, "tiktok", {
-      fetching: EMBEDLY_FETCH_TIKTOK,
-      failed: EMBEDLY_FAILED_TIKTOK
+      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.TikTok),
+      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.TikTok)
     });
   }
 

@@ -1,7 +1,7 @@
 import { Embed } from "@embedly/builder";
 import {
-  EMBEDLY_FAILED_INSTAGRAM,
-  EMBEDLY_FETCH_INSTAGRAM
+  EMBEDLY_FAILED_PLATFORM,
+  EMBEDLY_FETCH_PLATFORM
 } from "@embedly/logging";
 import { IG_REGEX } from "@embedly/parser";
 import {
@@ -13,8 +13,8 @@ import { EmbedlyPlatform } from "./Platform.ts";
 export class Instagram extends EmbedlyPlatform {
   constructor() {
     super(EmbedlyPlatformType.Instagram, "insta", {
-      fetching: EMBEDLY_FETCH_INSTAGRAM,
-      failed: EMBEDLY_FAILED_INSTAGRAM
+      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.Instagram),
+      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.Instagram)
     });
   }
 
