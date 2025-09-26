@@ -111,7 +111,7 @@ export class EmbedCommand extends Command {
     }
 
     try {
-      const embed = Platforms[platform.type].createEmbed(data);
+      const embed = await Platforms[platform.type].createEmbed(data);
       return await interaction.editReply({
         components: [Embed.getDiscordEmbed(embed, flags)],
         flags: ["IsComponentsV2"],

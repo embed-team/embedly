@@ -43,12 +43,7 @@ export class Twitter extends EmbedlyPlatform {
       throw { code, message };
     }
 
-    let tweet_data = tweet;
-    if (tweet.replying_to_status) {
-      tweet_data = await this.fetchPost(tweet.replying_to_status);
-      tweet_data.reply = tweet;
-    }
-    return tweet_data;
+    return tweet;
   }
 
   enrichTweetText(text_data: Record<string, any>) {
@@ -89,7 +84,7 @@ export class Twitter extends EmbedlyPlatform {
     };
   }
 
-  createEmbed(tweet_data: any): Embed {
+  async createEmbed(tweet_data: any): Promise<Embed> {
     const embed = new Embed(this.transformRawData(tweet_data));
     if (tweet_data.text !== "") {
       embed.setDescription(this.enrichTweetText(tweet_data.raw_text));
@@ -104,8 +99,10 @@ export class Twitter extends EmbedlyPlatform {
         }))
       );
     }
-    if (tweet_data.reply) {
-      const reply_tweet = tweet_data.reply;
+    if (tweet_data.replying_to_status) {
+      const reply_tweet = await this.fetchPost(
+        tweet_data.replying_to_status
+      );
       const reply_embed = new Embed(this.transformRawData(reply_tweet));
       if (reply_tweet.text !== "") {
         reply_embed.setDescription(
