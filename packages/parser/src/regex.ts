@@ -2,6 +2,8 @@ export const GENERIC_LINK_REGEX =
   /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/i;
 export const SPOILER_LINK_REGEX = (url: string) =>
   RegExp(`\\|\\|\\s?${url}\\s?\\|\\|`);
+export const ESCAPED_LINK_REGEX = (url: string) =>
+  RegExp(`<\\s?${url}\\s?>`);
 export const TWITTER_REGEX =
   /(?:twitter|x).com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
 export const IG_REGEX =
