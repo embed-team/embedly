@@ -1,5 +1,17 @@
 # @embedly/platforms
 
+## 0.5.1
+
+### Patch Changes
+
+- [#12](https://github.com/embed-team/embedly/pull/12) [`1097443`](https://github.com/embed-team/embedly/commit/1097443312b448010388135a559e6ffe6102e282) Thanks [@ItsRauf](https://github.com/ItsRauf)! - fixed twitter replies bubbling to top of thread
+
+- Updated dependencies []:
+  - @embedly/builder@0.5.1
+  - @embedly/logging@0.5.1
+  - @embedly/parser@0.5.1
+  - @embedly/types@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes
