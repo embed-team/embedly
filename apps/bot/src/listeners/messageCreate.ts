@@ -56,7 +56,7 @@ export class MessageListener extends Listener<
       );
       if (error) return;
 
-      const embed = Platforms[platform.type].createEmbed(data);
+      const embed = await Platforms[platform.type].createEmbed(data);
       const msg = {
         components: [
           Embed.getDiscordEmbed(embed, {
