@@ -1,5 +1,15 @@
 # @embedly/builder
 
+## 0.5.3
+
+### Patch Changes
+
+- [#20](https://github.com/embed-team/embedly/pull/20) [`455d9b1`](https://github.com/embed-team/embedly/commit/455d9b19b0c8662a85799557fedd8b9bfae2cc33) Thanks [@ItsRauf](https://github.com/ItsRauf)! - sane spoiler and escape detection
+
+- Updated dependencies [[`455d9b1`](https://github.com/embed-team/embedly/commit/455d9b19b0c8662a85799557fedd8b9bfae2cc33)]:
+  - @embedly/parser@0.5.3
+  - @embedly/types@0.5.3
+
 ## 0.5.2
 
 ### Patch Changes
