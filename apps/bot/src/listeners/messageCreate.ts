@@ -5,8 +5,8 @@ import {
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
   hasLink,
-  isSpoiler,
-  isEscaped
+  isEscaped,
+  isSpoiler
 } from "@embedly/parser";
 import Platforms from "@embedly/platforms";
 import { Events, Listener } from "@sapphire/framework";
