@@ -3,7 +3,6 @@ import {
   CBC_REGEX,
   GENERIC_LINK_REGEX,
   IG_REGEX,
-  SPOILER_LINK_REGEX,
   THREADS_REGEX,
   TIKTOK_REGEX_MAIN,
   TWITTER_REGEX
@@ -14,7 +13,13 @@ export function hasLink(content: string) {
 }
 
 export function isSpoiler(url: string, content: string) {
-  return SPOILER_LINK_REGEX(url).test(content);
+  return content
+    .split("||")
+    .some((part, ind) => ind % 2 === 1 && part.includes(url));
+}
+
+export function isEscaped(url: string, content: string) {
+  return content.includes(`<${url}>`);
 }
 
 export function getPlatformFromURL(

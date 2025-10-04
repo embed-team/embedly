@@ -5,6 +5,7 @@ import {
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
   hasLink,
+  isEscaped,
   isSpoiler
 } from "@embedly/parser";
 import Platforms from "@embedly/platforms";
@@ -38,6 +39,7 @@ export class MessageListener extends Listener<
     );
     if (!urls) return;
     for (const [ind, url] of urls.entries()) {
+      if (isEscaped(url, message.content)) return;
       const platform = getPlatformFromURL(url);
       if (!platform) return;
 
