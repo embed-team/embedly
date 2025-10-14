@@ -86,24 +86,44 @@ export class Embed implements EmbedData {
       container.setSpoiler(true);
     }
     const text_section = new SectionBuilder()
-      .addTextDisplayComponents((builder) =>
-        builder.setContent(
-          heading(
-            escapeHeading(
-              `${embed.quote ? emojis.quote : ""} ${embed.name} ${
-                embed.username
-                  ? `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
-                  : ""
-              }`
-            ),
-            HeadingLevel.Three
-          )
-        )
-      )
+      .addTextDisplayComponents((builder) => {
+        if (embed.reply) {
+          return builder.setContent(
+            heading(
+              escapeHeading(
+                `${embed.reply.name} ${
+                  embed.username
+                    ? `(${hyperlink(`@${embed.reply.username}`, embed.reply.profile_url)})`
+                    : ""
+                }`
+              ),
+              HeadingLevel.Three
+            )
+          );
+        } else {
+          return builder.setContent(
+            heading(
+              escapeHeading(
+                `${embed.quote ? emojis.quote : ""} ${embed.name} ${
+                  embed.username
+                    ? `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
+                    : ""
+                }`
+              ),
+              HeadingLevel.Three
+            )
+          );
+        }
+      })
       .setThumbnailAccessory((builder) =>
         builder.setURL(embed.avatar_url)
       );
-    if (embed.description) {
+
+    if (embed.reply?.description) {
+      text_section.addTextDisplayComponents((builder) =>
+        builder.setContent(escapeMarkdown(embed.reply?.description!))
+      );
+    } else if (embed.description) {
       text_section.addTextDisplayComponents((builder) =>
         builder.setContent(escapeMarkdown(embed.description!))
       );
@@ -113,7 +133,11 @@ export class Embed implements EmbedData {
       container.addSectionComponents(text_section);
     }
 
-    if (embed.media) {
+    if (embed.reply?.media) {
+      container.addMediaGalleryComponents((builder) =>
+        builder.addItems(embed.reply?.media!)
+      );
+    } else if (embed.media) {
       container.addMediaGalleryComponents((builder) =>
         builder.addItems(embed.media!)
       );
@@ -130,15 +154,14 @@ export class Embed implements EmbedData {
     }
 
     if (embed.reply) {
-      const reply_tweet = embed.reply;
       const reply_text_section = new SectionBuilder()
         .addTextDisplayComponents((builder) =>
           builder.setContent(
             heading(
               escapeHeading(
-                `${emojis.reply} ${reply_tweet.name} (${hyperlink(
-                  reply_tweet.username!,
-                  reply_tweet.profile_url
+                `${emojis.reply} ${embed.name} (${hyperlink(
+                  embed.username!,
+                  embed.profile_url
                 )})`
               ),
               HeadingLevel.Three
@@ -146,19 +169,19 @@ export class Embed implements EmbedData {
           )
         )
         .setThumbnailAccessory((builder) =>
-          builder.setURL(reply_tweet.avatar_url)
+          builder.setURL(embed.avatar_url)
         );
-      if (reply_tweet.description) {
+      if (embed.description) {
         reply_text_section.addTextDisplayComponents((builder) =>
-          builder.setContent(escapeMarkdown(reply_tweet.description!))
+          builder.setContent(escapeMarkdown(embed.description!))
         );
       }
 
       container.addSectionComponents(reply_text_section);
 
-      if (reply_tweet.media) {
+      if (embed.media) {
         container.addMediaGalleryComponents((builder) =>
-          builder.addItems(reply_tweet.media!)
+          builder.addItems(embed.media!)
         );
       }
     } else if (embed.quote) {
