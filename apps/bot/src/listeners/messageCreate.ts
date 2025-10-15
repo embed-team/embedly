@@ -61,7 +61,7 @@ export class MessageListener extends Listener<
         components: [
           Embed.getDiscordEmbed(embed, {
             [EmbedFlags.Spoiler]: isSpoiler(url, message.content)
-          })
+          })!
         ],
         flags: MessageFlags.IsComponentsV2,
         allowedMentions: {

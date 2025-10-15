@@ -55,12 +55,14 @@ export class DeleteCommand extends Command {
       interaction.member.user.id
     );
     const reference = await msg.fetchReference();
+
     if (
-      !runner.permissions.has(
+      (!runner.permissions.has(
         PermissionFlagsBits.ManageMessages,
         true
-      ) ||
-      runner.id !== reference.author.id
+      ) &&
+        runner.id !== reference.author.id) ||
+      !msg.deletable
     ) {
       return await interaction.editReply({
         content: formatDiscord(EMBEDLY_DELETE_FAILED, {
@@ -68,13 +70,7 @@ export class DeleteCommand extends Command {
         })
       });
     }
-    if (!msg.deletable) {
-      return await interaction.editReply({
-        content: formatDiscord(EMBEDLY_DELETE_FAILED, {
-          message_id: msg.id
-        })
-      });
-    }
+
     await msg.delete();
     return await interaction.editReply({
       content: formatDiscord(EMBEDLY_DELETE_SUCCESS, {
