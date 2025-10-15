@@ -66,8 +66,8 @@ export const EMBEDLY_FAILED_PLATFORM: (
   (platform: EmbedlyPlatformType) => ({
     type: `EMBEDLY_FAILED_${platform}`,
     status: 500,
-    title: "Failed to fetch tweet.",
-    detail: "Failed to fetch this tweet from the FixTweet API."
+    title: `Failed to fetch ${platform}.`,
+    detail: `Failed to fetch this ${platform} post from the ${platform} API.`
   });
 
 export const EMBEDLY_CACHED_POST: EmbedlyErrorBase<EmbedlyPostContext> =

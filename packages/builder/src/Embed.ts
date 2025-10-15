@@ -5,6 +5,7 @@ import {
   HeadingLevel,
   heading,
   hyperlink,
+  MediaGalleryBuilder,
   SectionBuilder,
   subtext,
   TimestampStyles,
@@ -44,6 +45,10 @@ export class Embed implements EmbedData {
   public url!: string;
   public timestamp!: number;
   public stats!: StatsData;
+  public description?: string;
+  public media?: APIMediaGalleryItem[];
+  public quote?: BaseEmbedDataWithoutPlatform;
+  public reply?: BaseEmbedDataWithoutPlatform;
 
   static NumberFormatter = new Intl.NumberFormat("en", {
     roundingMode: "ceil",
@@ -52,10 +57,6 @@ export class Embed implements EmbedData {
     maximumFractionDigits: 2
   });
 
-  public description?: string;
-  public media?: APIMediaGalleryItem[];
-  public quote?: BaseEmbedDataWithoutPlatform;
-  public reply?: BaseEmbedDataWithoutPlatform;
   constructor(data: BaseEmbedData) {
     Object.assign(this, data);
   }
@@ -63,12 +64,15 @@ export class Embed implements EmbedData {
   public setDescription(text: string) {
     this.description = text;
   }
+
   public setMedia(media: APIMediaGalleryItem[]) {
     this.media = media;
   }
+
   public setQuoteTweet(quote_tweet: BaseEmbedDataWithoutPlatform) {
     this.quote = quote_tweet;
   }
+
   public setReplyTweet(reply_tweet: BaseEmbedDataWithoutPlatform) {
     this.reply = reply_tweet;
   }
@@ -80,136 +84,218 @@ export class Embed implements EmbedData {
     const media_only = flags?.[EmbedFlags.MediaOnly];
     const hidden = flags?.[EmbedFlags.Spoiler];
 
+    if (media_only) {
+      return Embed.buildMediaOnlyEmbed(embed, hidden);
+    }
+
     const container = new ContainerBuilder();
     container.setAccentColor(EmbedlyPlatformColors[embed.platform]);
+
     if (hidden) {
       container.setSpoiler(true);
     }
-    const text_section = new SectionBuilder()
-      .addTextDisplayComponents((builder) =>
-        builder.setContent(
-          heading(
-            escapeHeading(
-              `${embed.quote ? emojis.quote : ""} ${embed.name} ${
-                embed.username
-                  ? `(${hyperlink(`@${embed.username}`, embed.profile_url)})`
-                  : ""
-              }`
-            ),
-            HeadingLevel.Three
-          )
-        )
-      )
-      .setThumbnailAccessory((builder) =>
-        builder.setURL(embed.avatar_url)
-      );
-    if (embed.description) {
-      text_section.addTextDisplayComponents((builder) =>
-        builder.setContent(escapeMarkdown(embed.description!))
-      );
+
+    // Add primary content section (reply content if exists, otherwise main content)
+    Embed.addPrimaryContentSection(container, embed);
+
+    // Add primary media (reply media if exists, otherwise main media)
+    Embed.addPrimaryMedia(container, embed);
+
+    // Add secondary content (main content after reply, or quote)
+    Embed.addSecondaryContent(container, embed);
+
+    // Add footer with stats and metadata
+    Embed.addFooterSection(container, embed);
+
+    return container.toJSON();
+  }
+
+  private static buildMediaOnlyEmbed(embed: Embed, hidden?: boolean) {
+    const media = embed.reply?.media || embed.media;
+
+    if (!media || media.length === 0) {
+      return null;
     }
 
-    if (!media_only) {
-      container.addSectionComponents(text_section);
+    const gallery = new MediaGalleryBuilder();
+    gallery.addItems(media.map((m) => ({ ...m, spoiler: hidden })));
+
+    return gallery.toJSON();
+  }
+
+  private static addPrimaryContentSection(
+    container: ContainerBuilder,
+    embed: Embed
+  ) {
+    let author_name: string;
+    let author_username: string | undefined;
+    let author_profile_url: string | undefined;
+    let author_description: string | undefined;
+    let prefix_emoji = "";
+
+    if (embed.reply) {
+      // Show reply content first
+      author_name = embed.reply.name;
+      author_username = embed.reply.username;
+      author_profile_url = embed.reply.profile_url;
+      author_description = embed.reply.description;
+    } else {
+      // Show main content with quote emoji if it's a quote
+      author_name = embed.name;
+      author_username = embed.username;
+      author_profile_url = embed.profile_url;
+      author_description = embed.description;
+      prefix_emoji = embed.quote ? emojis.quote : "";
     }
+
+    const text_section = Embed.createAuthorSection(
+      author_name,
+      author_username,
+      author_profile_url,
+      embed.avatar_url,
+      author_description,
+      prefix_emoji
+    );
+
+    container.addSectionComponents(text_section);
+  }
+
+  private static addPrimaryMedia(
+    container: ContainerBuilder,
+    embed: Embed
+  ) {
+    const media = embed.reply?.media || embed.media;
+
+    if (media) {
+      container.addMediaGalleryComponents((builder) =>
+        builder.addItems(media)
+      );
+    }
+  }
+
+  private static addSecondaryContent(
+    container: ContainerBuilder,
+    embed: Embed
+  ) {
+    if (!embed.reply && !embed.quote) {
+      return;
+    }
+
+    // Add separator
+    container.addSeparatorComponents((builder) =>
+      builder.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    );
+
+    if (embed.reply) {
+      // Show original content after reply
+      Embed.addOriginalContentAfterReply(container, embed);
+    } else if (embed.quote) {
+      // Show quote content
+      Embed.addQuoteContent(container, embed.quote);
+    }
+  }
+
+  private static addOriginalContentAfterReply(
+    container: ContainerBuilder,
+    embed: Embed
+  ) {
+    const reply_section = Embed.createAuthorSection(
+      embed.name,
+      embed.username,
+      embed.profile_url,
+      embed.avatar_url,
+      embed.description,
+      emojis.reply
+    );
+
+    container.addSectionComponents(reply_section);
 
     if (embed.media) {
       container.addMediaGalleryComponents((builder) =>
-        builder.addItems(embed.media!)
+        builder.addItems(embed.media ?? [])
+      );
+    }
+  }
+
+  private static addQuoteContent(
+    container: ContainerBuilder,
+    quote: BaseEmbedDataWithoutPlatform
+  ) {
+    const quote_section = Embed.createAuthorSection(
+      quote.name,
+      quote.username,
+      quote.profile_url,
+      quote.avatar_url,
+      quote.description
+    );
+
+    container.addSectionComponents(quote_section);
+
+    if (quote.media) {
+      container.addMediaGalleryComponents((builder) =>
+        builder.addItems(quote.media ?? [])
+      );
+    }
+  }
+
+  private static createAuthorSection(
+    name: string,
+    username: string | undefined,
+    profile_url: string | undefined,
+    avatar_url: string,
+    description: string | undefined,
+    prefix_emoji: string = ""
+  ): SectionBuilder {
+    const author_text = Embed.formatAuthorHeading(
+      name,
+      username,
+      profile_url,
+      prefix_emoji
+    );
+
+    const section = new SectionBuilder()
+      .addTextDisplayComponents((builder) =>
+        builder.setContent(author_text)
+      )
+      .setThumbnailAccessory((builder) => builder.setURL(avatar_url));
+
+    if (description) {
+      section.addTextDisplayComponents((builder) =>
+        builder.setContent(escapeMarkdown(description))
       );
     }
 
-    if (media_only) {
-      return container.toJSON();
-    }
+    return section;
+  }
 
-    if (embed.reply || embed.quote) {
-      container.addSeparatorComponents((builder) =>
-        builder.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-      );
-    }
+  private static formatAuthorHeading(
+    name: string,
+    username: string | undefined,
+    profile_url: string | undefined,
+    prefix_emoji: string
+  ): string {
+    const username_part = username
+      ? ` (${hyperlink(`@${username}`, profile_url)})`
+      : "";
 
-    if (embed.reply) {
-      const reply_tweet = embed.reply;
-      const reply_text_section = new SectionBuilder()
-        .addTextDisplayComponents((builder) =>
-          builder.setContent(
-            heading(
-              escapeHeading(
-                `${emojis.reply} ${reply_tweet.name} (${hyperlink(
-                  reply_tweet.username!,
-                  reply_tweet.profile_url
-                )})`
-              ),
-              HeadingLevel.Three
-            )
-          )
-        )
-        .setThumbnailAccessory((builder) =>
-          builder.setURL(reply_tweet.avatar_url)
-        );
-      if (reply_tweet.description) {
-        reply_text_section.addTextDisplayComponents((builder) =>
-          builder.setContent(escapeMarkdown(reply_tweet.description!))
-        );
-      }
+    const full_text = `${prefix_emoji} ${name}${username_part}`.trim();
 
-      container.addSectionComponents(reply_text_section);
+    return heading(escapeHeading(full_text), HeadingLevel.Three);
+  }
 
-      if (reply_tweet.media) {
-        container.addMediaGalleryComponents((builder) =>
-          builder.addItems(reply_tweet.media!)
-        );
-      }
-    } else if (embed.quote) {
-      const quote_tweet = embed.quote;
-      const quote_text_section = new SectionBuilder()
-        .addTextDisplayComponents((builder) =>
-          builder.setContent(
-            heading(
-              escapeHeading(
-                `${quote_tweet.name} (${hyperlink(
-                  quote_tweet.username!,
-                  quote_tweet.profile_url
-                )})`
-              ),
-              HeadingLevel.Three
-            )
-          )
-        )
-        .setThumbnailAccessory((builder) =>
-          builder.setURL(quote_tweet.avatar_url)
-        );
-      if (quote_tweet.description) {
-        quote_text_section.addTextDisplayComponents((builder) =>
-          builder.setContent(escapeMarkdown(quote_tweet.description!))
-        );
-      }
+  private static addFooterSection(
+    container: ContainerBuilder,
+    embed: Embed
+  ) {
+    const stats = Embed.formatStats(embed);
 
-      container.addSectionComponents(quote_text_section);
-
-      if (quote_tweet.media) {
-        container.addMediaGalleryComponents((builder) =>
-          builder.addItems(quote_tweet.media!)
-        );
-      }
-    }
-
-    let stats: string[] = [];
-    if (embed.stats || embed.reply?.stats) {
-      stats = Object.entries(
-        embed.reply ? embed.reply.stats! : embed.stats
-      ).map(
-        ([key, val]) =>
-          `${emojis[key as keyof Emojis]} ${Embed.NumberFormatter.format(val)}`
-      );
-    }
     container.addSectionComponents((builder) => {
       if (stats.length > 0) {
         builder.addTextDisplayComponents((builder) =>
           builder.setContent(subtext(stats.join("      ")))
         );
       }
+
       return builder
         .addTextDisplayComponents((builder) =>
           builder.setContent(
@@ -226,7 +312,18 @@ export class Embed implements EmbedData {
             .setLabel(`View on ${embed.platform}`)
         );
     });
+  }
 
-    return container.toJSON();
+  private static formatStats(embed: Embed): string[] {
+    const stats_data = embed.reply ? embed.reply.stats : embed.stats;
+
+    if (!stats_data) {
+      return [];
+    }
+
+    return Object.entries(stats_data).map(
+      ([key, val]) =>
+        `${emojis[key as keyof Emojis]} ${Embed.NumberFormatter.format(val)}`
+    );
   }
 }
