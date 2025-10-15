@@ -1,5 +1,19 @@
 # @embedly/builder
 
+## 0.6.0
+
+### Minor Changes
+
+- [#22](https://github.com/embed-team/embedly/pull/22) [`327acfe`](https://github.com/embed-team/embedly/commit/327acfe0c405fd57b65643e881bd4978af47e0bb) Thanks [@ItsRauf](https://github.com/ItsRauf)! - refactor embed builder and fix delete command
+
+### Patch Changes
+
+- [#22](https://github.com/embed-team/embedly/pull/22) [`327acfe`](https://github.com/embed-team/embedly/commit/327acfe0c405fd57b65643e881bd4978af47e0bb) Thanks [@ItsRauf](https://github.com/ItsRauf)! - replies now show in the correct order
+
+- Updated dependencies [[`327acfe`](https://github.com/embed-team/embedly/commit/327acfe0c405fd57b65643e881bd4978af47e0bb), [`327acfe`](https://github.com/embed-team/embedly/commit/327acfe0c405fd57b65643e881bd4978af47e0bb)]:
+  - @embedly/parser@0.6.0
+  - @embedly/types@0.6.0
+
 ## 0.5.3
 
 ### Patch Changes
