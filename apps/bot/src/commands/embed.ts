@@ -50,6 +50,13 @@ export class EmbedCommand extends Command {
           )
           .addBooleanOption((opt) =>
             opt
+              .setName("source_only")
+              .setDescription(
+                "Show only the original post (no reply chains or quotes)"
+              )
+          )
+          .addBooleanOption((opt) =>
+            opt
               .setName("spoiler")
               .setDescription("Hide embed content behind spoiler")
           )
@@ -151,6 +158,8 @@ export class EmbedCommand extends Command {
     this.fetchEmbed(interaction, url, {
       [EmbedFlags.MediaOnly]:
         interaction.options.getBoolean("media_only") ?? false,
+      [EmbedFlags.SourceOnly]:
+        interaction.options.getBoolean("source_only") ?? false,
       [EmbedFlags.Spoiler]:
         interaction.options.getBoolean("spoiler") ?? false
     });
