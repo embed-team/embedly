@@ -33,6 +33,7 @@ export interface EmbedData extends BaseEmbedData {
 
 export enum EmbedFlags {
   MediaOnly = "MediaOnly",
+  SourceOnly = "SourceOnly",
   Spoiler = "Spoiler"
 }
 
@@ -82,6 +83,7 @@ export class Embed implements EmbedData {
     flags?: Partial<Record<EmbedFlags, boolean>>
   ) {
     const media_only = flags?.[EmbedFlags.MediaOnly];
+    const source_only = flags?.[EmbedFlags.SourceOnly];
     const hidden = flags?.[EmbedFlags.Spoiler];
 
     if (media_only) {
@@ -96,13 +98,15 @@ export class Embed implements EmbedData {
     }
 
     // Add primary content section (reply content if exists, otherwise main content)
-    Embed.addPrimaryContentSection(container, embed);
+    Embed.addPrimaryContentSection(container, embed, source_only);
 
     // Add primary media (reply media if exists, otherwise main media)
-    Embed.addPrimaryMedia(container, embed);
+    Embed.addPrimaryMedia(container, embed, source_only);
 
-    // Add secondary content (main content after reply, or quote)
-    Embed.addSecondaryContent(container, embed);
+    // Add secondary content (reply/quote) - skip if source_only
+    if (!source_only) {
+      Embed.addSecondaryContent(container, embed);
+    }
 
     // Add footer with stats and metadata
     Embed.addFooterSection(container, embed);
@@ -125,7 +129,8 @@ export class Embed implements EmbedData {
 
   private static addPrimaryContentSection(
     container: ContainerBuilder,
-    embed: Embed
+    embed: Embed,
+    source_only?: boolean
   ) {
     let author_name: string;
     let author_username: string | undefined;
@@ -133,19 +138,19 @@ export class Embed implements EmbedData {
     let author_description: string | undefined;
     let prefix_emoji = "";
 
-    if (embed.reply) {
-      // Show reply content first
-      author_name = embed.reply.name;
-      author_username = embed.reply.username;
-      author_profile_url = embed.reply.profile_url;
-      author_description = embed.reply.description;
-    } else {
-      // Show main content with quote emoji if it's a quote
+    if (source_only || !embed.reply) {
       author_name = embed.name;
       author_username = embed.username;
       author_profile_url = embed.profile_url;
       author_description = embed.description;
-      prefix_emoji = embed.quote ? emojis.quote : "";
+      // Don't show quote emoji when source_only
+      prefix_emoji = !source_only && embed.quote ? emojis.quote : "";
+    } else {
+      // Show reply content first (only when not source_only)
+      author_name = embed.reply.name;
+      author_username = embed.reply.username;
+      author_profile_url = embed.reply.profile_url;
+      author_description = embed.reply.description;
     }
 
     const text_section = Embed.createAuthorSection(
@@ -162,9 +167,13 @@ export class Embed implements EmbedData {
 
   private static addPrimaryMedia(
     container: ContainerBuilder,
-    embed: Embed
+    embed: Embed,
+    source_only?: boolean
   ) {
-    const media = embed.reply?.media || embed.media;
+    const media =
+      source_only || !embed.reply?.media
+        ? embed.media
+        : embed.reply.media;
 
     if (media) {
       container.addMediaGalleryComponents((builder) =>
