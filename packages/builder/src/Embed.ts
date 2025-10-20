@@ -115,7 +115,8 @@ export class Embed implements EmbedData {
   }
 
   private static buildMediaOnlyEmbed(embed: Embed, hidden?: boolean) {
-    const media = embed.reply?.media || embed.media;
+    const media =
+      embed.quote?.media || embed.media || embed.reply?.media;
 
     if (!media || media.length === 0) {
       return null;
