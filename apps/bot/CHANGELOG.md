@@ -1,5 +1,11 @@
 # @embedly/bot
 
+## 0.7.0
+
+### Minor Changes
+
+- [#24](https://github.com/embed-team/embedly/pull/24) [`2499c4e`](https://github.com/embed-team/embedly/commit/2499c4e1edbf46312b99398e181518477aee44fe) Thanks [@ItsRauf](https://github.com/ItsRauf)! - added souce_only flag to embed command
+
 ## 0.6.0
 
 ### Minor Changes
