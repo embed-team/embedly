@@ -119,7 +119,7 @@ export class Twitter extends EmbedlyPlatform {
           }))
         );
       }
-      embed.setReplyTweet(reply_embed);
+      embed.setReplyingTo(reply_embed);
     } else if (tweet_data.quote) {
       const quote_tweet = tweet_data.quote;
       const quote_embed = new Embed(this.transformRawData(quote_tweet));
@@ -138,7 +138,7 @@ export class Twitter extends EmbedlyPlatform {
           }))
         );
       }
-      embed.setQuoteTweet(quote_embed);
+      embed.setQuote(quote_embed);
     }
     return embed;
   }

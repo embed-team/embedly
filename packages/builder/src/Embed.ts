@@ -28,7 +28,7 @@ import {
 
 export interface EmbedData extends BaseEmbedData {
   quote?: BaseEmbedDataWithoutPlatform;
-  reply?: BaseEmbedDataWithoutPlatform;
+  replying_to?: BaseEmbedDataWithoutPlatform;
 }
 
 export enum EmbedFlags {
@@ -49,7 +49,7 @@ export class Embed implements EmbedData {
   public description?: string;
   public media?: APIMediaGalleryItem[];
   public quote?: BaseEmbedDataWithoutPlatform;
-  public reply?: BaseEmbedDataWithoutPlatform;
+  public replying_to?: BaseEmbedDataWithoutPlatform;
 
   static NumberFormatter = new Intl.NumberFormat("en", {
     roundingMode: "ceil",
@@ -70,12 +70,12 @@ export class Embed implements EmbedData {
     this.media = media;
   }
 
-  public setQuoteTweet(quote_tweet: BaseEmbedDataWithoutPlatform) {
-    this.quote = quote_tweet;
+  public setQuote(quote: BaseEmbedDataWithoutPlatform) {
+    this.quote = quote;
   }
 
-  public setReplyTweet(reply_tweet: BaseEmbedDataWithoutPlatform) {
-    this.reply = reply_tweet;
+  public setReplyingTo(replying_to: BaseEmbedDataWithoutPlatform) {
+    this.replying_to = replying_to;
   }
 
   static getDiscordEmbed(
@@ -116,7 +116,7 @@ export class Embed implements EmbedData {
 
   private static buildMediaOnlyEmbed(embed: Embed, hidden?: boolean) {
     const media =
-      embed.quote?.media || embed.media || embed.reply?.media;
+      embed.quote?.media || embed.media || embed.replying_to?.media;
 
     if (!media || media.length === 0) {
       return null;
@@ -136,29 +136,31 @@ export class Embed implements EmbedData {
     let author_name: string;
     let author_username: string | undefined;
     let author_profile_url: string | undefined;
+    let author_avatar_url: string;
     let author_description: string | undefined;
     let prefix_emoji = "";
 
-    if (source_only || !embed.reply) {
+    if (source_only || !embed.replying_to) {
       author_name = embed.name;
       author_username = embed.username;
       author_profile_url = embed.profile_url;
       author_description = embed.description;
-      // Don't show quote emoji when source_only
+      author_avatar_url = embed.avatar_url;
       prefix_emoji = !source_only && embed.quote ? emojis.quote : "";
     } else {
       // Show reply content first (only when not source_only)
-      author_name = embed.reply.name;
-      author_username = embed.reply.username;
-      author_profile_url = embed.reply.profile_url;
-      author_description = embed.reply.description;
+      author_name = embed.replying_to.name;
+      author_username = embed.replying_to.username;
+      author_profile_url = embed.replying_to.profile_url;
+      author_avatar_url = embed.replying_to.avatar_url;
+      author_description = embed.replying_to.description;
     }
 
     const text_section = Embed.createAuthorSection(
       author_name,
       author_username,
       author_profile_url,
-      embed.avatar_url,
+      author_avatar_url,
       author_description,
       prefix_emoji
     );
@@ -171,10 +173,17 @@ export class Embed implements EmbedData {
     embed: Embed,
     source_only?: boolean
   ) {
-    const media =
-      source_only || !embed.reply?.media
-        ? embed.media
-        : embed.reply.media;
+    let media: APIMediaGalleryItem[] | undefined;
+    if (source_only) {
+      // For source_only, use main embed's media
+      media = embed.media;
+    } else if (embed.replying_to) {
+      // For replies, show parent's media first (derek's media)
+      media = embed.replying_to.media;
+    } else {
+      // Otherwise use main embed's media
+      media = embed.media;
+    }
 
     if (media) {
       container.addMediaGalleryComponents((builder) =>
@@ -187,7 +196,7 @@ export class Embed implements EmbedData {
     container: ContainerBuilder,
     embed: Embed
   ) {
-    if (!embed.reply && !embed.quote) {
+    if (!embed.replying_to && !embed.quote) {
       return;
     }
 
@@ -196,7 +205,7 @@ export class Embed implements EmbedData {
       builder.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
     );
 
-    if (embed.reply) {
+    if (embed.replying_to) {
       // Show original content after reply
       Embed.addOriginalContentAfterReply(container, embed);
     } else if (embed.quote) {
@@ -325,7 +334,9 @@ export class Embed implements EmbedData {
   }
 
   private static formatStats(embed: Embed): string[] {
-    const stats_data = embed.reply ? embed.reply.stats : embed.stats;
+    const stats_data = embed.replying_to
+      ? embed.replying_to.stats
+      : embed.stats;
 
     if (!stats_data) {
       return [];
