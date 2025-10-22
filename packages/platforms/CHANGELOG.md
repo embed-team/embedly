@@ -1,5 +1,17 @@
 # @embedly/platforms
 
+## 0.7.1
+
+### Patch Changes
+
+- [#26](https://github.com/embed-team/embedly/pull/26) [`6f40601`](https://github.com/embed-team/embedly/commit/6f40601e86b5b2a7956e3ada83725b2cc9635018) Thanks [@ItsRauf](https://github.com/ItsRauf)! - twitter replies showing incorrect parent media
+
+- Updated dependencies [[`6f40601`](https://github.com/embed-team/embedly/commit/6f40601e86b5b2a7956e3ada83725b2cc9635018)]:
+  - @embedly/builder@0.7.1
+  - @embedly/logging@0.7.1
+  - @embedly/parser@0.7.1
+  - @embedly/types@0.7.1
+
 ## 0.7.0
 
 ### Patch Changes
