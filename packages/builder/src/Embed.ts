@@ -294,7 +294,7 @@ export class Embed implements EmbedData {
     prefix_emoji: string
   ): string {
     const username_part = username
-      ? ` (${hyperlink(`@${username}`, profile_url)})`
+      ? ` (${hyperlink(`@${escapeMarkdown(username, { italic: true, underline: true })}`, profile_url)})`
       : "";
 
     const full_text = `${prefix_emoji} ${name}${username_part}`.trim();
