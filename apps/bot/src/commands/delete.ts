@@ -6,6 +6,8 @@ import {
 import { Command } from "@sapphire/framework";
 import {
   ApplicationCommandType,
+  ApplicationIntegrationType,
+  InteractionContextType,
   MessageFlags,
   PermissionFlagsBits
 } from "discord.js";
@@ -28,6 +30,15 @@ export class DeleteCommand extends Command {
       command
         .setName("Delete Embed")
         .setType(ApplicationCommandType.Message)
+        .setContexts(
+          InteractionContextType.BotDM,
+          InteractionContextType.Guild,
+          InteractionContextType.PrivateChannel
+        )
+        .setIntegrationTypes(
+          ApplicationIntegrationType.GuildInstall,
+          ApplicationIntegrationType.UserInstall
+        )
     );
   }
 

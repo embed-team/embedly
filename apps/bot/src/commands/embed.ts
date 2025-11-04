@@ -14,7 +14,11 @@ import {
 } from "@embedly/parser";
 import Platforms from "@embedly/platforms";
 import { Command } from "@sapphire/framework";
-import { ApplicationCommandType } from "discord.js";
+import {
+  ApplicationCommandType,
+  ApplicationIntegrationType,
+  InteractionContextType
+} from "discord.js";
 
 const app = treaty<App>(process.env.EMBEDLY_API_DOMAIN!);
 
@@ -60,11 +64,29 @@ export class EmbedCommand extends Command {
               .setName("spoiler")
               .setDescription("Hide embed content behind spoiler")
           )
+          .setContexts(
+            InteractionContextType.BotDM,
+            InteractionContextType.Guild,
+            InteractionContextType.PrivateChannel
+          )
+          .setIntegrationTypes(
+            ApplicationIntegrationType.GuildInstall,
+            ApplicationIntegrationType.UserInstall
+          )
       )
       .registerContextMenuCommand((command) =>
         command
           .setName("Embed Links")
           .setType(ApplicationCommandType.Message)
+          .setContexts(
+            InteractionContextType.BotDM,
+            InteractionContextType.Guild,
+            InteractionContextType.PrivateChannel
+          )
+          .setIntegrationTypes(
+            ApplicationIntegrationType.GuildInstall,
+            ApplicationIntegrationType.UserInstall
+          )
       );
   }
 
