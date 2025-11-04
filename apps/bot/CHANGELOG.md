@@ -1,5 +1,11 @@
 # @embedly/bot
 
+## 0.8.0
+
+### Minor Changes
+
+- [#29](https://github.com/embed-team/embedly/pull/29) [`dce282e`](https://github.com/embed-team/embedly/commit/dce282e73fb395b5fb41b3280999a75e4ca55373) Thanks [@ItsRauf](https://github.com/ItsRauf)! - added about command
+
 ## 0.7.1
 
 ## 0.7.0
