@@ -1,5 +1,14 @@
 # @embedly/parser
 
+## 0.8.0
+
+### Patch Changes
+
+- [#29](https://github.com/embed-team/embedly/pull/29) [`9c5c80d`](https://github.com/embed-team/embedly/commit/9c5c80d3015bcee08027856d919283f8a7cd916c) Thanks [@ItsRauf](https://github.com/ItsRauf)! - cbc regex was only capturing a subset of links
+
+- Updated dependencies []:
+  - @embedly/types@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes
