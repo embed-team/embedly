@@ -10,4 +10,4 @@ export const TIKTOK_REGEX =
   /https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@[\w.-]+)\/video\/(?<tiktok_id>\d+)/;
 export const THREADS_REGEX =
   /threads\.com\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
-export const CBC_REGEX = /cbc.ca\/.*(?<cbc_id>1\.\d+)/;
+export const CBC_REGEX = /cbc.ca\/.*(?<cbc_id>\d\.\d+)/;
