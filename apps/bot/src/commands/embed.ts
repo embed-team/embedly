@@ -114,7 +114,7 @@ export class EmbedCommand extends Command {
         flags: ["Ephemeral"]
       });
     }
-    const url = GENERIC_LINK_REGEX.exec(content)?.[0]!;
+    const url = GENERIC_LINK_REGEX.exec(content)![0];
     const platform = getPlatformFromURL(url);
     if (!platform) {
       this.container.betterstack.warn(
