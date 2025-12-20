@@ -2,6 +2,12 @@ import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
 import { Embed, EmbedFlags } from "@embedly/builder";
 import {
+  EMBEDLY_EMBED_CREATED_MESSAGE,
+  type EmbedlyInteractionContext,
+  type EmbedlyPostContext,
+  formatBetterStack
+} from "@embedly/logging";
+import {
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
   hasLink,
@@ -54,7 +60,20 @@ export class MessageListener extends Listener<
           }
         }
       );
-      if (error) return;
+      if (error) {
+        if ("detail" in error.value) {
+          const error_context: EmbedlyInteractionContext &
+            EmbedlyPostContext = {
+            ...error.value.context,
+            message_id: message.id,
+            user_id: message.author.id
+          };
+          this.container.betterstack.error(
+            ...formatBetterStack(error.value, error_context)
+          );
+        }
+        return;
+      }
 
       const embed = await Platforms[platform.type].createEmbed(data);
       const msg = {
@@ -69,11 +88,23 @@ export class MessageListener extends Listener<
           repliedUser: false
         }
       } as const;
-      if (ind > 0 && message.channel.isSendable()) {
-        await message.channel.send(msg);
-      } else {
-        await message.reply(msg);
-      }
+      const bot_message =
+        ind > 0 && message.channel.isSendable()
+          ? await message.channel.send(msg)
+          : await message.reply(msg);
+      this.container.embed_authors.set(
+        bot_message.id,
+        message.author.id
+      );
+      this.container.betterstack.info(
+        ...formatBetterStack(EMBEDLY_EMBED_CREATED_MESSAGE, {
+          user_message_id: message.id,
+          bot_message_id: bot_message.id,
+          user_id: message.author.id,
+          platform: platform.type,
+          url
+        })
+      );
     }
     await message.edit({ flags: MessageFlags.SuppressEmbeds });
   }

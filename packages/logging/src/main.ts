@@ -1,11 +1,15 @@
 import type { EmbedlyPlatformType } from "@embedly/types";
 
-export interface EmbedlyErrorBase<C = unknown> {
+export interface EmbedlyLogBase<C = unknown> {
   type: string;
-  status?: 400 | 401 | 500;
   title: string;
   detail: string;
   context?: C;
+}
+
+export interface EmbedlyErrorBase<C = unknown>
+  extends EmbedlyLogBase<C> {
+  status?: 400 | 401 | 500;
 }
 
 export const EMBEDLY_INVALID_REQUEST: EmbedlyErrorBase<{
@@ -42,9 +46,9 @@ export const EMBEDLY_NO_VALID_LINK: EmbedlyErrorBase<EmbedlyInteractionContext> 
   };
 
 export interface EmbedlyPostContext {
-  platform: EmbedlyPlatformType;
-  post_url: string;
-  post_id: string;
+  platform?: EmbedlyPlatformType;
+  post_url?: string;
+  post_id?: string;
   resp_status?: number;
   resp_message?: string;
   resp_data?: any;
@@ -55,7 +59,7 @@ export const EMBEDLY_FETCH_PLATFORM: (
 ) => EmbedlyErrorBase<EmbedlyPostContext> = (
   platform: EmbedlyPlatformType
 ) => ({
-  type: `EMBEDLY_FETCH_${platform}`,
+  type: `EMBEDLY_FETCH_${platform.toUpperCase()}`,
   title: `Fetching ${platform}.`,
   detail: `Fetching ${platform} from the ${platform} API.`
 });
@@ -64,7 +68,7 @@ export const EMBEDLY_FAILED_PLATFORM: (
   platform: EmbedlyPlatformType
 ) => EmbedlyErrorBase<EmbedlyInteractionContext & EmbedlyPostContext> =
   (platform: EmbedlyPlatformType) => ({
-    type: `EMBEDLY_FAILED_${platform}`,
+    type: `EMBEDLY_FAILED_${platform.toUpperCase()}`,
     status: 500,
     title: `Failed to fetch ${platform}.`,
     detail: `Failed to fetch this ${platform} post from the ${platform} API.`
@@ -122,12 +126,69 @@ export const EMBEDLY_DELETE_SUCCESS: EmbedlyErrorBase<EmbedlyInteractionContext>
       ]
   };
 
-export function formatBetterStack<T extends EmbedlyErrorBase>(
-  err: T,
+export interface EmbedlyEmbedContext extends EmbedlyInteractionContext {
+  platform?: EmbedlyPlatformType;
+  url?: string;
+  bot_message_id?: string;
+  user_message_id?: string;
+}
+
+export const EMBEDLY_EMBED_CREATED_COMMAND: EmbedlyLogBase<EmbedlyEmbedContext> =
+  {
+    type: "EMBEDLY_EMBED_CREATED_COMMAND",
+    title: "Embed created via command.",
+    detail: "User created an embed using slash command or context menu."
+  };
+
+export const EMBEDLY_EMBED_CREATED_MESSAGE: EmbedlyLogBase<EmbedlyEmbedContext> =
+  {
+    type: "EMBEDLY_EMBED_CREATED_MESSAGE",
+    title: "Embed created from message.",
+    detail: "Embed automatically created from user message."
+  };
+
+export interface EmbedlyDeleteContext
+  extends EmbedlyInteractionContext {
+  original_author_id?: string;
+  has_manage_permission?: boolean;
+  reason?: string;
+}
+
+export const EMBEDLY_DELETE_FAILED_WARN: EmbedlyLogBase<EmbedlyDeleteContext> =
+  {
+    type: "EMBEDLY_DELETE_FAILED_WARN",
+    title: "Deletion failed.",
+    detail:
+      "User attempted to delete embed but failed permission check."
+  };
+
+export const EMBEDLY_DELETE_SUCCESS_INFO: EmbedlyLogBase<EmbedlyDeleteContext> =
+  {
+    type: "EMBEDLY_DELETE_SUCCESS_INFO",
+    title: "Embed deleted.",
+    detail: "User successfully deleted an embed."
+  };
+
+export const EMBEDLY_NO_LINK_WARN: EmbedlyLogBase<EmbedlyInteractionContext> =
+  {
+    type: "EMBEDLY_NO_LINK_WARN",
+    title: "No link found.",
+    detail: "User attempted to create embed without a link."
+  };
+
+export const EMBEDLY_NO_VALID_LINK_WARN: EmbedlyLogBase<EmbedlyInteractionContext> =
+  {
+    type: "EMBEDLY_NO_VALID_LINK_WARN",
+    title: "Invalid link platform.",
+    detail: "User attempted to embed unsupported platform."
+  };
+
+export function formatBetterStack<T extends EmbedlyLogBase>(
+  log: T,
   ctx: T["context"]
 ) {
-  err.context = ctx;
-  return [err.detail, err] as const;
+  log.context = ctx;
+  return [log.detail, log] as const;
 }
 
 export function formatDiscord<

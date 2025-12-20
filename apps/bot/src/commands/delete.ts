@@ -1,6 +1,9 @@
 import {
   EMBEDLY_DELETE_FAILED,
+  EMBEDLY_DELETE_FAILED_WARN,
   EMBEDLY_DELETE_SUCCESS,
+  EMBEDLY_DELETE_SUCCESS_INFO,
+  formatBetterStack,
   formatDiscord
 } from "@embedly/logging";
 import { Command } from "@sapphire/framework";
@@ -49,6 +52,13 @@ export class DeleteCommand extends Command {
     if (!interaction.inGuild()) return;
     const msg = interaction.targetMessage;
     if (msg.author.id !== this.container.client.id) {
+      this.container.betterstack.warn(
+        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+          message_id: msg.id,
+          user_id: interaction.user.id,
+          reason: "not_bot_message"
+        })
+      );
       return await interaction.reply({
         content: formatDiscord(EMBEDLY_DELETE_FAILED, {
           message_id: msg.id
@@ -61,20 +71,64 @@ export class DeleteCommand extends Command {
       flags: MessageFlags.Ephemeral
     });
 
+    if (!msg.deletable) {
+      this.container.betterstack.warn(
+        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+          message_id: msg.id,
+          user_id: interaction.user.id,
+          reason: "not_deletable"
+        })
+      );
+      return await interaction.editReply({
+        content: formatDiscord(EMBEDLY_DELETE_FAILED, {
+          message_id: msg.id
+        })
+      });
+    }
+
+    let original_author_id = this.container.embed_authors.get(msg.id);
+
+    if (!original_author_id) {
+      try {
+        const reference = await msg.fetchReference();
+        original_author_id = reference.author.id;
+      } catch {
+        this.container.betterstack.warn(
+          ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+            message_id: msg.id,
+            user_id: interaction.user.id,
+            reason: "no_author_mapping_and_no_reference"
+          })
+        );
+        return await interaction.editReply({
+          content: formatDiscord(EMBEDLY_DELETE_FAILED, {
+            message_id: msg.id
+          })
+        });
+      }
+    }
+
     const guild = await interaction.guild!.fetch();
     const runner = await guild.members.fetch(
       interaction.member.user.id
     );
-    const reference = await msg.fetchReference();
 
-    if (
-      (!runner.permissions.has(
-        PermissionFlagsBits.ManageMessages,
-        true
-      ) &&
-        runner.id !== reference.author.id) ||
-      !msg.deletable
-    ) {
+    const has_manage_permission = runner.permissions.has(
+      PermissionFlagsBits.ManageMessages,
+      true
+    );
+    const is_original_poster = runner.id === original_author_id;
+
+    if (!has_manage_permission && !is_original_poster) {
+      this.container.betterstack.warn(
+        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+          message_id: msg.id,
+          user_id: interaction.user.id,
+          original_author_id,
+          has_manage_permission,
+          reason: "insufficient_permissions"
+        })
+      );
       return await interaction.editReply({
         content: formatDiscord(EMBEDLY_DELETE_FAILED, {
           message_id: msg.id
@@ -83,6 +137,14 @@ export class DeleteCommand extends Command {
     }
 
     await msg.delete();
+    this.container.embed_authors.delete(msg.id);
+    this.container.betterstack.info(
+      ...formatBetterStack(EMBEDLY_DELETE_SUCCESS_INFO, {
+        message_id: msg.id,
+        user_id: interaction.user.id,
+        original_author_id
+      })
+    );
     return await interaction.editReply({
       content: formatDiscord(EMBEDLY_DELETE_SUCCESS, {
         message_id: msg.id
