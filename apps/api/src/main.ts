@@ -127,7 +127,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
           const err = EMBEDLY_NO_LINK_IN_MESSAGE;
           return status(err.status!, err);
         }
-        const url = GENERIC_LINK_REGEX.exec(message.content)?.[0]!;
+        const url = GENERIC_LINK_REGEX.exec(message.content)![0];
         const platform = getPlatformFromURL(url);
         if (!platform) {
           const err = EMBEDLY_NO_VALID_LINK;
