@@ -17,10 +17,10 @@
     "build": "pkgroll"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.1",
+    "@biomejs/biome": "2.3.10",
     "@embedly/config": "workspace:*",
-    "pkgroll": "^2.14.3",
-    "typescript": "^5.8.3"
+    "pkgroll": "^2.21.4",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@embedly/types": "workspace:*"
