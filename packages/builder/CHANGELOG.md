@@ -1,5 +1,13 @@
 # @embedly/builder
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @embedly/parser@0.9.0
+  - @embedly/types@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

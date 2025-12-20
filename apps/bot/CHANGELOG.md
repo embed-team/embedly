@@ -1,5 +1,11 @@
 # @embedly/bot
 
+## 0.9.0
+
+### Minor Changes
+
+- [#32](https://github.com/embed-team/embedly/pull/32) [`0c800a2`](https://github.com/embed-team/embedly/commit/0c800a2311bce62641b5a9112124851b506c428f) Thanks [@ItsRauf](https://github.com/ItsRauf)! - add betterstack logging to bot and improve delete command
+
 ## 0.8.0
 
 ### Minor Changes
