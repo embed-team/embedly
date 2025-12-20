@@ -50,9 +50,6 @@ importers:
       '@discordjs/rest':
         specifier: ^2.6.0
         version: 2.6.0
-      '@elysiajs/node':
-        specifier: ^1.3.1
-        version: 1.3.1(elysia@1.3.21(exact-mirror@0.1.2(@sinclair/typebox@0.34.38))(file-type@21.0.0)(typescript@5.8.3))(hono@4.8.5)
       '@embedly/builder':
         specifier: workspace:*
         version: link:../../packages/builder
@@ -657,11 +654,6 @@ packages:
     peerDependencies:
       elysia: '>= 1.3.18'
 
-  '@elysiajs/node@1.3.1':
-    resolution: {integrity: sha512-l+0gmdUCPW+s2MfUg8OtOkam/qJxEQK936WfCfr+rIeZwHXMYNFgbYdkTysrT6jFDdxSpd1nLqlsJjv29RHChw==}
-    peerDependencies:
-      elysia: '>= 1.3.18'
-
   '@emnapi/runtime@1.5.0':
     resolution: {integrity: sha512-97/BJ3iXHww3djw6hYIfErCZFee7qCtrneuLa20UXFCOTCfBM2cvQHjWJ2EG0s0MtdNwInarqCTz35i4wWXHsQ==}
 
@@ -979,12 +971,6 @@ packages:
 
   '@gitmoji/parser-opts@1.4.0':
     resolution: {integrity: sha512-zzmx/vtpdB/ijjUm7u9OzHNCXWKpSbzVEgVzOzhilMgoTBlUDyInZFUtiCTV+Wf4oCP9nxGa/kQGQFfN+XLH1g==}
-
-  '@hono/node-server@1.19.1':
-    resolution: {integrity: sha512-h44e5s+ByUriaRIbeS/C74O8v90m0A95luyYQGMF7KEn96KkYMXO7bZAwombzTpjQTU4e0TkU8U1WBIXlwuwtA==}
-    engines: {node: '>=18.14.1'}
-    peerDependencies:
-      hono: ^4
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -2086,10 +2072,6 @@ packages:
   he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
-
-  hono@4.8.5:
-    resolution: {integrity: sha512-Up2cQbtNz1s111qpnnECdTGqSIUIhZJMLikdKkshebQSEBcoUKq6XJayLGqSZWidiH0zfHRCJqFu062Mz5UuRA==}
-    engines: {node: '>=16.9.0'}
 
   http-proxy-agent@7.0.2:
     resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
@@ -3610,13 +3592,6 @@ snapshots:
     dependencies:
       elysia: 1.3.21(exact-mirror@0.1.2(@sinclair/typebox@0.34.38))(file-type@21.0.0)(typescript@5.8.3)
 
-  '@elysiajs/node@1.3.1(elysia@1.3.21(exact-mirror@0.1.2(@sinclair/typebox@0.34.38))(file-type@21.0.0)(typescript@5.8.3))(hono@4.8.5)':
-    dependencies:
-      '@hono/node-server': 1.19.1(hono@4.8.5)
-      elysia: 1.3.21(exact-mirror@0.1.2(@sinclair/typebox@0.34.38))(file-type@21.0.0)(typescript@5.8.3)
-    transitivePeerDependencies:
-      - hono
-
   '@emnapi/runtime@1.5.0':
     dependencies:
       tslib: 2.8.1
@@ -3785,10 +3760,6 @@ snapshots:
   '@gitmoji/parser-opts@1.4.0':
     dependencies:
       '@gitmoji/gitmoji-regex': 1.0.0
-
-  '@hono/node-server@1.19.1(hono@4.8.5)':
-    dependencies:
-      hono: 4.8.5
 
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
@@ -4905,8 +4876,6 @@ snapshots:
       space-separated-tokens: 2.0.2
 
   he@1.2.0: {}
-
-  hono@4.8.5: {}
 
   http-proxy-agent@7.0.2:
     dependencies:
