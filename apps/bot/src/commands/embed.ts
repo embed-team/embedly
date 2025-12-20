@@ -2,9 +2,13 @@ import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
 import { Embed, EmbedFlags } from "@embedly/builder";
 import {
+  EMBEDLY_EMBED_CREATED_COMMAND,
   EMBEDLY_NO_LINK_IN_MESSAGE,
+  EMBEDLY_NO_LINK_WARN,
   EMBEDLY_NO_VALID_LINK,
+  EMBEDLY_NO_VALID_LINK_WARN,
   type EmbedlyInteractionContext,
+  formatBetterStack,
   formatDiscord
 } from "@embedly/logging";
 import {
@@ -102,6 +106,9 @@ export class EmbedCommand extends Command {
       user_id: interaction.user.id
     } satisfies EmbedlyInteractionContext;
     if (!hasLink(content)) {
+      this.container.betterstack.warn(
+        ...formatBetterStack(EMBEDLY_NO_LINK_WARN, log_ctx)
+      );
       return await interaction.reply({
         content: formatDiscord(EMBEDLY_NO_LINK_IN_MESSAGE, log_ctx),
         flags: ["Ephemeral"]
@@ -110,6 +117,9 @@ export class EmbedCommand extends Command {
     const url = GENERIC_LINK_REGEX.exec(content)?.[0]!;
     const platform = getPlatformFromURL(url);
     if (!platform) {
+      this.container.betterstack.warn(
+        ...formatBetterStack(EMBEDLY_NO_VALID_LINK_WARN, log_ctx)
+      );
       return await interaction.reply({
         content: formatDiscord(EMBEDLY_NO_VALID_LINK, log_ctx),
         flags: ["Ephemeral"]
@@ -131,38 +141,41 @@ export class EmbedCommand extends Command {
     );
 
     if (error?.status === 400 || error?.status === 500) {
+      const error_context = {
+        ...log_ctx,
+        ...error.value.context!
+      };
+      this.container.betterstack.error(
+        ...formatBetterStack(error.value, error_context)
+      );
       return await interaction.editReply({
-        content: formatDiscord(error.value, {
-          ...log_ctx,
-          ...error.value.context!
-        })
+        content: formatDiscord(error.value, error_context)
       });
     }
 
-    try {
-      const embed = await Platforms[platform.type].createEmbed(data);
-      return await interaction.editReply({
-        components: [Embed.getDiscordEmbed(embed, flags)!],
-        flags: ["IsComponentsV2"],
-        allowedMentions: {
-          parse: [],
-          repliedUser: false
-        }
-      });
-    } catch (error) {
-      console.error(error);
-      return await interaction.editReply({
-        content: formatDiscord(
-          Platforms[platform.type].log_messages.failed,
-          {
-            ...log_ctx,
-            platform: platform.type,
-            post_id: await Platforms[platform.type].parsePostId(url),
-            post_url: url
-          }
-        )
-      });
-    }
+    const embed = await Platforms[platform.type].createEmbed(data);
+    const bot_message = await interaction.editReply({
+      components: [Embed.getDiscordEmbed(embed, flags)!],
+      flags: ["IsComponentsV2"],
+      allowedMentions: {
+        parse: [],
+        repliedUser: false
+      }
+    });
+    this.container.embed_authors.set(
+      bot_message.id,
+      interaction.user.id
+    );
+    this.container.betterstack.info(
+      ...formatBetterStack(EMBEDLY_EMBED_CREATED_COMMAND, {
+        interaction_id: interaction.id,
+        user_id: interaction.user.id,
+        bot_message_id: bot_message.id,
+        platform: platform.type,
+        url
+      })
+    );
+    return bot_message;
   }
 
   public override async contextMenuRun(

@@ -36,3 +36,5 @@ yarn.lock
 .turbo
 
 .env
+
+AGENTS.md
