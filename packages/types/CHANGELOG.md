@@ -1,5 +1,11 @@
 # @embedly/types
 
+## 0.9.1
+
+### Patch Changes
+
+- [#34](https://github.com/embed-team/embedly/pull/34) [`d8495b4`](https://github.com/embed-team/embedly/commit/d8495b40953bce13cb528dfb28f467cdbf19d07c) Thanks [@ItsRauf](https://github.com/ItsRauf)! - feat(ci): split github actions across multiple files
+
 ## 0.9.0
 
 ## 0.8.0
