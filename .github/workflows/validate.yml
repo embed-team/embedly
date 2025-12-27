@@ -1,0 +1,41 @@
+name: Validate (Lint and Build)
+env:
+  PNPM_VERSION: "10.15.1"
+  NODE_VERSION: "24"
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main, devel]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint and format check
+        run: pnpm biome ci
+      - name: Build all packages
+        run: pnpm build
