@@ -8,9 +8,7 @@ import {
   type BaseEmbedData,
   EmbedlyPlatformType
 } from "@embedly/types";
-import rehypeParse from "rehype-parse";
-import { unified } from "unified";
-import { visit } from "unist-util-visit";
+import * as cheerio from "cheerio";
 import { EmbedlyPlatform } from "./Platform.ts";
 
 export class TikTok extends EmbedlyPlatform {
@@ -49,20 +47,10 @@ export class TikTok extends EmbedlyPlatform {
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
-    const hast = unified()
-      .use(rehypeParse)
-      .parse(await resp.text());
-    let data: any;
-    visit(hast, "element", (node) => {
-      if (
-        node.tagName === "script" &&
-        node.properties.id === "__UNIVERSAL_DATA_FOR_REHYDRATION__"
-      ) {
-        data = JSON.parse(
-          node.children.find((c) => c.type === "text")!.value
-        );
-      }
-    });
+    const html = await resp.text();
+    const $ = cheerio.load(html);
+    const script = $("script#__UNIVERSAL_DATA_FOR_REHYDRATION__");
+    const data = JSON.parse(script.text());
     return data.__DEFAULT_SCOPE__["webapp.video-detail"].itemInfo
       .itemStruct;
   }
