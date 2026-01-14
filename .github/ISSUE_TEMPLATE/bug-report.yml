@@ -1,0 +1,58 @@
+name: Bug Report
+description: Report a bug with Embedly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+  
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe what went wrong
+      placeholder: The bot didn't embed my Twitter link
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: What should have happened instead?
+      placeholder: Expected a rich embed with the tweet content
+    validations:
+      required: true
+  
+  - type: input
+    id: link
+    attributes:
+      label: Link to the post
+      description: If applicable, include the link that failed
+      placeholder: https://twitter.com/user/status/123456789
+    validations:
+      required: false
+  
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which platform is this bug related to?
+      options:
+        - Twitter/X
+        - Instagram
+        - TikTok
+        - Threads
+        - Other
+    validations:
+      required: true
+  
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Any other info that might be relevant
+      placeholder: This only happens with reply chains
+    validations:
+      required: false

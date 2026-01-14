@@ -1,0 +1,35 @@
+name: Feature Request
+description: Suggest a new feature for Embedly
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea? Let's hear it.
+  
+  - type: textarea
+    id: feature
+    attributes:
+      label: What feature do you want?
+      description: Describe the feature you'd like to see
+      placeholder: Add support for Bluesky posts
+    validations:
+      required: true
+  
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: Why would this be useful?
+      placeholder: Bluesky is growing and Discord embeds don't work for it
+    validations:
+      required: true
+  
+  - type: textarea
+    id: alternative
+    attributes:
+      label: Alternatives
+      description: Are there any workarounds or alternative solutions?
+      placeholder: Currently have to manually screenshot posts
+    validations:
+      required: false
