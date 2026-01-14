@@ -9,10 +9,8 @@ import {
   type BaseEmbedData,
   EmbedlyPlatformType
 } from "@embedly/types";
+import * as cheerio from "cheerio";
 import he from "he";
-import rehypeParse from "rehype-parse";
-import { unified } from "unified";
-import { visit } from "unist-util-visit";
 import { EmbedlyPlatform } from "./Platform.ts";
 
 export class CBC extends EmbedlyPlatform {
@@ -41,23 +39,15 @@ export class CBC extends EmbedlyPlatform {
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
-    const hast = unified()
-      .use(rehypeParse)
-      .parse(await resp.text());
-    let data: any;
-    visit(hast, "element", (node) => {
-      if (
-        node.tagName === "script" &&
-        node.properties.id === "initialStateDom"
-      ) {
-        const text = node.children.find(
-          (c) => c.type === "text"
-        )!.value;
-        data = JSON.parse(
-          text.replace("window.__INITIAL_STATE__ = ", "").slice(0, -1)
-        );
-      }
-    });
+    const html = await resp.text();
+    const $ = cheerio.load(html);
+    const script = $("script#initialStateDom");
+    const data = JSON.parse(
+      script
+        .text()
+        .replace("window.__INITIAL_STATE__ = ", "")
+        .slice(0, -1)
+    );
     return data.app.meta.jsonld;
   }
 
