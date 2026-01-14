@@ -1,5 +1,17 @@
 # @embedly/platforms
 
+## 0.10.0
+
+### Patch Changes
+
+- [#36](https://github.com/embed-team/embedly/pull/36) [`dde5d23`](https://github.com/embed-team/embedly/commit/dde5d23d2d3705dc743fb772d602f64d85069f8c) Thanks [@ItsRauf](https://github.com/ItsRauf)! - feat(ci): split github actions across multiple files
+
+- Updated dependencies [[`487a6e0`](https://github.com/embed-team/embedly/commit/487a6e0503852868c403119011f8be2afa392be7), [`dde5d23`](https://github.com/embed-team/embedly/commit/dde5d23d2d3705dc743fb772d602f64d85069f8c)]:
+  - @embedly/builder@0.10.0
+  - @embedly/logging@0.10.0
+  - @embedly/parser@0.10.0
+  - @embedly/types@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes
