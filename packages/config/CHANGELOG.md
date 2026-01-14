@@ -1,5 +1,11 @@
 # @embedly/config
 
+## 0.10.0
+
+### Patch Changes
+
+- [#36](https://github.com/embed-team/embedly/pull/36) [`dde5d23`](https://github.com/embed-team/embedly/commit/dde5d23d2d3705dc743fb772d602f64d85069f8c) Thanks [@ItsRauf](https://github.com/ItsRauf)! - feat(ci): split github actions across multiple files
+
 ## 0.9.1
 
 ### Patch Changes
