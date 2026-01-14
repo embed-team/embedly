@@ -5,11 +5,13 @@ import {
   GatewayIntentBits,
   PresenceUpdateStatus
 } from "discord.js";
+import { PostHog } from "posthog-node";
 
 declare module "@sapphire/framework" {
   interface Container {
     betterstack: Logtail;
     embed_authors: Map<string, string>;
+    posthog: PostHog;
   }
 }
 
@@ -43,11 +45,15 @@ export class EmbedlyClient extends SapphireClient {
       }
     );
     container.embed_authors = new Map();
+    container.posthog = new PostHog(process.env.POSTHOG_API_KEY!, {
+      host: process.env.POSTHOG_HOST
+    });
     return super.login(token);
   }
 
-  public override destroy() {
-    container.betterstack?.flush();
+  public override async destroy() {
+    await container.betterstack?.flush();
+    await container.posthog.shutdown();
     return super.destroy();
   }
 }

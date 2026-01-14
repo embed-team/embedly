@@ -74,12 +74,16 @@ export class TikTok extends EmbedlyPlatform {
     };
   }
 
-  createEmbed(post_data: any): Embed {
+  async createEmbed(post_data: any): Promise<Embed> {
     const embed = new Embed(this.transformRawData(post_data));
+    const video = await fetch(
+      post_data.video.bitrateInfo[0].PlayAddr.UrlList[2],
+      { redirect: "follow" }
+    );
     embed.setMedia([
       {
         media: {
-          url: post_data.video.bitrateInfo[0].PlayAddr.UrlList[2]
+          url: video.url
         }
       }
     ]);

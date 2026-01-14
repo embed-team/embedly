@@ -39,6 +39,7 @@
     "@logtail/node": "^0.5.6",
     "@sapphire/discord.js-utilities": "^7.3.3",
     "@sapphire/framework": "^5.4.0",
-    "discord.js": "~14.25.1"
+    "discord.js": "~14.25.1",
+    "posthog-node": "^5.20.0"
   }
 }
