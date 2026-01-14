@@ -1,6 +1,10 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
-import { Embed, EmbedFlags } from "@embedly/builder";
+import {
+  Embed,
+  EmbedFlagNames,
+  type EmbedFlags
+} from "@embedly/builder";
 import {
   EMBEDLY_EMBED_CREATED_COMMAND,
   EMBEDLY_NO_LINK_IN_MESSAGE,
@@ -99,7 +103,7 @@ export class EmbedCommand extends Command {
       | Command.ChatInputCommandInteraction
       | Command.ContextMenuCommandInteraction,
     content: string,
-    flags?: Partial<Record<EmbedFlags, boolean>>
+    flags?: Partial<EmbedFlags>
   ) {
     const log_ctx = {
       interaction_id: interaction.id,
@@ -190,13 +194,18 @@ export class EmbedCommand extends Command {
     interaction: Command.ChatInputCommandInteraction
   ) {
     const url = interaction.options.getString("url", true);
+    const link_style = (await this.container.posthog.getFeatureFlag(
+      "embed-link-styling-test",
+      interaction.user.id
+    )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
     this.fetchEmbed(interaction, url, {
-      [EmbedFlags.MediaOnly]:
+      [EmbedFlagNames.MediaOnly]:
         interaction.options.getBoolean("media_only") ?? false,
-      [EmbedFlags.SourceOnly]:
+      [EmbedFlagNames.SourceOnly]:
         interaction.options.getBoolean("source_only") ?? false,
-      [EmbedFlags.Spoiler]:
-        interaction.options.getBoolean("spoiler") ?? false
+      [EmbedFlagNames.Spoiler]:
+        interaction.options.getBoolean("spoiler") ?? false,
+      [EmbedFlagNames.LinkStyle]: link_style ?? "control"
     });
   }
 }

@@ -31,10 +31,18 @@ export interface EmbedData extends BaseEmbedData {
   replying_to?: BaseEmbedDataWithoutPlatform;
 }
 
-export enum EmbedFlags {
+export enum EmbedFlagNames {
   MediaOnly = "MediaOnly",
   SourceOnly = "SourceOnly",
-  Spoiler = "Spoiler"
+  Spoiler = "Spoiler",
+  LinkStyle = "LinkStyle"
+}
+
+export interface EmbedFlags {
+  [EmbedFlagNames.MediaOnly]: boolean;
+  [EmbedFlagNames.SourceOnly]: boolean;
+  [EmbedFlagNames.Spoiler]: boolean;
+  [EmbedFlagNames.LinkStyle]: "control" | "inline" | "none";
 }
 
 export class Embed implements EmbedData {
@@ -78,13 +86,11 @@ export class Embed implements EmbedData {
     this.replying_to = replying_to;
   }
 
-  static getDiscordEmbed(
-    embed: Embed,
-    flags?: Partial<Record<EmbedFlags, boolean>>
-  ) {
-    const media_only = flags?.[EmbedFlags.MediaOnly];
-    const source_only = flags?.[EmbedFlags.SourceOnly];
-    const hidden = flags?.[EmbedFlags.Spoiler];
+  static getDiscordEmbed(embed: Embed, flags?: Partial<EmbedFlags>) {
+    const media_only = flags?.[EmbedFlagNames.MediaOnly];
+    const source_only = flags?.[EmbedFlagNames.SourceOnly];
+    const hidden = flags?.[EmbedFlagNames.Spoiler];
+    const link_style = flags?.[EmbedFlagNames.LinkStyle] ?? "control";
 
     if (media_only) {
       return Embed.buildMediaOnlyEmbed(embed, hidden);
@@ -109,7 +115,7 @@ export class Embed implements EmbedData {
     }
 
     // Add footer with stats and metadata
-    Embed.addFooterSection(container, embed);
+    Embed.addFooterSection(container, embed, link_style);
 
     return container.toJSON();
   }
@@ -294,7 +300,7 @@ export class Embed implements EmbedData {
     prefix_emoji: string
   ): string {
     const username_part = username
-      ? ` (${hyperlink(`@${escapeMarkdown(username, { italic: true, underline: true })}`, profile_url)})`
+      ? ` (${hyperlink(`@${escapeMarkdown(username, { italic: true, underline: true })}`, profile_url!)})`
       : "";
 
     const full_text = `${prefix_emoji} ${name}${username_part}`.trim();
@@ -304,33 +310,46 @@ export class Embed implements EmbedData {
 
   private static addFooterSection(
     container: ContainerBuilder,
-    embed: Embed
+    embed: Embed,
+    link_style: EmbedFlags[EmbedFlagNames.LinkStyle]
   ) {
     const stats = Embed.formatStats(embed);
 
-    container.addSectionComponents((builder) => {
-      if (stats.length > 0) {
+    if (link_style === "control") {
+      container.addSectionComponents((builder) => {
         builder.addTextDisplayComponents((builder) =>
-          builder.setContent(subtext(stats.join("      ")))
-        );
-      }
-
-      return builder
-        .addTextDisplayComponents((builder) =>
           builder.setContent(
-            `${emojis[embed.platform]} • ${time(
+            `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${emojis[embed.platform]} • ${time(
               embed.timestamp,
-              TimestampStyles.ShortDateTime
+              TimestampStyles.LongDateShortTime
             )}`
           )
-        )
-        .setButtonAccessory((builder) =>
+        );
+
+        builder.setButtonAccessory((builder) =>
           builder
             .setStyle(ButtonStyle.Link)
             .setURL(embed.url)
             .setLabel(`View on ${embed.platform}`)
         );
-    });
+
+        return builder;
+      });
+      return;
+    }
+
+    container.addSeparatorComponents((builder) =>
+      builder.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    );
+
+    container.addTextDisplayComponents((builder) =>
+      builder.setContent(
+        `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${emojis[embed.platform]} • ${time(
+          embed.timestamp,
+          TimestampStyles.LongDateShortTime
+        )} • ${link_style === "inline" ? hyperlink(`View on ${embed.platform}`, embed.url) : ""}`
+      )
+    );
   }
 
   private static formatStats(embed: Embed): string[] {

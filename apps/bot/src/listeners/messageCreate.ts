@@ -1,6 +1,10 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "@embedly/api";
-import { Embed, EmbedFlags } from "@embedly/builder";
+import {
+  Embed,
+  EmbedFlagNames,
+  type EmbedFlags
+} from "@embedly/builder";
 import {
   EMBEDLY_EMBED_CREATED_MESSAGE,
   type EmbedlyInteractionContext,
@@ -76,10 +80,15 @@ export class MessageListener extends Listener<
       }
 
       const embed = await Platforms[platform.type].createEmbed(data);
+      const link_style = (await this.container.posthog.getFeatureFlag(
+        "embed-link-styling-test",
+        message.author.id
+      )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
       const msg = {
         components: [
           Embed.getDiscordEmbed(embed, {
-            [EmbedFlags.Spoiler]: isSpoiler(url, message.content)
+            [EmbedFlagNames.Spoiler]: isSpoiler(url, message.content),
+            [EmbedFlagNames.LinkStyle]: link_style ?? "control"
           })!
         ],
         flags: MessageFlags.IsComponentsV2,

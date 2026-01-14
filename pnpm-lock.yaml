@@ -129,6 +129,9 @@ importers:
       discord.js:
         specifier: ~14.25.1
         version: 14.25.1
+      posthog-node:
+        specifier: ^5.20.0
+        version: 5.20.0
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.10
@@ -1258,6 +1261,9 @@ packages:
 
   '@poppinss/exception@1.2.3':
     resolution: {integrity: sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw==}
+
+  '@posthog/core@1.9.1':
+    resolution: {integrity: sha512-kRb1ch2dhQjsAapZmu6V66551IF2LnCbc1rnrQqnR7ArooVyJN9KOPXre16AJ3ObJz2eTfuP7x25BMyS2Y5Exw==}
 
   '@rollup/plugin-alias@6.0.0':
     resolution: {integrity: sha512-tPCzJOtS7uuVZd+xPhoy5W4vThe6KWXNmsFCNktaAh5RTqcLiSfT4huPQIXkgJ6YCOjJHvecOAzQxLFhPxKr+g==}
@@ -2760,6 +2766,10 @@ packages:
       typescript:
         optional: true
 
+  posthog-node@5.20.0:
+    resolution: {integrity: sha512-LkR5KfrvEQTnUtNKN97VxFB00KcYG1Iz8iKg8r0e/i7f1eQhg1WSZO+Jp1B4bvtHCmdpIE4HwYbvCCzFoCyjVg==}
+    engines: {node: '>=20'}
+
   prettier@2.8.8:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
@@ -4104,6 +4114,10 @@ snapshots:
       supports-color: 10.2.2
 
   '@poppinss/exception@1.2.3': {}
+
+  '@posthog/core@1.9.1':
+    dependencies:
+      cross-spawn: 7.0.6
 
   '@rollup/plugin-alias@6.0.0(rollup@4.53.5)':
     optionalDependencies:
@@ -5598,6 +5612,10 @@ snapshots:
       yaml: 2.8.2
     optionalDependencies:
       typescript: 5.9.3
+
+  posthog-node@5.20.0:
+    dependencies:
+      '@posthog/core': 1.9.1
 
   prettier@2.8.8: {}
 
