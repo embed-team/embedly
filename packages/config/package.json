@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./typescript": "./tsconfig.json",
-    "./biome": "./biome.json"
+    "./tsconfig.json": "./tsconfig.json",
+    "./biome.json": "./biome.json"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10"

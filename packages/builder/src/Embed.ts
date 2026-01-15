@@ -286,7 +286,7 @@ export class Embed implements EmbedData {
 
     if (description) {
       section.addTextDisplayComponents((builder) =>
-        builder.setContent(escapeMarkdown(description))
+        builder.setContent(description)
       );
     }
 
