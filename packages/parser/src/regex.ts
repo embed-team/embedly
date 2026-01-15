@@ -11,3 +11,5 @@ export const TIKTOK_REGEX =
 export const THREADS_REGEX =
   /threads\.com\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
 export const CBC_REGEX = /cbc.ca\/.*(?<cbc_id>\d\.\d+)/;
+export const REDDIT_REGEX =
+  /https?:\/\/(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
