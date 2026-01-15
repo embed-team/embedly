@@ -54,6 +54,10 @@ export class Instagram extends EmbedlyPlatform {
         "X-FB-LSD": "AVqbxe3J_YA",
         "X-ASBD-ID": "129477",
         "Sec-Fetch-Site": "same-origin"
+      },
+      cf: {
+        cacheTtl: 60 * 60 * 24,
+        cacheEverything: true
       }
     });
     if (!resp.ok) {
