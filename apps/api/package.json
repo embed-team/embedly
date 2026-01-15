@@ -15,7 +15,7 @@
 	"scripts": {
 		"dev": "wrangler dev --config wrangler.local.jsonc",
 		"lint": "biome ci ./src/*",
-		"build": "pkgroll && wrangler deploy --dry-run",
+		"build": "pkgroll  --sourcemap=inline && tsc && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy --minify",
 		"deploy:local": "wrangler deploy --config wrangler.local.jsonc --minify",
 		"cf-typegen": "wrangler types"

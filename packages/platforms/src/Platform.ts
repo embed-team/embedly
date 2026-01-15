@@ -44,6 +44,8 @@ export abstract class EmbedlyPlatform {
     });
   }
   abstract fetchPost<T>(post_id: string, env?: any): Promise<T>;
-  abstract transformRawData(raw_data: any): BaseEmbedData;
+  abstract transformRawData(
+    raw_data: any
+  ): Promise<BaseEmbedData> | BaseEmbedData;
   abstract createEmbed<T>(post_data: T): Promise<Embed> | Embed;
 }

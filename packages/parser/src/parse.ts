@@ -3,6 +3,7 @@ import {
   CBC_REGEX,
   GENERIC_LINK_REGEX,
   IG_REGEX,
+  REDDIT_REGEX,
   THREADS_REGEX,
   TIKTOK_REGEX_MAIN,
   TWITTER_REGEX
@@ -36,6 +37,9 @@ export function getPlatformFromURL(
   }
   if (THREADS_REGEX.test(url)) {
     return { type: EmbedlyPlatformType.Threads };
+  }
+  if (REDDIT_REGEX.test(url)) {
+    return { type: EmbedlyPlatformType.Reddit };
   }
   return null;
 }

@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env src/main.ts",
     "lint": "biome ci ./src/*",
-    "build": "pkgroll"
+    "build": "pkgroll  --sourcemap=inline && tsc"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10",

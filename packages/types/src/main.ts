@@ -5,7 +5,8 @@ export enum EmbedlyPlatformType {
   Instagram = "Instagram",
   TikTok = "TikTok",
   CBC = "cbc.ca",
-  Threads = "Threads"
+  Threads = "Threads",
+  Reddit = "Reddit"
 }
 
 export const EmbedlyPlatformColors: Record<
@@ -16,7 +17,8 @@ export const EmbedlyPlatformColors: Record<
   [EmbedlyPlatformType.Instagram]: [225, 48, 108],
   [EmbedlyPlatformType.TikTok]: [57, 118, 132],
   [EmbedlyPlatformType.CBC]: [215, 36, 42],
-  [EmbedlyPlatformType.Threads]: [0, 0, 0]
+  [EmbedlyPlatformType.Threads]: [0, 0, 0],
+  [EmbedlyPlatformType.Reddit]: [255, 86, 0]
 };
 
 export interface StatsData {
@@ -63,5 +65,6 @@ export const emojis: Emojis = {
   [EmbedlyPlatformType.Instagram]: "<:instagram:1386639712013254748>",
   [EmbedlyPlatformType.TikTok]: "<:tiktok:1386641825963708446>",
   [EmbedlyPlatformType.CBC]: "<:cbc:1409997044495683674>",
-  [EmbedlyPlatformType.Threads]: "<:threads:1413343483929956446>"
+  [EmbedlyPlatformType.Threads]: "<:threads:1413343483929956446>",
+  [EmbedlyPlatformType.Reddit]: "<:reddit:1461320093240655922>"
 };
