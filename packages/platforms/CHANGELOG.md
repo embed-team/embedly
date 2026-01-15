@@ -1,5 +1,19 @@
 # @embedly/platforms
 
+## 0.11.0
+
+### Minor Changes
+
+- [#39](https://github.com/embed-team/embedly/pull/39) [`90c90a9`](https://github.com/embed-team/embedly/commit/90c90a943139d7616d7ea1a70c96a907518bbacc) Thanks [@ItsRauf](https://github.com/ItsRauf)! - added reddit support (mostly working)
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @embedly/builder@0.11.0
+  - @embedly/logging@0.11.0
+  - @embedly/parser@0.11.0
+  - @embedly/types@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes
