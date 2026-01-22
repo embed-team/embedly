@@ -1,9 +1,0 @@
-{
-  "extends": "@embedly/config/tsconfig.json",
-  "compilerOptions": {
-    "lib": ["WebWorker", "ESNext"],
-    "outDir": "./dist"
-  },
-  "exclude": ["node_modules"],
-  "include": ["src"]
-}

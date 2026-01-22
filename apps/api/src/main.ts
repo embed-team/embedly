@@ -6,13 +6,12 @@ import {
   type EmbedlyPostContext,
   formatBetterStack
 } from "@embedly/logging";
-import {
+import Platforms, {
+  EmbedlyPlatformType,
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
   hasLink
-} from "@embedly/parser";
-import Platforms from "@embedly/platforms";
-import { EmbedlyPlatformType } from "@embedly/types";
+} from "@embedly/platforms";
 import { Logtail } from "@logtail/edge";
 import { Elysia, t } from "elysia";
 

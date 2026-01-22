@@ -27,8 +27,6 @@
   "dependencies": {
     "@embedly/builder": "workspace:*",
     "@embedly/logging": "workspace:*",
-    "@embedly/parser": "workspace:*",
-    "@embedly/types": "workspace:*",
     "@types/he": "^1.2.3",
     "cheerio": "^1.1.2",
     "he": "^1.2.0"

@@ -6,25 +6,63 @@ import {
   heading,
   hyperlink,
   MediaGalleryBuilder,
+  type RGBTuple,
   SectionBuilder,
   subtext,
   TimestampStyles,
   time
 } from "@discordjs/builders";
-import {
-  type BaseEmbedData,
-  type BaseEmbedDataWithoutPlatform,
-  EmbedlyPlatformColors,
-  type EmbedlyPlatformType,
-  type Emojis,
-  emojis,
-  type StatsData
-} from "@embedly/types";
+
 import {
   type APIMediaGalleryItem,
   ButtonStyle,
   SeparatorSpacingSize
 } from "discord-api-types/v10";
+
+// ============================================================================
+// Types - moved from @embedly/types
+// ============================================================================
+
+export interface StatsData {
+  comments: number;
+  reposts?: number;
+  likes: number;
+  bookmarks?: number;
+  views?: number;
+}
+
+// Stat emojis (not platform-specific)
+export const statEmojis = {
+  comments: "<:comment:1386639521373753374>",
+  reposts: "<:repost:1386639564143198349>",
+  likes: "<:like:1386639662772391987>",
+  bookmarks: "<:bookmark:1386639640433529014>",
+  views: "<:view:1386639685237084292>",
+  reply: "<:reply:1386639619768058007>",
+  quote: "<:quote:1389657738480713838>"
+} as const;
+
+export type StatEmojis = typeof statEmojis;
+
+export interface BaseEmbedData {
+  platform: string;
+  color: RGBTuple;
+  emoji: string;
+  name: string;
+  username?: string;
+  profile_url?: string;
+  avatar_url: string;
+  url: string;
+  timestamp: number;
+  stats?: StatsData;
+  description?: string;
+  media?: APIMediaGalleryItem[];
+}
+
+export type BaseEmbedDataWithoutPlatform = Omit<
+  BaseEmbedData,
+  "platform" | "color" | "emoji"
+>;
 
 export interface EmbedData extends BaseEmbedData {
   quote?: BaseEmbedDataWithoutPlatform;
@@ -46,7 +84,9 @@ export interface EmbedFlags {
 }
 
 export class Embed implements EmbedData {
-  public platform!: EmbedlyPlatformType;
+  public platform!: string;
+  public color!: RGBTuple;
+  public emoji!: string;
   public name!: string;
   public username?: string;
   public profile_url?: string;
@@ -97,7 +137,7 @@ export class Embed implements EmbedData {
     }
 
     const container = new ContainerBuilder();
-    container.setAccentColor(EmbedlyPlatformColors[embed.platform]);
+    container.setAccentColor(embed.color);
 
     if (hidden) {
       container.setSpoiler(true);
@@ -152,7 +192,8 @@ export class Embed implements EmbedData {
       author_profile_url = embed.profile_url;
       author_description = embed.description;
       author_avatar_url = embed.avatar_url;
-      prefix_emoji = !source_only && embed.quote ? emojis.quote : "";
+      prefix_emoji =
+        !source_only && embed.quote ? statEmojis.quote : "";
     } else {
       // Show reply content first (only when not source_only)
       author_name = embed.replying_to.name;
@@ -230,7 +271,7 @@ export class Embed implements EmbedData {
       embed.profile_url,
       embed.avatar_url,
       embed.description,
-      emojis.reply
+      statEmojis.reply
     );
 
     container.addSectionComponents(reply_section);
@@ -319,7 +360,7 @@ export class Embed implements EmbedData {
       container.addSectionComponents((builder) => {
         builder.addTextDisplayComponents((builder) =>
           builder.setContent(
-            `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${emojis[embed.platform]} • ${time(
+            `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${embed.emoji} • ${time(
               embed.timestamp,
               TimestampStyles.LongDateShortTime
             )}`
@@ -344,7 +385,7 @@ export class Embed implements EmbedData {
 
     container.addTextDisplayComponents((builder) =>
       builder.setContent(
-        `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${emojis[embed.platform]} • ${time(
+        `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${embed.emoji} • ${time(
           embed.timestamp,
           TimestampStyles.LongDateShortTime
         )} • ${link_style === "inline" ? hyperlink(`View on ${embed.platform}`, embed.url) : ""}`
@@ -363,7 +404,7 @@ export class Embed implements EmbedData {
 
     return Object.entries(stats_data).map(
       ([key, val]) =>
-        `${emojis[key as keyof Emojis]} ${Embed.NumberFormatter.format(val)}`
+        `${statEmojis[key as keyof StatEmojis]} ${Embed.NumberFormatter.format(val)}`
     );
   }
 }

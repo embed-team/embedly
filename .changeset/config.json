@@ -14,9 +14,7 @@
       "@embedly/builder",
       "@embedly/config",
       "@embedly/logging",
-      "@embedly/parser",
-      "@embedly/platforms",
-      "@embedly/types"
+      "@embedly/platforms"
     ]
   ],
   "linked": [],

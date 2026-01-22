@@ -1,28 +1,22 @@
 import { createHmac } from "node:crypto";
 import { Embed } from "@embedly/builder";
-import {
-  EMBEDLY_FAILED_PLATFORM,
-  EMBEDLY_FETCH_PLATFORM
-} from "@embedly/logging";
-import { CBC_REGEX } from "@embedly/parser";
-import {
-  type BaseEmbedData,
-  EmbedlyPlatformType
-} from "@embedly/types";
 import * as cheerio from "cheerio";
 import he from "he";
-import { EmbedlyPlatform } from "./Platform.ts";
+import { CF_CACHE_OPTIONS } from "./constants.ts";
+import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
+import { EmbedlyPlatformType } from "./types.ts";
 
 export class CBC extends EmbedlyPlatform {
+  readonly color = [215, 36, 42] as const;
+  readonly emoji = "<:cbc:1409997044495683674>";
+  readonly regex = /cbc.ca\/.*(?<cbc_id>\d\.\d+)/;
+
   constructor() {
-    super(EmbedlyPlatformType.CBC, "cbc.ca", {
-      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.CBC),
-      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.CBC)
-    });
+    super(EmbedlyPlatformType.CBC, "cbc.ca");
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = CBC_REGEX.exec(url)!;
+    const match = this.regex.exec(url)!;
     const { cbc_id } = match.groups!;
     return cbc_id;
   }
@@ -31,10 +25,7 @@ export class CBC extends EmbedlyPlatform {
     const resp = await fetch(`https://cbc.ca/${post_id}`, {
       method: "GET",
       redirect: "follow",
-      cf: {
-        cacheTtl: 60 * 60 * 24,
-        cacheEverything: true
-      }
+      ...CF_CACHE_OPTIONS
     });
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
@@ -54,6 +45,8 @@ export class CBC extends EmbedlyPlatform {
   transformRawData(raw_data: any): BaseEmbedData {
     return {
       platform: this.name,
+      color: [...this.color],
+      emoji: this.emoji,
       name: he.decode(raw_data.name),
       avatar_url: this.signProxyURL(raw_data.publisher.logo),
       timestamp: Math.floor(

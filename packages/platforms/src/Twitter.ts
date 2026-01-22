@@ -1,26 +1,21 @@
 import { Embed } from "@embedly/builder";
-import {
-  EMBEDLY_FAILED_PLATFORM,
-  EMBEDLY_FETCH_PLATFORM
-} from "@embedly/logging";
-import { TWITTER_REGEX } from "@embedly/parser";
-import {
-  type BaseEmbedData,
-  EmbedlyPlatformType
-} from "@embedly/types";
 import he from "he";
-import { EmbedlyPlatform } from "./Platform.ts";
+import { CF_CACHE_OPTIONS } from "./constants.ts";
+import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
+import { EmbedlyPlatformType } from "./types.ts";
 
 export class Twitter extends EmbedlyPlatform {
+  readonly color = [29, 161, 242] as const;
+  readonly emoji = "<:twitter:1386639732179599481>";
+  readonly regex =
+    /(?:twitter|x).com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
+
   constructor() {
-    super(EmbedlyPlatformType.Twitter, "tweet", {
-      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.Twitter),
-      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.Twitter)
-    });
+    super(EmbedlyPlatformType.Twitter, "tweet");
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = TWITTER_REGEX.exec(url)!;
+    const match = this.regex.exec(url)!;
     const { tweet_id } = match.groups!;
     return tweet_id;
   }
@@ -33,10 +28,7 @@ export class Twitter extends EmbedlyPlatform {
         headers: {
           "User-Agent": "Embedly/0.0.1"
         },
-        cf: {
-          cacheTtl: 60 * 60 * 24,
-          cacheEverything: true
-        }
+        ...CF_CACHE_OPTIONS
       }
     ).then((r) => r.json() as Record<string, any>);
     if (code !== 200) {
@@ -69,6 +61,8 @@ export class Twitter extends EmbedlyPlatform {
   transformRawData(raw_data: any): BaseEmbedData {
     return {
       platform: this.name,
+      color: [...this.color],
+      emoji: this.emoji,
       name: raw_data.author.name,
       username: raw_data.author.screen_name,
       profile_url: `https://x.com/${raw_data.author.screen_name}`,

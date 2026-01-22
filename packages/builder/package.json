@@ -14,7 +14,7 @@
   },
   "scripts": {
     "lint": "biome ci ./src/*",
-    "build": "pkgroll   --sourcemap=inline && tsc && tsc"
+    "build": "pkgroll   --sourcemap=inline && tsc"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10",
@@ -24,8 +24,6 @@
   },
   "dependencies": {
     "@discordjs/builders": "^1.13.1",
-    "@embedly/parser": "workspace:*",
-    "@embedly/types": "workspace:*",
     "discord-api-types": "^0.38.37"
   }
 }

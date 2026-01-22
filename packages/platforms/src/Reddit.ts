@@ -1,32 +1,31 @@
 import { Embed } from "@embedly/builder";
-import {
-  EMBEDLY_FAILED_PLATFORM,
-  EMBEDLY_FETCH_PLATFORM
-} from "@embedly/logging";
-import { REDDIT_REGEX } from "@embedly/parser";
+import { CF_CACHE_OPTIONS } from "./constants.ts";
 import {
   type BaseEmbedData,
-  EmbedlyPlatformType
-} from "@embedly/types";
-import { EmbedlyPlatform } from "./Platform.ts";
+  type CloudflareEnv,
+  EmbedlyPlatform
+} from "./Platform.ts";
+import { EmbedlyPlatformType } from "./types.ts";
 
 export class Reddit extends EmbedlyPlatform {
+  readonly color = [255, 86, 0] as const;
+  readonly emoji = "<:reddit:1461320093240655922>";
+  readonly regex =
+    /https?:\/\/(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
+
   constructor() {
-    super(EmbedlyPlatformType.Reddit, "reddit", {
-      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.Reddit),
-      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.Reddit)
-    });
+    super(EmbedlyPlatformType.Reddit, "reddit");
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = REDDIT_REGEX.exec(url)!;
+    const match = this.regex.exec(url)!;
     const { post_id, subreddit } = match.groups!;
     return `${subreddit}/${post_id}`;
   }
 
   async fetchPost(
     post_id: string,
-    env: { EMBED_USER_AGENT: string }
+    env?: Partial<CloudflareEnv>
   ): Promise<any> {
     const [subreddit, reddit_id] = post_id.split("/");
     const resp = await fetch(
@@ -34,12 +33,9 @@ export class Reddit extends EmbedlyPlatform {
       {
         method: "GET",
         headers: {
-          "User-Agent": env.EMBED_USER_AGENT
+          "User-Agent": env?.EMBED_USER_AGENT ?? ""
         },
-        cf: {
-          cacheTtl: 60 * 60 * 24,
-          cacheEverything: true
-        }
+        ...CF_CACHE_OPTIONS
       }
     );
 
@@ -50,21 +46,21 @@ export class Reddit extends EmbedlyPlatform {
     const post_data = (await resp.json()) as Record<string, any>;
 
     const profile_resp = await fetch(
-      `https://www.reddit.com/user/${post_data.author}/about.json?raw_json=1`,
+      `https://www.reddit.com/user/${post_data[0].data.children[0].data.author}/about.json?raw_json=1`,
       {
         method: "GET",
         headers: {
-          "User-Agent": env.EMBED_USER_AGENT
+          "User-Agent": env?.EMBED_USER_AGENT ?? ""
         },
-        cf: {
-          cacheTtl: 60 * 60 * 24,
-          cacheEverything: true
-        }
+        ...CF_CACHE_OPTIONS
       }
     );
 
     if (!profile_resp.ok) {
-      throw { code: resp.status, message: resp.statusText };
+      throw {
+        code: profile_resp.status,
+        message: profile_resp.statusText
+      };
     }
 
     const { data: profile_data } =
@@ -125,6 +121,8 @@ export class Reddit extends EmbedlyPlatform {
   }: any): Promise<BaseEmbedData> {
     return {
       platform: this.name,
+      color: [...this.color],
+      emoji: this.emoji,
       username: post_data.author,
       name: post_data.subreddit_name_prefixed,
       profile_url: `https://reddit.com/user/${post_data.author}`,
@@ -147,9 +145,7 @@ export class Reddit extends EmbedlyPlatform {
 
     const embed = new Embed(data);
 
-    if (media.length > 10) {
-      media.length = 10;
-    }
+    // Media truncation will be handled by Embed.setMedia
     if (media.length > 0) {
       embed.setMedia(media);
     }
