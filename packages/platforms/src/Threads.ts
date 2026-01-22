@@ -1,28 +1,26 @@
 import { Embed } from "@embedly/builder";
 import {
-  EMBEDLY_FAILED_PLATFORM,
-  EMBEDLY_FETCH_PLATFORM
-} from "@embedly/logging";
-import { THREADS_REGEX } from "@embedly/parser";
-import {
   type BaseEmbedData,
-  EmbedlyPlatformType
-} from "@embedly/types";
-import { EmbedlyPlatform } from "./Platform.ts";
+  type CloudflareEnv,
+  EmbedlyPlatform
+} from "./Platform.ts";
+import { EmbedlyPlatformType } from "./types.ts";
 
 const alphabet =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 export class Threads extends EmbedlyPlatform {
+  readonly color = [0, 0, 0] as const;
+  readonly emoji = "<:threads:1413343483929956446>";
+  readonly regex =
+    /threads\.net\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
+
   constructor() {
-    super(EmbedlyPlatformType.Threads, "threads", {
-      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.Threads),
-      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.Threads)
-    });
+    super(EmbedlyPlatformType.Threads, "threads");
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = THREADS_REGEX.exec(url)!;
+    const match = this.regex.exec(url)!;
     const { thread_shortcode } = match.groups!;
     const thread_id = thread_shortcode
       .split("")
@@ -36,12 +34,9 @@ export class Threads extends EmbedlyPlatform {
 
   async fetchPost(
     thread_id: string,
-    env: {
-      EMBED_USER_AGENT: string;
-      THREADS_CSRF_TOKEN: string;
-    }
+    env?: Partial<CloudflareEnv>
   ): Promise<any> {
-    const graphql = new URL(`https://www.threads.com/graphql/query`);
+    const graphql = new URL(`https://www.threads.net/graphql/query`);
     graphql.searchParams.set(
       "variables",
       JSON.stringify({
@@ -76,10 +71,10 @@ export class Threads extends EmbedlyPlatform {
     const resp = await fetch(graphql.toString(), {
       method: "POST",
       headers: {
-        "User-Agent": env.EMBED_USER_AGENT,
+        "User-Agent": env?.EMBED_USER_AGENT ?? "",
         "Content-Type": "application/x-www-form-urlencoded",
         "X-IG-App-ID": "238260118697367",
-        "X-CSRFTOKEN": env.THREADS_CSRF_TOKEN,
+        "X-CSRFTOKEN": env?.THREADS_CSRF_TOKEN ?? "",
         "X-FB-LSD": "UpH8MtbTBKi8Wbdbt_uZX3",
         "X-ASBD-ID": "359341",
         "Sec-Fetch-Site": "same-origin"
@@ -128,12 +123,14 @@ export class Threads extends EmbedlyPlatform {
   transformRawData(raw_data: any): BaseEmbedData {
     return {
       platform: this.name,
+      color: [...this.color],
+      emoji: this.emoji,
       name: raw_data.user.full_name,
       username: raw_data.user.username,
-      profile_url: `https://threads.com/@${raw_data.user.username}`,
+      profile_url: `https://threads.net/@${raw_data.user.username}`,
       avatar_url: raw_data.user.profile_pic_url,
       timestamp: raw_data.taken_at,
-      url: `https://threads.com/@${raw_data.user.username}/post/${raw_data.code}`,
+      url: `https://threads.net/@${raw_data.user.username}/post/${raw_data.code}`,
       stats: {
         comments: raw_data.text_post_app_info.direct_reply_count,
         likes: raw_data.like_count,
@@ -147,9 +144,7 @@ export class Threads extends EmbedlyPlatform {
     const embed = new Embed(this.transformRawData(post_data));
     const media = this.parsePostMedia(post_data);
     if (media.length > 0) {
-      if (media.length > 10) {
-        media.length = 10;
-      }
+      // Media truncation will be handled by Embed.setMedia
       embed.setMedia(media);
     }
 

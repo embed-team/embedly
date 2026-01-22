@@ -1,21 +1,20 @@
 import { Embed } from "@embedly/builder";
-import {
-  EMBEDLY_FAILED_PLATFORM,
-  EMBEDLY_FETCH_PLATFORM
-} from "@embedly/logging";
-import { IG_REGEX } from "@embedly/parser";
+import { CF_CACHE_OPTIONS } from "./constants.ts";
 import {
   type BaseEmbedData,
-  EmbedlyPlatformType
-} from "@embedly/types";
-import { EmbedlyPlatform } from "./Platform.ts";
+  type CloudflareEnv,
+  EmbedlyPlatform
+} from "./Platform.ts";
+import { EmbedlyPlatformType } from "./types.ts";
 
 export class Instagram extends EmbedlyPlatform {
+  readonly color = [225, 48, 108] as const;
+  readonly emoji = "<:instagram:1386639712013254748>";
+  readonly regex =
+    /instagram.com\/(?:[A-Za-z0-9_.]+\/)?(p|share|reels|reel|stories)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
+
   constructor() {
-    super(EmbedlyPlatformType.Instagram, "insta", {
-      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.Instagram),
-      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.Instagram)
-    });
+    super(EmbedlyPlatformType.Instagram, "insta");
   }
 
   async parsePostId(url: string): Promise<string> {
@@ -28,14 +27,14 @@ export class Instagram extends EmbedlyPlatform {
       });
       url = req.url;
     }
-    const match = IG_REGEX.exec(url)!;
+    const match = this.regex.exec(url)!;
     const { ig_shortcode } = match.groups!;
     return ig_shortcode;
   }
 
   async fetchPost(
     ig_shortcode: string,
-    env: { EMBED_USER_AGENT: string }
+    env?: Partial<CloudflareEnv>
   ): Promise<any> {
     const graphql = new URL(`https://www.instagram.com/api/graphql`);
     graphql.searchParams.set(
@@ -48,17 +47,14 @@ export class Instagram extends EmbedlyPlatform {
     const resp = await fetch(graphql.toString(), {
       method: "POST",
       headers: {
-        "User-Agent": env.EMBED_USER_AGENT,
+        "User-Agent": env?.EMBED_USER_AGENT ?? "",
         "Content-Type": "application/x-www-form-urlencoded",
         "X-IG-App-ID": "936619743392459",
         "X-FB-LSD": "AVqbxe3J_YA",
         "X-ASBD-ID": "129477",
         "Sec-Fetch-Site": "same-origin"
       },
-      cf: {
-        cacheTtl: 60 * 60 * 24,
-        cacheEverything: true
-      }
+      ...CF_CACHE_OPTIONS
     });
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
@@ -112,6 +108,8 @@ export class Instagram extends EmbedlyPlatform {
   transformRawData(raw_data: any): BaseEmbedData {
     return {
       platform: this.name,
+      color: [...this.color],
+      emoji: this.emoji,
       name: raw_data.owner.full_name,
       username: raw_data.owner.username,
       profile_url: `https://instagram.com/${raw_data.owner.username}`,
@@ -130,9 +128,7 @@ export class Instagram extends EmbedlyPlatform {
   createEmbed(post_data: any): Embed {
     const embed = new Embed(this.transformRawData(post_data));
     const media = this.parsePostMedia(post_data);
-    if (media.length > 10) {
-      media.length = 10;
-    }
+    // Media truncation will be handled by Embed.setMedia
     embed.setMedia(media);
 
     return embed;

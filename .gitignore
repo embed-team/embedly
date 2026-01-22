@@ -38,3 +38,5 @@ yarn.lock
 .env
 
 AGENTS.md
+.claude
+.serena

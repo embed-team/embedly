@@ -56,15 +56,9 @@ importers:
       '@embedly/logging':
         specifier: workspace:*
         version: link:../../packages/logging
-      '@embedly/parser':
-        specifier: workspace:*
-        version: link:../../packages/parser
       '@embedly/platforms':
         specifier: workspace:*
         version: link:../../packages/platforms
-      '@embedly/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@logtail/edge':
         specifier: ^0.5.7
         version: 0.5.7(@cloudflare/workers-types@4.20251220.0)
@@ -148,9 +142,6 @@ importers:
       '@embedly/logging':
         specifier: workspace:*
         version: link:../../packages/logging
-      '@embedly/parser':
-        specifier: workspace:*
-        version: link:../../packages/parser
       '@embedly/platforms':
         specifier: workspace:*
         version: link:../../packages/platforms
@@ -175,12 +166,6 @@ importers:
       '@discordjs/builders':
         specifier: ^1.13.1
         version: 1.13.1
-      '@embedly/parser':
-        specifier: workspace:*
-        version: link:../parser
-      '@embedly/types':
-        specifier: workspace:*
-        version: link:../types
       discord-api-types:
         specifier: ^0.38.37
         version: 0.38.37
@@ -212,28 +197,6 @@ importers:
       '@embedly/config':
         specifier: workspace:*
         version: link:../config
-      '@embedly/types':
-        specifier: workspace:*
-        version: link:../types
-      pkgroll:
-        specifier: ^2.21.4
-        version: 2.21.4(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/parser:
-    dependencies:
-      '@embedly/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@biomejs/biome':
-        specifier: 2.3.10
-        version: 2.3.10
-      '@embedly/config':
-        specifier: workspace:*
-        version: link:../config
       pkgroll:
         specifier: ^2.21.4
         version: 2.21.4(typescript@5.9.3)
@@ -249,12 +212,6 @@ importers:
       '@embedly/logging':
         specifier: workspace:*
         version: link:../logging
-      '@embedly/parser':
-        specifier: workspace:*
-        version: link:../parser
-      '@embedly/types':
-        specifier: workspace:*
-        version: link:../types
       '@types/he':
         specifier: ^1.2.3
         version: 1.2.3
@@ -277,25 +234,6 @@ importers:
       '@types/node':
         specifier: ^25.0.3
         version: 25.0.3
-      pkgroll:
-        specifier: ^2.21.4
-        version: 2.21.4(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/types:
-    dependencies:
-      discord-api-types:
-        specifier: ^0.38.37
-        version: 0.38.37
-    devDependencies:
-      '@biomejs/biome':
-        specifier: 2.3.10
-        version: 2.3.10
-      '@embedly/config':
-        specifier: workspace:*
-        version: link:../config
       pkgroll:
         specifier: ^2.21.4
         version: 2.21.4(typescript@5.9.3)

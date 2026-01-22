@@ -15,12 +15,11 @@ import {
   formatBetterStack,
   formatDiscord
 } from "@embedly/logging";
-import {
+import Platforms, {
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
   hasLink
-} from "@embedly/parser";
-import Platforms from "@embedly/platforms";
+} from "@embedly/platforms";
 import { Command } from "@sapphire/framework";
 import {
   ApplicationCommandType,

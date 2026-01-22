@@ -1,4 +1,6 @@
-import type { EmbedlyPlatformType } from "@embedly/types";
+// Platform type is just a string for logging purposes
+// This avoids circular dependency with @embedly/types
+type PlatformName = string;
 
 export interface EmbedlyLogBase<C = unknown> {
   type: string;
@@ -46,7 +48,7 @@ export const EMBEDLY_NO_VALID_LINK: EmbedlyErrorBase<EmbedlyInteractionContext> 
   };
 
 export interface EmbedlyPostContext {
-  platform?: EmbedlyPlatformType;
+  platform?: PlatformName;
   post_url?: string;
   post_id?: string;
   resp_status?: number;
@@ -54,25 +56,24 @@ export interface EmbedlyPostContext {
   resp_data?: any;
 }
 
-export const EMBEDLY_FETCH_PLATFORM: (
-  platform: EmbedlyPlatformType
-) => EmbedlyErrorBase<EmbedlyPostContext> = (
-  platform: EmbedlyPlatformType
-) => ({
+export const EMBEDLY_FETCH_PLATFORM = (
+  platform: PlatformName
+): EmbedlyErrorBase<EmbedlyPostContext> => ({
   type: `EMBEDLY_FETCH_${platform.toUpperCase()}`,
   title: `Fetching ${platform}.`,
   detail: `Fetching ${platform} from the ${platform} API.`
 });
 
-export const EMBEDLY_FAILED_PLATFORM: (
-  platform: EmbedlyPlatformType
-) => EmbedlyErrorBase<EmbedlyInteractionContext & EmbedlyPostContext> =
-  (platform: EmbedlyPlatformType) => ({
-    type: `EMBEDLY_FAILED_${platform.toUpperCase()}`,
-    status: 500,
-    title: `Failed to fetch ${platform}.`,
-    detail: `Failed to fetch this ${platform} post from the ${platform} API.`
-  });
+export const EMBEDLY_FAILED_PLATFORM = (
+  platform: PlatformName
+): EmbedlyErrorBase<
+  EmbedlyInteractionContext & EmbedlyPostContext
+> => ({
+  type: `EMBEDLY_FAILED_${platform.toUpperCase()}`,
+  status: 500,
+  title: `Failed to fetch ${platform}.`,
+  detail: `Failed to fetch this ${platform} post from the ${platform} API.`
+});
 
 export const EMBEDLY_CACHED_POST: EmbedlyErrorBase<EmbedlyPostContext> =
   {
@@ -127,7 +128,7 @@ export const EMBEDLY_DELETE_SUCCESS: EmbedlyErrorBase<EmbedlyInteractionContext>
   };
 
 export interface EmbedlyEmbedContext extends EmbedlyInteractionContext {
-  platform?: EmbedlyPlatformType;
+  platform?: PlatformName;
   url?: string;
   bot_message_id?: string;
   user_message_id?: string;

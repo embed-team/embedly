@@ -11,14 +11,13 @@ import {
   type EmbedlyPostContext,
   formatBetterStack
 } from "@embedly/logging";
-import {
+import Platforms, {
   GENERIC_LINK_REGEX,
   getPlatformFromURL,
   hasLink,
   isEscaped,
   isSpoiler
-} from "@embedly/parser";
-import Platforms from "@embedly/platforms";
+} from "@embedly/platforms";
 import { Events, Listener } from "@sapphire/framework";
 import { type Message, MessageFlags } from "discord.js";
 
@@ -49,9 +48,9 @@ export class MessageListener extends Listener<
     );
     if (!urls) return;
     for (const [ind, url] of urls.entries()) {
-      if (isEscaped(url, message.content)) return;
+      if (isEscaped(url, message.content)) continue;
       const platform = getPlatformFromURL(url);
-      if (!platform) return;
+      if (!platform) continue;
 
       const { data, error } = await app.api.scrape.post(
         {

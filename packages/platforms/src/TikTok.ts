@@ -1,34 +1,39 @@
 import { Embed } from "@embedly/builder";
-import {
-  EMBEDLY_FAILED_PLATFORM,
-  EMBEDLY_FETCH_PLATFORM
-} from "@embedly/logging";
-import { TIKTOK_REGEX } from "@embedly/parser";
+import * as cheerio from "cheerio";
+import { CF_CACHE_OPTIONS } from "./constants.ts";
 import {
   type BaseEmbedData,
-  EmbedlyPlatformType
-} from "@embedly/types";
-import * as cheerio from "cheerio";
-import { EmbedlyPlatform } from "./Platform.ts";
+  type CloudflareEnv,
+  EmbedlyPlatform
+} from "./Platform.ts";
+import { EmbedlyPlatformType } from "./types.ts";
+
+// Main regex for initial URL detection
+const TIKTOK_REGEX_MAIN = /(https?:\/\/)?(?:[\w-]+\.)*tiktok\.com/;
+
+// Detailed regex for extracting user and video ID from expanded URL
+const TIKTOK_REGEX_DETAIL =
+  /https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@[\w.-]+)\/video\/(?<tiktok_id>\d+)/;
 
 export class TikTok extends EmbedlyPlatform {
+  readonly color = [57, 118, 132] as const;
+  readonly emoji = "<:tiktok:1386641825963708446>";
+  readonly regex = TIKTOK_REGEX_MAIN;
+
   constructor() {
-    super(EmbedlyPlatformType.TikTok, "tiktok", {
-      fetching: EMBEDLY_FETCH_PLATFORM(EmbedlyPlatformType.TikTok),
-      failed: EMBEDLY_FAILED_PLATFORM(EmbedlyPlatformType.TikTok)
-    });
+    super(EmbedlyPlatformType.TikTok, "tiktok");
   }
 
   async parsePostId(url: string): Promise<string> {
     const req = await fetch(url, { redirect: "follow" });
-    const match = TIKTOK_REGEX.exec(req.url)!;
+    const match = TIKTOK_REGEX_DETAIL.exec(req.url)!;
     const { tiktok_user, tiktok_id } = match.groups!;
     return `${tiktok_user}/${tiktok_id}`;
   }
 
   async fetchPost(
     post_id: string,
-    env: { EMBED_USER_AGENT: string }
+    env?: Partial<CloudflareEnv>
   ): Promise<any> {
     const [tiktok_user, tiktok_id] = post_id.split("/");
     const resp = await fetch(
@@ -36,12 +41,9 @@ export class TikTok extends EmbedlyPlatform {
       {
         method: "GET",
         headers: {
-          "User-Agent": env.EMBED_USER_AGENT
+          "User-Agent": env?.EMBED_USER_AGENT ?? ""
         },
-        cf: {
-          cacheTtl: 60 * 60 * 24,
-          cacheEverything: true
-        }
+        ...CF_CACHE_OPTIONS
       }
     );
     if (!resp.ok) {
@@ -58,6 +60,8 @@ export class TikTok extends EmbedlyPlatform {
   transformRawData(raw_data: any): BaseEmbedData {
     return {
       platform: this.name,
+      color: [...this.color],
+      emoji: this.emoji,
       name: raw_data.author.nickname,
       username: raw_data.author.uniqueId,
       profile_url: `https://tiktok.com/@${raw_data.author.uniqueId}`,
