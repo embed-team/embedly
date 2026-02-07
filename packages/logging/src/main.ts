@@ -1,5 +1,3 @@
-// Platform type is just a string for logging purposes
-// This avoids circular dependency with @embedly/types
 type PlatformName = string;
 
 export interface EmbedlyLogBase<C = unknown> {

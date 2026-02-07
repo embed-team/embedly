@@ -8,7 +8,6 @@ import {
 } from "@embedly/logging";
 import type { EmbedlyPlatformType } from "./types.ts";
 
-// Re-export for convenience
 export type { BaseEmbedData } from "@embedly/builder";
 
 export interface EmbedlyPlatformLogMessages {
@@ -28,28 +27,22 @@ export interface CloudflareEnv {
 }
 
 export abstract class EmbedlyPlatform {
-  // Config properties - each platform must define these
   abstract readonly color: readonly [number, number, number];
   abstract readonly emoji: string;
   abstract readonly regex: RegExp;
 
-  // Auto-generated log messages
   public log_messages: EmbedlyPlatformLogMessages;
 
   constructor(
     public name: EmbedlyPlatformType,
     private cache_prefix: string
   ) {
-    // Auto-generate log messages from platform name
     this.log_messages = {
       fetching: EMBEDLY_FETCH_PLATFORM(name),
       failed: EMBEDLY_FAILED_PLATFORM(name)
     };
   }
 
-  /**
-   * Test if a URL matches this platform's regex
-   */
   public matchesUrl(url: string): boolean {
     return this.regex.test(url);
   }
@@ -78,7 +71,6 @@ export abstract class EmbedlyPlatform {
     });
   }
 
-  // env is optional and partial - each platform uses what it needs
   abstract fetchPost<T>(
     post_id: string,
     env?: Partial<CloudflareEnv>

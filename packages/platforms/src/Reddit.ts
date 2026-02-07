@@ -145,7 +145,6 @@ export class Reddit extends EmbedlyPlatform {
 
     const embed = new Embed(data);
 
-    // Media truncation will be handled by Embed.setMedia
     if (media.length > 0) {
       embed.setMedia(media);
     }

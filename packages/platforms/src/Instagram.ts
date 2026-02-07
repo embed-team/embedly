@@ -128,7 +128,6 @@ export class Instagram extends EmbedlyPlatform {
   createEmbed(post_data: any): Embed {
     const embed = new Embed(this.transformRawData(post_data));
     const media = this.parsePostMedia(post_data);
-    // Media truncation will be handled by Embed.setMedia
     embed.setMedia(media);
 
     return embed;

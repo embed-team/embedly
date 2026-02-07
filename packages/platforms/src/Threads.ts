@@ -144,7 +144,6 @@ export class Threads extends EmbedlyPlatform {
     const embed = new Embed(this.transformRawData(post_data));
     const media = this.parsePostMedia(post_data);
     if (media.length > 0) {
-      // Media truncation will be handled by Embed.setMedia
       embed.setMedia(media);
     }
 
