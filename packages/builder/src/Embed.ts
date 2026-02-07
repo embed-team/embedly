@@ -15,13 +15,8 @@ import {
 
 import {
   type APIMediaGalleryItem,
-  ButtonStyle,
   SeparatorSpacingSize
 } from "discord-api-types/v10";
-
-// ============================================================================
-// Types - moved from @embedly/types
-// ============================================================================
 
 export interface StatsData {
   comments: number;
@@ -31,7 +26,6 @@ export interface StatsData {
   views?: number;
 }
 
-// Stat emojis (not platform-specific)
 export const statEmojis = {
   comments: "<:comment:1386639521373753374>",
   reposts: "<:repost:1386639564143198349>",
@@ -352,32 +346,9 @@ export class Embed implements EmbedData {
   private static addFooterSection(
     container: ContainerBuilder,
     embed: Embed,
-    link_style: EmbedFlags[EmbedFlagNames.LinkStyle]
+    _link_style?: EmbedFlags[EmbedFlagNames.LinkStyle]
   ) {
     const stats = Embed.formatStats(embed);
-
-    if (link_style === "control") {
-      container.addSectionComponents((builder) => {
-        builder.addTextDisplayComponents((builder) =>
-          builder.setContent(
-            `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${embed.emoji} • ${time(
-              embed.timestamp,
-              TimestampStyles.LongDateShortTime
-            )}`
-          )
-        );
-
-        builder.setButtonAccessory((builder) =>
-          builder
-            .setStyle(ButtonStyle.Link)
-            .setURL(embed.url)
-            .setLabel(`View on ${embed.platform}`)
-        );
-
-        return builder;
-      });
-      return;
-    }
 
     container.addSeparatorComponents((builder) =>
       builder.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
@@ -388,7 +359,7 @@ export class Embed implements EmbedData {
         `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${embed.emoji} • ${time(
           embed.timestamp,
           TimestampStyles.LongDateShortTime
-        )} • ${link_style === "inline" ? hyperlink(`View on ${embed.platform}`, embed.url) : ""}`
+        )} • ${hyperlink(`View on ${embed.platform}`, embed.url)}`
       )
     );
   }

@@ -8,10 +8,8 @@ import {
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
 
-// Main regex for initial URL detection
 const TIKTOK_REGEX_MAIN = /(https?:\/\/)?(?:[\w-]+\.)*tiktok\.com/;
 
-// Detailed regex for extracting user and video ID from expanded URL
 const TIKTOK_REGEX_DETAIL =
   /https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@[\w.-]+)\/video\/(?<tiktok_id>\d+)/;
 
