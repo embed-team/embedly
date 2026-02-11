@@ -1,4 +1,5 @@
 import { Logtail } from "@logtail/node";
+import { type Tracer, trace } from "@opentelemetry/api";
 import { container, SapphireClient } from "@sapphire/framework";
 import {
   ActivityType,
@@ -14,6 +15,7 @@ declare module "@sapphire/framework" {
     embed_authors: Map<string, string>;
     embed_messages: Map<string, string[]>;
     posthog: PostHog;
+    tracer: Tracer;
   }
 }
 
@@ -52,6 +54,7 @@ export class EmbedlyClient extends SapphireClient {
     container.posthog = new PostHog(process.env.POSTHOG_API_KEY!, {
       host: process.env.POSTHOG_HOST
     });
+    container.tracer = trace.getTracer("embedly-bot");
     return super.login(token);
   }
 
