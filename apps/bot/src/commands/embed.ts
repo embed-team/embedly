@@ -20,7 +20,11 @@ import Platforms, {
   getPlatformFromURL,
   hasLink
 } from "@embedly/platforms";
-import { SpanStatusCode } from "@opentelemetry/api";
+import {
+  context,
+  propagation,
+  SpanStatusCode
+} from "@opentelemetry/api";
 import { Command } from "@sapphire/framework";
 import {
   ApplicationCommandType,
@@ -146,6 +150,10 @@ export class EmbedCommand extends Command {
       async (s) => {
         s.setAttribute("embedly.platform", platform.type);
         s.setAttribute("embedly.url", url);
+
+        const otelHeaders: Record<string, string> = {};
+        propagation.inject(context.active(), otelHeaders);
+
         const res = await app.api.scrape.post(
           {
             platform: platform.type,
@@ -153,7 +161,8 @@ export class EmbedCommand extends Command {
           },
           {
             headers: {
-              authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
+              authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
+              ...otelHeaders
             }
           }
         );
@@ -238,7 +247,7 @@ export class EmbedCommand extends Command {
     if (!interaction.isMessageContextMenuCommand()) return;
     const msg = interaction.targetMessage;
     this.container.tracer.startActiveSpan(
-      `interaction:${interaction.id}`,
+      "context_menu",
       async (root_span) => {
         root_span.setAttributes({
           "discord.interaction_id": interaction.id,
@@ -269,7 +278,7 @@ export class EmbedCommand extends Command {
     const url = interaction.options.getString("url", true);
 
     this.container.tracer.startActiveSpan(
-      `interaction:${interaction.id}`,
+      "/embed",
       async (root_span) => {
         root_span.setAttributes({
           "discord.interaction_id": interaction.id,
