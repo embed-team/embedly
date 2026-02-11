@@ -6,6 +6,7 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 export class Instagram extends EmbedlyPlatform {
   readonly color = [225, 48, 108] as const;
@@ -27,8 +28,12 @@ export class Instagram extends EmbedlyPlatform {
       });
       url = req.url;
     }
-    const match = this.regex.exec(url)!;
-    const { ig_shortcode } = match.groups!;
+    const match = this.regex.exec(url);
+    validateRegexMatch(
+      match,
+      "Invalid Instagram URL: could not extract shortcode"
+    );
+    const { ig_shortcode } = match.groups;
     return ig_shortcode;
   }
 
@@ -56,11 +61,22 @@ export class Instagram extends EmbedlyPlatform {
       },
       ...CF_CACHE_OPTIONS
     });
+
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
+
     const { data } = (await resp.json()) as Record<string, any>;
-    return data.xdt_shortcode_media;
+    const media = data?.xdt_shortcode_media;
+
+    if (!media) {
+      throw {
+        code: 500,
+        message: "Instagram API returned unexpected structure"
+      };
+    }
+
+    return media;
   }
 
   parsePostMedia(

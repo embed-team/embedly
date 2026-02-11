@@ -3,6 +3,7 @@ import he from "he";
 import { CF_CACHE_OPTIONS } from "./constants.ts";
 import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 export class Twitter extends EmbedlyPlatform {
   readonly color = [29, 161, 242] as const;
@@ -15,14 +16,18 @@ export class Twitter extends EmbedlyPlatform {
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.regex.exec(url)!;
-    const { tweet_id } = match.groups!;
+    const match = this.regex.exec(url);
+    validateRegexMatch(
+      match,
+      "Invalid Twitter URL: could not extract tweet ID"
+    );
+    const { tweet_id } = match.groups;
     return tweet_id;
   }
 
   async fetchPost(tweet_id: string): Promise<any> {
-    const { tweet, code, message } = await fetch(
-      `https://api.fxtwitter.com/embedly/status/${tweet_id}`,
+    const resp = await fetch(
+      `https://api.fxtwitter.com/embedly/status/${tweet_id}/en`,
       {
         method: "GET",
         headers: {
@@ -30,7 +35,17 @@ export class Twitter extends EmbedlyPlatform {
         },
         ...CF_CACHE_OPTIONS
       }
-    ).then((r) => r.json() as Record<string, any>);
+    );
+
+    if (!resp.ok) {
+      throw { code: resp.status, message: resp.statusText };
+    }
+
+    const { tweet, code, message } = (await resp.json()) as Record<
+      string,
+      any
+    >;
+
     if (code !== 200) {
       throw { code, message };
     }
@@ -40,6 +55,11 @@ export class Twitter extends EmbedlyPlatform {
 
   enrichTweetText(text_data: Record<string, any>) {
     let text = text_data.text as string;
+
+    if (!text_data.facets || !Array.isArray(text_data.facets)) {
+      return he.decode(text);
+    }
+
     for (const facet of text_data.facets) {
       if (facet.type === "url") {
         text = text.replace(facet.original, facet.replacement);
@@ -82,6 +102,9 @@ export class Twitter extends EmbedlyPlatform {
     const embed = new Embed(this.transformRawData(tweet_data));
     if (tweet_data.text !== "") {
       embed.setDescription(this.enrichTweetText(tweet_data.raw_text));
+    }
+    if (tweet_data.translation?.text) {
+      embed.setDescription(tweet_data.translation.text);
     }
     if (tweet_data.media) {
       embed.setMedia(

@@ -66,7 +66,7 @@ export abstract class EmbedlyPlatform {
     cache_store: KVNamespace
   ): Promise<void> {
     const cache_key = `${this.cache_prefix}:${post_id}`;
-    cache_store.put(cache_key, JSON.stringify(post_data), {
+    await cache_store.put(cache_key, JSON.stringify(post_data), {
       expirationTtl: 60 * 60 * 24
     });
   }

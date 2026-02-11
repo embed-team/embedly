@@ -6,6 +6,7 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 export class Reddit extends EmbedlyPlatform {
   readonly color = [255, 86, 0] as const;
@@ -18,8 +19,12 @@ export class Reddit extends EmbedlyPlatform {
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.regex.exec(url)!;
-    const { post_id, subreddit } = match.groups!;
+    const match = this.regex.exec(url);
+    validateRegexMatch(
+      match,
+      "Invalid Reddit URL: could not extract post ID or subreddit"
+    );
+    const { post_id, subreddit } = match.groups;
     return `${subreddit}/${post_id}`;
   }
 
@@ -45,8 +50,26 @@ export class Reddit extends EmbedlyPlatform {
 
     const post_data = (await resp.json()) as Record<string, any>;
 
+    const postDataItem = post_data?.[0]?.data?.children?.[0]?.data;
+
+    if (!postDataItem) {
+      throw {
+        code: 500,
+        message: "Reddit API returned unexpected structure"
+      };
+    }
+
+    const authorName = postDataItem.author;
+
+    if (!authorName) {
+      throw {
+        code: 500,
+        message: "Reddit post missing author information"
+      };
+    }
+
     const profile_resp = await fetch(
-      `https://www.reddit.com/user/${post_data[0].data.children[0].data.author}/about.json?raw_json=1`,
+      `https://www.reddit.com/user/${authorName}/about.json?raw_json=1`,
       {
         method: "GET",
         headers: {
@@ -66,10 +89,14 @@ export class Reddit extends EmbedlyPlatform {
     const { data: profile_data } =
       (await profile_resp.json()) as Record<string, any>;
 
-    return {
-      post_data: post_data[0].data.children[0].data,
-      profile_data
-    };
+    if (!profile_data) {
+      throw {
+        code: 500,
+        message: "Reddit profile API returned unexpected structure"
+      };
+    }
+
+    return { post_data: postDataItem, profile_data };
   }
 
   parsePostMedia(
