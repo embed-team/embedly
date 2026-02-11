@@ -10,6 +10,8 @@ import { Command } from "@sapphire/framework";
 import {
   ApplicationCommandType,
   ApplicationIntegrationType,
+  type Guild,
+  type GuildMember,
   InteractionContextType,
   MessageFlags,
   PermissionFlagsBits
@@ -108,10 +110,25 @@ export class DeleteCommand extends Command {
       }
     }
 
-    const guild = await interaction.guild!.fetch();
-    const runner = await guild.members.fetch(
-      interaction.member.user.id
-    );
+    let guild: Guild;
+    let runner: GuildMember;
+    try {
+      guild = await interaction.guild!.fetch();
+      runner = await guild.members.fetch(interaction.member.user.id);
+    } catch {
+      this.container.betterstack.warn(
+        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+          message_id: msg.id,
+          user_id: interaction.user.id,
+          reason: "failed_to_fetch_guild_or_member"
+        })
+      );
+      return await interaction.editReply({
+        content: formatDiscord(EMBEDLY_DELETE_FAILED, {
+          message_id: msg.id
+        })
+      });
+    }
 
     const has_manage_permission = runner.permissions.has(
       PermissionFlagsBits.ManageMessages,
@@ -138,6 +155,17 @@ export class DeleteCommand extends Command {
 
     await msg.delete();
     this.container.embed_authors.delete(msg.id);
+    for (const [user_msg_id, bot_ids] of this.container
+      .embed_messages) {
+      const filtered = bot_ids.filter((id) => id !== msg.id);
+      if (filtered.length === bot_ids.length) continue;
+      if (filtered.length === 0) {
+        this.container.embed_messages.delete(user_msg_id);
+      } else {
+        this.container.embed_messages.set(user_msg_id, filtered);
+      }
+      break;
+    }
     this.container.betterstack.info(
       ...formatBetterStack(EMBEDLY_DELETE_SUCCESS_INFO, {
         message_id: msg.id,
