@@ -146,7 +146,7 @@ export class EmbedCommand extends Command {
     if (error?.status === 400 || error?.status === 500) {
       const error_context = {
         ...log_ctx,
-        ...error.value.context!
+        ...("context" in error.value ? error.value.context : {})
       };
       this.container.betterstack.error(
         ...formatBetterStack(error.value, error_context)
@@ -193,10 +193,17 @@ export class EmbedCommand extends Command {
     interaction: Command.ChatInputCommandInteraction
   ) {
     const url = interaction.options.getString("url", true);
-    const link_style = (await this.container.posthog.getFeatureFlag(
-      "embed-link-styling-test",
-      interaction.user.id
-    )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
+
+    let link_style: EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
+    try {
+      link_style = (await this.container.posthog.getFeatureFlag(
+        "embed-link-styling-test",
+        interaction.user.id
+      )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
+    } catch {
+      link_style = undefined;
+    }
+
     this.fetchEmbed(interaction, url, {
       [EmbedFlagNames.MediaOnly]:
         interaction.options.getBoolean("media_only") ?? false,

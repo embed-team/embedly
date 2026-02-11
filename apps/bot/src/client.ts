@@ -3,6 +3,7 @@ import { container, SapphireClient } from "@sapphire/framework";
 import {
   ActivityType,
   GatewayIntentBits,
+  Partials,
   PresenceUpdateStatus
 } from "discord.js";
 import { PostHog } from "posthog-node";
@@ -11,6 +12,7 @@ declare module "@sapphire/framework" {
   interface Container {
     betterstack: Logtail;
     embed_authors: Map<string, string>;
+    embed_messages: Map<string, string[]>;
     posthog: PostHog;
   }
 }
@@ -23,6 +25,7 @@ export class EmbedlyClient extends SapphireClient {
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent
       ],
+      partials: [Partials.Message],
       presence: {
         activities: [
           {
@@ -45,6 +48,7 @@ export class EmbedlyClient extends SapphireClient {
       }
     );
     container.embed_authors = new Map();
+    container.embed_messages = new Map();
     container.posthog = new PostHog(process.env.POSTHOG_API_KEY!, {
       host: process.env.POSTHOG_HOST
     });

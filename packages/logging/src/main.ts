@@ -168,6 +168,14 @@ export const EMBEDLY_DELETE_SUCCESS_INFO: EmbedlyLogBase<EmbedlyDeleteContext> =
     detail: "User successfully deleted an embed."
   };
 
+export const EMBEDLY_AUTO_DELETE_INFO: EmbedlyLogBase<EmbedlyDeleteContext> =
+  {
+    type: "EMBEDLY_AUTO_DELETE_INFO",
+    title: "Embed auto-deleted.",
+    detail:
+      "Bot embed automatically deleted because the original message was deleted."
+  };
+
 export const EMBEDLY_NO_LINK_WARN: EmbedlyLogBase<EmbedlyInteractionContext> =
   {
     type: "EMBEDLY_NO_LINK_WARN",

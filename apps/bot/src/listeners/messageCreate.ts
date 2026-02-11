@@ -67,7 +67,7 @@ export class MessageListener extends Listener<
         if ("detail" in error.value) {
           const error_context: EmbedlyInteractionContext &
             EmbedlyPostContext = {
-            ...error.value.context,
+            ...("context" in error.value ? error.value.context : {}),
             message_id: message.id,
             user_id: message.author.id
           };
@@ -79,10 +79,17 @@ export class MessageListener extends Listener<
       }
 
       const embed = await Platforms[platform.type].createEmbed(data);
-      const link_style = (await this.container.posthog.getFeatureFlag(
-        "embed-link-styling-test",
-        message.author.id
-      )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
+
+      let link_style: EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
+      try {
+        link_style = (await this.container.posthog.getFeatureFlag(
+          "embed-link-styling-test",
+          message.author.id
+        )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
+      } catch {
+        link_style = undefined;
+      }
+
       const msg = {
         components: [
           Embed.getDiscordEmbed(embed, {
@@ -104,6 +111,10 @@ export class MessageListener extends Listener<
         bot_message.id,
         message.author.id
       );
+      const existing =
+        this.container.embed_messages.get(message.id) ?? [];
+      existing.push(bot_message.id);
+      this.container.embed_messages.set(message.id, existing);
       this.container.betterstack.info(
         ...formatBetterStack(EMBEDLY_EMBED_CREATED_MESSAGE, {
           user_message_id: message.id,
