@@ -309,7 +309,10 @@ export class Embed implements EmbedData {
 
     if (description) {
       section.addTextDisplayComponents((builder) =>
-        builder.setContent(description)
+        builder.setContent(
+          description.slice(0, 1500) +
+            (description.length > 1500 ? "..." : "")
+        )
       );
     }
 
