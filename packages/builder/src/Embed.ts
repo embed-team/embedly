@@ -137,18 +137,13 @@ export class Embed implements EmbedData {
       container.setSpoiler(true);
     }
 
-    // Add primary content section (reply content if exists, otherwise main content)
     Embed.addPrimaryContentSection(container, embed, source_only);
-
-    // Add primary media (reply media if exists, otherwise main media)
     Embed.addPrimaryMedia(container, embed, source_only);
 
-    // Add secondary content (reply/quote) - skip if source_only
     if (!source_only) {
       Embed.addSecondaryContent(container, embed);
     }
 
-    // Add footer with stats and metadata
     Embed.addFooterSection(container, embed, link_style);
 
     return container.toJSON();
@@ -189,7 +184,6 @@ export class Embed implements EmbedData {
       prefix_emoji =
         !source_only && embed.quote ? statEmojis.quote : "";
     } else {
-      // Show reply content first (only when not source_only)
       author_name = embed.replying_to.name;
       author_username = embed.replying_to.username;
       author_profile_url = embed.replying_to.profile_url;
@@ -216,13 +210,10 @@ export class Embed implements EmbedData {
   ) {
     let media: APIMediaGalleryItem[] | undefined;
     if (source_only) {
-      // For source_only, use main embed's media
       media = embed.media;
     } else if (embed.replying_to) {
-      // For replies, show parent's media first (derek's media)
       media = embed.replying_to.media;
     } else {
-      // Otherwise use main embed's media
       media = embed.media;
     }
 
@@ -241,16 +232,13 @@ export class Embed implements EmbedData {
       return;
     }
 
-    // Add separator
     container.addSeparatorComponents((builder) =>
       builder.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
     );
 
     if (embed.replying_to) {
-      // Show original content after reply
       Embed.addOriginalContentAfterReply(container, embed);
     } else if (embed.quote) {
-      // Show quote content
       Embed.addQuoteContent(container, embed.quote);
     }
   }
