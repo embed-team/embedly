@@ -5,6 +5,7 @@ import he from "he";
 import { CF_CACHE_OPTIONS } from "./constants.ts";
 import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 export class CBC extends EmbedlyPlatform {
   readonly color = [215, 36, 42] as const;
@@ -16,8 +17,9 @@ export class CBC extends EmbedlyPlatform {
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.regex.exec(url)!;
-    const { cbc_id } = match.groups!;
+    const match = this.regex.exec(url);
+    validateRegexMatch(match, "Invalid CBC URL: could not extract ID");
+    const { cbc_id } = match.groups;
     return cbc_id;
   }
 
@@ -27,19 +29,44 @@ export class CBC extends EmbedlyPlatform {
       redirect: "follow",
       ...CF_CACHE_OPTIONS
     });
+
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
+
     const html = await resp.text();
     const $ = cheerio.load(html);
     const script = $("script#initialStateDom");
-    const data = JSON.parse(
-      script
-        .text()
-        .replace("window.__INITIAL_STATE__ = ", "")
-        .slice(0, -1)
-    );
-    return data.app.meta.jsonld;
+    const scriptText = script.text();
+
+    if (!scriptText) {
+      throw {
+        code: 500,
+        message: "CBC page structure changed: missing data"
+      };
+    }
+
+    let data: any;
+    try {
+      data = JSON.parse(
+        scriptText
+          .replace("window.__INITIAL_STATE__ = ", "")
+          .slice(0, -1)
+      );
+    } catch {
+      throw { code: 500, message: "Failed to parse CBC data" };
+    }
+
+    const jsonld = data?.app?.meta?.jsonld;
+
+    if (!jsonld) {
+      throw {
+        code: 500,
+        message: "CBC page structure changed: missing metadata"
+      };
+    }
+
+    return jsonld;
   }
 
   transformRawData(raw_data: any): BaseEmbedData {

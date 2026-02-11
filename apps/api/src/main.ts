@@ -56,7 +56,25 @@ const app = (env: Env, ctx: ExecutionContext) =>
       "/api/scrape",
       async ({ body: { platform, url }, status, logger, set }) => {
         const handler = Platforms[platform as keyof typeof Platforms];
-        const post_id = await handler.parsePostId(url);
+
+        let post_id: string;
+        try {
+          post_id = await handler.parsePostId(url);
+        } catch (error: any) {
+          logger.error("Failed to parse post ID", {
+            platform: handler.name,
+            url,
+            error: error.message || String(error)
+          });
+
+          return status(400, {
+            type: "EMBEDLY_INVALID_URL",
+            status: 400,
+            title: "Invalid URL",
+            detail: `Could not extract post ID from ${platform} URL`
+          });
+        }
+
         const post_log_ctx: EmbedlyPostContext = {
           platform: handler.name,
           post_url: url,
@@ -97,7 +115,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
             post_data!.url = url;
           }
 
-          handler.addPostToCache(post_id, post_data, env.STORAGE);
+          await handler.addPostToCache(post_id, post_data, env.STORAGE);
           logger.debug(
             ...formatBetterStack(EMBEDLY_CACHING_POST, post_log_ctx)
           );

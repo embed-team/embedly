@@ -1,6 +1,5 @@
 import { CBC } from "./CBC.ts";
 import { Instagram } from "./Instagram.ts";
-import { registerPlatformDetector } from "./parsing.ts";
 import { Reddit } from "./Reddit.ts";
 import { Threads } from "./Threads.ts";
 import { TikTok } from "./TikTok.ts";
@@ -30,23 +29,19 @@ export const platformEmojis = Object.fromEntries(
   ])
 ) as Record<EmbedlyPlatformType, string>;
 
-registerPlatformDetector((url: string) => {
+export function getPlatformFromURL(
+  url: string
+): null | { type: EmbedlyPlatformType } {
   for (const [name, platform] of Object.entries(Platforms)) {
     if (platform.matchesUrl(url)) {
       return { type: name as EmbedlyPlatformType };
     }
   }
   return null;
-});
+}
 
 export { CF_CACHE_OPTIONS, GENERIC_LINK_REGEX } from "./constants.ts";
 export { type CloudflareEnv, EmbedlyPlatform } from "./Platform.ts";
-export {
-  getPlatformFromURL,
-  hasLink,
-  isEscaped,
-  isSpoiler
-} from "./parsing.ts";
 export {
   EmbedlyPlatformType,
   type Emojis,
@@ -54,5 +49,6 @@ export {
   type StatEmojis,
   statEmojis
 } from "./types.ts";
+export { hasLink, isEscaped, isSpoiler } from "./utils.ts";
 
 export default Platforms;

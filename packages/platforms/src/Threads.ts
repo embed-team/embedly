@@ -5,6 +5,7 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 const alphabet =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -20,8 +21,12 @@ export class Threads extends EmbedlyPlatform {
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.regex.exec(url)!;
-    const { thread_shortcode } = match.groups!;
+    const match = this.regex.exec(url);
+    validateRegexMatch(
+      match,
+      "Invalid Threads URL: could not extract shortcode"
+    );
+    const { thread_shortcode } = match.groups;
     const thread_id = thread_shortcode
       .split("")
       .reduce(
@@ -80,11 +85,22 @@ export class Threads extends EmbedlyPlatform {
         "Sec-Fetch-Site": "same-origin"
       }
     });
+
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
+
     const { data } = (await resp.json()) as Record<string, any>;
-    return data.data.edges[0].node.thread_items[0].post;
+    const post = data?.data?.edges?.[0]?.node?.thread_items?.[0]?.post;
+
+    if (!post) {
+      throw {
+        code: 500,
+        message: "Threads API returned unexpected structure"
+      };
+    }
+
+    return post;
   }
 
   parsePostMedia(

@@ -7,6 +7,7 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 const TIKTOK_REGEX_MAIN = /(https?:\/\/)?(?:[\w-]+\.)*tiktok\.com/;
 
@@ -24,8 +25,12 @@ export class TikTok extends EmbedlyPlatform {
 
   async parsePostId(url: string): Promise<string> {
     const req = await fetch(url, { redirect: "follow" });
-    const match = TIKTOK_REGEX_DETAIL.exec(req.url)!;
-    const { tiktok_user, tiktok_id } = match.groups!;
+    const match = TIKTOK_REGEX_DETAIL.exec(req.url);
+    validateRegexMatch(
+      match,
+      "Invalid TikTok URL: could not extract user/id"
+    );
+    const { tiktok_user, tiktok_id } = match.groups;
     return `${tiktok_user}/${tiktok_id}`;
   }
 
@@ -44,15 +49,41 @@ export class TikTok extends EmbedlyPlatform {
         ...CF_CACHE_OPTIONS
       }
     );
+
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
+
     const html = await resp.text();
     const $ = cheerio.load(html);
     const script = $("script#__UNIVERSAL_DATA_FOR_REHYDRATION__");
-    const data = JSON.parse(script.text());
-    return data.__DEFAULT_SCOPE__["webapp.video-detail"].itemInfo
-      .itemStruct;
+    const scriptText = script.text();
+
+    if (!scriptText) {
+      throw {
+        code: 500,
+        message: "TikTok page structure changed: missing data script"
+      };
+    }
+
+    let data: any;
+    try {
+      data = JSON.parse(scriptText);
+    } catch {
+      throw { code: 500, message: "Failed to parse TikTok data" };
+    }
+    const itemStruct =
+      data?.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo
+        ?.itemStruct;
+
+    if (!itemStruct) {
+      throw {
+        code: 500,
+        message: "TikTok page structure changed: missing video data"
+      };
+    }
+
+    return itemStruct;
   }
 
   transformRawData(raw_data: any): BaseEmbedData {
@@ -78,17 +109,18 @@ export class TikTok extends EmbedlyPlatform {
 
   async createEmbed(post_data: any): Promise<Embed> {
     const embed = new Embed(this.transformRawData(post_data));
-    const video = await fetch(
-      post_data.video.bitrateInfo[0].PlayAddr.UrlList[2],
-      { redirect: "follow" }
-    );
-    embed.setMedia([
-      {
-        media: {
-          url: video.url
-        }
-      }
-    ]);
+
+    const videoUrl =
+      post_data?.video?.bitrateInfo?.[0]?.PlayAddr?.UrlList?.[2];
+
+    if (!videoUrl) {
+      return embed;
+    }
+
+    try {
+      const video = await fetch(videoUrl, { redirect: "follow" });
+      embed.setMedia([{ media: { url: video.url } }]);
+    } catch {}
 
     return embed;
   }
