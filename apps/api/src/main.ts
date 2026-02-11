@@ -13,6 +13,16 @@ import Platforms, {
   hasLink
 } from "@embedly/platforms";
 import { Logtail } from "@logtail/edge";
+import {
+  instrument,
+  type ResolveConfigFn
+} from "@microlabs/otel-cf-workers";
+import {
+  context,
+  propagation,
+  SpanStatusCode,
+  trace
+} from "@opentelemetry/api";
 import { Elysia, t } from "elysia";
 
 const app = (env: Env, ctx: ExecutionContext) =>
@@ -54,79 +64,166 @@ const app = (env: Env, ctx: ExecutionContext) =>
     })
     .post(
       "/api/scrape",
-      async ({ body: { platform, url }, status, logger, set }) => {
-        const handler = Platforms[platform as keyof typeof Platforms];
+      async ({
+        body: { platform, url },
+        status,
+        logger,
+        set,
+        headers
+      }) => {
+        const carrier: Record<string, string> = {};
+        Object.values(headers).forEach((value, key) => {
+          carrier[key] = value;
+        });
 
-        let post_id: string;
-        try {
-          post_id = await handler.parsePostId(url);
-        } catch (error: any) {
-          logger.error("Failed to parse post ID", {
-            platform: handler.name,
-            url,
-            error: error.message || String(error)
-          });
-
-          return status(400, {
-            type: "EMBEDLY_INVALID_URL",
-            status: 400,
-            title: "Invalid URL",
-            detail: `Could not extract post ID from ${platform} URL`
-          });
-        }
-
-        const post_log_ctx: EmbedlyPostContext = {
-          platform: handler.name,
-          post_url: url,
-          post_id
-        };
-        let post_data = await handler.getPostFromCache(
-          post_id,
-          env.STORAGE
+        const parent_ctx = propagation.extract(
+          context.active(),
+          carrier
         );
-        if (!post_data) {
-          logger.debug(
-            ...formatBetterStack(
-              handler.log_messages.fetching,
-              post_log_ctx
-            )
-          );
+        const tracer = trace.getTracer("embedly-api");
+        return await context.with(parent_ctx, async () => {
+          return tracer.startActiveSpan("scrape", async (root_span) => {
+            const handler =
+              Platforms[platform as keyof typeof Platforms];
 
-          try {
-            post_data = await handler.fetchPost(post_id, env);
-          } catch (error: any) {
-            post_log_ctx.resp_status = error.code;
-            post_log_ctx.resp_message = error.message;
+            root_span.setAttributes({
+              "embedly.platform": platform,
+              "embedly.url": url
+            });
 
-            const err = handler.log_messages.failed;
-            err.context = post_log_ctx;
+            let post_id: string;
+            try {
+              post_id = await tracer.startActiveSpan(
+                "parse_post_id",
+                async (s) => {
+                  const id = await handler.parsePostId(url);
+                  s.setAttribute("embedly.post_id", id);
+                  s.end();
+                  return id;
+                }
+              );
+            } catch (error: any) {
+              root_span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: error.message
+              });
+              root_span.recordException(error);
+              root_span.end();
+              return status(400, {
+                type: "EMBEDLY_INVALID_URL",
+                title: "Invalid URL.",
+                detail: `Failed to parse post ID from URL: ${url}`
+              });
+            }
 
-            logger.error(...formatBetterStack(err, err.context));
+            root_span.setAttribute("embedly.post_id", post_id);
 
-            return status(err.status!, err);
-          }
+            const post_log_ctx: EmbedlyPostContext = {
+              platform: handler.name,
+              post_url: url,
+              post_id
+            };
+            let post_data = await tracer.startActiveSpan(
+              "cache_lookup",
+              async (s) => {
+                const res = await handler.getPostFromCache(
+                  post_id,
+                  env.STORAGE
+                );
+                s.setAttribute("embedly.cache_hit", !!res);
+                s.end();
+                return res;
+              }
+            );
 
-          if (!post_data) {
-            const err = handler.log_messages.failed;
-            return status(err.status!, err);
-          }
+            if (!post_data) {
+              logger.debug(
+                ...formatBetterStack(
+                  handler.log_messages.fetching,
+                  post_log_ctx
+                )
+              );
 
-          if (handler.name === EmbedlyPlatformType.Instagram) {
-            post_data!.url = url;
-          }
+              try {
+                post_data = await tracer.startActiveSpan(
+                  "fetch_post",
+                  async (s) => {
+                    s.setAttribute("embedly.platform", handler.name);
+                    try {
+                      const data = await handler.fetchPost(
+                        post_id,
+                        env
+                      );
+                      s.setStatus({ code: SpanStatusCode.OK });
+                      return data;
+                    } catch (error: any) {
+                      s.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: error.message
+                      });
+                      s.recordException(error);
+                      throw error;
+                    } finally {
+                      s.end();
+                    }
+                  }
+                );
+              } catch (error: any) {
+                post_log_ctx.resp_status = error.code;
+                post_log_ctx.resp_message = error.message;
 
-          await handler.addPostToCache(post_id, post_data, env.STORAGE);
-          logger.debug(
-            ...formatBetterStack(EMBEDLY_CACHING_POST, post_log_ctx)
-          );
-        } else {
-          logger.debug(
-            ...formatBetterStack(EMBEDLY_CACHED_POST, post_log_ctx)
-          );
-        }
+                const err = handler.log_messages.failed;
+                err.context = post_log_ctx;
 
-        set.headers["content-type"] = "application/json";
-        return post_data as Record<string, any>;
+                logger.error(...formatBetterStack(err, err.context));
+
+                root_span.setStatus({
+                  code: SpanStatusCode.ERROR,
+                  message: error.message
+                });
+                root_span.end();
+                return status(err.status!, err);
+              }
+
+              if (!post_data) {
+                const err = handler.log_messages.failed;
+
+                logger.error(...formatBetterStack(err, post_log_ctx));
+
+                root_span.setStatus({
+                  code: SpanStatusCode.ERROR,
+                  message: err.detail
+                });
+                root_span.end();
+                return status(err.status!, err);
+              }
+
+              if (handler.name === EmbedlyPlatformType.Instagram) {
+                post_data!.url = url;
+              }
+
+              await tracer.startActiveSpan("cache_store", async (s) => {
+                handler.addPostToCache(post_id, post_data, env.STORAGE);
+                logger.debug(
+                  ...formatBetterStack(
+                    EMBEDLY_CACHING_POST,
+                    post_log_ctx
+                  )
+                );
+                s.end();
+              });
+            } else {
+              logger.debug(
+                ...formatBetterStack(EMBEDLY_CACHED_POST, post_log_ctx)
+              );
+            }
+
+            set.headers["content-type"] = "application/json";
+            root_span.setStatus({ code: SpanStatusCode.OK });
+            root_span.end();
+            return post_data as Record<string, any>;
+          });
+        });
       },
       {
         body: t.Object({
@@ -196,10 +293,22 @@ const app = (env: Env, ctx: ExecutionContext) =>
       }
     );
 
-export default {
-  fetch(req, env, ctx) {
+const handler = {
+  fetch(req: Request, env: Env, ctx: ExecutionContext) {
     return app(env, ctx).fetch(req);
   }
 } satisfies ExportedHandler<Env>;
+
+const config: ResolveConfigFn = (env: Env) => ({
+  exporter: {
+    url: env.OTEL_ENDPOINT,
+    headers: {}
+  },
+  service: {
+    name: "embedly-api"
+  }
+});
+
+export default instrument(handler, config);
 
 export type App = ReturnType<typeof app>;

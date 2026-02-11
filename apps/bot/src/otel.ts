@@ -26,7 +26,21 @@ const sdk = new NodeSDK({
       url: `${endpoint}/v1/metrics`
     })
   }),
-  instrumentations: [new HttpInstrumentation()]
+  instrumentations: [
+    new HttpInstrumentation({
+      ignoreIncomingRequestHook: () => true,
+      ignoreOutgoingRequestHook: (request) => {
+        const host =
+          typeof request === "string"
+            ? request
+            : (request.hostname ?? request.host ?? "");
+
+        return (
+          host.includes("discord.gg") || host.includes("discord.com")
+        );
+      }
+    })
+  ]
 });
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);

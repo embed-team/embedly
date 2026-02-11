@@ -18,7 +18,11 @@ import Platforms, {
   isEscaped,
   isSpoiler
 } from "@embedly/platforms";
-import { SpanStatusCode } from "@opentelemetry/api";
+import {
+  context,
+  propagation,
+  SpanStatusCode
+} from "@opentelemetry/api";
 import { Events, Listener } from "@sapphire/framework";
 import { type Message, MessageFlags } from "discord.js";
 
@@ -49,7 +53,7 @@ export class MessageListener extends Listener<
     if (!urls) return;
 
     this.container.tracer.startActiveSpan(
-      `message:${message.id}`,
+      "message",
       async (root_span) => {
         root_span.setAttributes({
           "discord.message_id": message.id,
@@ -83,6 +87,10 @@ export class MessageListener extends Listener<
                 async (s) => {
                   s.setAttribute("embedly.platform", platform.type);
                   s.setAttribute("embedly.url", url);
+
+                  const otelHeaders: Record<string, string> = {};
+                  propagation.inject(context.active(), otelHeaders);
+
                   const res = await app.api.scrape.post(
                     {
                       platform: platform.type,
@@ -90,7 +98,8 @@ export class MessageListener extends Listener<
                     },
                     {
                       headers: {
-                        authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
+                        authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
+                        ...otelHeaders
                       }
                     }
                   );
