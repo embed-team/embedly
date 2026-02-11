@@ -20,6 +20,7 @@ import Platforms, {
   getPlatformFromURL,
   hasLink
 } from "@embedly/platforms";
+import { SpanStatusCode } from "@opentelemetry/api";
 import { Command } from "@sapphire/framework";
 import {
   ApplicationCommandType,
@@ -118,7 +119,16 @@ export class EmbedCommand extends Command {
       });
     }
     const url = GENERIC_LINK_REGEX.exec(content)![0];
-    const platform = getPlatformFromURL(url);
+    const platform = await this.container.tracer.startActiveSpan(
+      "detect_platform",
+      async (s) => {
+        const platform = getPlatformFromURL(url);
+        s.setAttribute("embedly.platform", platform?.type ?? "unknown");
+        s.setAttribute("embedly.url", url);
+        s.end();
+        return platform;
+      }
+    );
     if (!platform) {
       this.container.betterstack.warn(
         ...formatBetterStack(EMBEDLY_NO_VALID_LINK_WARN, log_ctx)
@@ -131,15 +141,38 @@ export class EmbedCommand extends Command {
 
     await interaction.deferReply();
 
-    const { data, error } = await app.api.scrape.post(
-      {
-        platform: platform.type,
-        url
-      },
-      {
-        headers: {
-          authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
+    const { data, error } = await this.container.tracer.startActiveSpan(
+      "fetch_from_api",
+      async (s) => {
+        s.setAttribute("embedly.platform", platform.type);
+        s.setAttribute("embedly.url", url);
+        const res = await app.api.scrape.post(
+          {
+            platform: platform.type,
+            url
+          },
+          {
+            headers: {
+              authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`
+            }
+          }
+        );
+        if (res.error) {
+          s.setStatus({
+            code: SpanStatusCode.ERROR,
+            message:
+              "detail" in res.error.value
+                ? res.error.value.detail
+                : res.error.value.type
+          });
+          s.recordException(
+            "detail" in res.error.value
+              ? res.error.value.detail
+              : res.error.value.type
+          );
         }
+        s.end();
+        return res;
       }
     );
 
@@ -156,15 +189,33 @@ export class EmbedCommand extends Command {
       });
     }
 
-    const embed = await Platforms[platform.type].createEmbed(data);
-    const bot_message = await interaction.editReply({
-      components: [Embed.getDiscordEmbed(embed, flags)!],
-      flags: ["IsComponentsV2"],
-      allowedMentions: {
-        parse: [],
-        repliedUser: false
+    const embed = await this.container.tracer.startActiveSpan(
+      "create_embed",
+      async (s) => {
+        s.setAttribute("embedly.platform", platform.type);
+        const embed = await Platforms[platform.type].createEmbed(data);
+        s.end();
+        return embed;
       }
-    });
+    );
+
+    const bot_message = await this.container.tracer.startActiveSpan(
+      "send_message",
+      async (s) => {
+        const res = await interaction.editReply({
+          components: [Embed.getDiscordEmbed(embed, flags)!],
+          flags: ["IsComponentsV2"],
+          allowedMentions: {
+            parse: [],
+            repliedUser: false
+          }
+        });
+        s.setAttribute("discord.bot_message_id", res.id);
+        s.end();
+        return res;
+      }
+    );
+
     this.container.embed_authors.set(
       bot_message.id,
       interaction.user.id
@@ -186,7 +237,30 @@ export class EmbedCommand extends Command {
   ) {
     if (!interaction.isMessageContextMenuCommand()) return;
     const msg = interaction.targetMessage;
-    this.fetchEmbed(interaction, msg.content);
+    this.container.tracer.startActiveSpan(
+      `interaction:${interaction.id}`,
+      async (root_span) => {
+        root_span.setAttributes({
+          "discord.interaction_id": interaction.id,
+          "discord.command": interaction.commandName,
+          "discord.guild_id": interaction.guildId ?? "dm",
+          "discord.user_id": interaction.user.id,
+          "discord.message_id": msg.id
+        });
+        try {
+          await this.fetchEmbed(interaction, msg.content);
+          root_span.setStatus({ code: SpanStatusCode.OK });
+        } catch (error: any) {
+          root_span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error.message
+          });
+          root_span.recordException(error);
+        } finally {
+          root_span.end();
+        }
+      }
+    );
   }
 
   public override async chatInputRun(
@@ -194,24 +268,49 @@ export class EmbedCommand extends Command {
   ) {
     const url = interaction.options.getString("url", true);
 
-    let link_style: EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
-    try {
-      link_style = (await this.container.posthog.getFeatureFlag(
-        "embed-link-styling-test",
-        interaction.user.id
-      )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
-    } catch {
-      link_style = undefined;
-    }
+    this.container.tracer.startActiveSpan(
+      `interaction:${interaction.id}`,
+      async (root_span) => {
+        root_span.setAttributes({
+          "discord.interaction_id": interaction.id,
+          "discord.command": interaction.commandName,
+          "discord.guild_id": interaction.guildId ?? "dm",
+          "discord.user_id": interaction.user.id
+        });
 
-    this.fetchEmbed(interaction, url, {
-      [EmbedFlagNames.MediaOnly]:
-        interaction.options.getBoolean("media_only") ?? false,
-      [EmbedFlagNames.SourceOnly]:
-        interaction.options.getBoolean("source_only") ?? false,
-      [EmbedFlagNames.Spoiler]:
-        interaction.options.getBoolean("spoiler") ?? false,
-      [EmbedFlagNames.LinkStyle]: link_style ?? "control"
-    });
+        let link_style:
+          | EmbedFlags[EmbedFlagNames.LinkStyle]
+          | undefined;
+        try {
+          link_style = (await this.container.posthog.getFeatureFlag(
+            "embed-link-styling-test",
+            interaction.user.id
+          )) as EmbedFlags[EmbedFlagNames.LinkStyle] | undefined;
+        } catch {
+          link_style = undefined;
+        }
+
+        try {
+          await this.fetchEmbed(interaction, url, {
+            [EmbedFlagNames.MediaOnly]:
+              interaction.options.getBoolean("media_only") ?? false,
+            [EmbedFlagNames.SourceOnly]:
+              interaction.options.getBoolean("source_only") ?? false,
+            [EmbedFlagNames.Spoiler]:
+              interaction.options.getBoolean("spoiler") ?? false,
+            [EmbedFlagNames.LinkStyle]: link_style ?? "control"
+          });
+          root_span.setStatus({ code: SpanStatusCode.OK });
+        } catch (error: any) {
+          root_span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error.message
+          });
+          root_span.recordException(error);
+        } finally {
+          root_span.end();
+        }
+      }
+    );
   }
 }
