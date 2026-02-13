@@ -1,7 +1,4 @@
-import {
-  EMBEDLY_AUTO_DELETE_INFO,
-  formatBetterStack
-} from "@embedly/logging";
+import { EMBEDLY_AUTO_DELETE_INFO, formatLog } from "@embedly/logging";
 import { Events, Listener } from "@sapphire/framework";
 import type { Message, PartialMessage } from "discord.js";
 
@@ -35,8 +32,8 @@ export class MessageDeleteListener extends Listener<
 
     this.container.embed_messages.delete(message.id);
 
-    this.container.betterstack.info(
-      ...formatBetterStack(EMBEDLY_AUTO_DELETE_INFO, {
+    this.container.logger.info(
+      formatLog(EMBEDLY_AUTO_DELETE_INFO, {
         message_id: message.id,
         user_id: message.author?.id,
         original_author_id: message.author?.id
