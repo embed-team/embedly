@@ -212,7 +212,9 @@ export class MessageListener extends Listener<
               })
             );
           }
-          await message.edit({ flags: MessageFlags.SuppressEmbeds });
+          if (this.container.embed_messages.has(message.id)) {
+            await message.edit({ flags: MessageFlags.SuppressEmbeds });
+          }
           root_span.setStatus({ code: SpanStatusCode.OK });
         } catch (error: any) {
           root_span.setStatus({
