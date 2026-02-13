@@ -25,8 +25,6 @@
 		"@embedly/builder": "workspace:*",
 		"@embedly/logging": "workspace:*",
 		"@embedly/platforms": "workspace:*",
-		"@logtail/edge": "^0.5.7",
-		"@logtail/node": "^0.5.6",
 		"discord-verify": "^1.2.0",
 		"elysia": "^1.4.19",
 		"wrangler": "^4.59.1"
