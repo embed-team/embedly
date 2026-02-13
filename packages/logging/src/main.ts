@@ -190,12 +190,35 @@ export const EMBEDLY_NO_VALID_LINK_WARN: EmbedlyLogBase<EmbedlyInteractionContex
     detail: "User attempted to embed unsupported platform."
   };
 
-export function formatBetterStack<T extends EmbedlyLogBase>(
+export interface FormattedLog {
+  body: string;
+  attributes: Record<string, string | number | boolean | undefined>;
+}
+
+export function formatLog<T extends EmbedlyLogBase>(
   log: T,
   ctx: T["context"]
-) {
+): FormattedLog {
   log.context = ctx;
-  return [log.detail, log] as const;
+  const contextAttrs: Record<
+    string,
+    string | number | boolean | undefined
+  > = {};
+  if (ctx && typeof ctx === "object") {
+    for (const [key, value] of Object.entries(ctx)) {
+      if (value !== undefined && typeof value !== "object") {
+        contextAttrs[key] = value;
+      }
+    }
+  }
+  return {
+    body: log.detail,
+    attributes: {
+      "log.type": log.type,
+      "log.title": log.title,
+      ...contextAttrs
+    }
+  };
 }
 
 export function formatDiscord<
