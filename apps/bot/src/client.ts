@@ -1,10 +1,6 @@
-import type { FormattedLog } from "@embedly/logging";
+import { EmbedlyLogger } from "@embedly/logging";
 import { type Tracer, trace } from "@opentelemetry/api";
-import {
-  logs,
-  type Logger as OtelLogger,
-  SeverityNumber
-} from "@opentelemetry/api-logs";
+import { logs } from "@opentelemetry/api-logs";
 import {
   container,
   type ILogger,
@@ -19,13 +15,7 @@ import {
 } from "discord.js";
 import { PostHog } from "posthog-node";
 
-class EmbedlyLogger implements ILogger {
-  private otel: OtelLogger;
-
-  constructor(name: string) {
-    this.otel = logs.getLogger(name);
-  }
-
+class SapphireLogger extends EmbedlyLogger implements ILogger {
   has(level: LogLevel): boolean {
     return level >= LogLevel.Info;
   }
@@ -34,80 +24,15 @@ class EmbedlyLogger implements ILogger {
 
   debug() {}
 
-  info(...values: readonly unknown[]) {
-    this.emit(SeverityNumber.INFO, "INFO", values);
-  }
-
-  warn(...values: readonly unknown[]) {
-    this.emit(SeverityNumber.WARN, "WARN", values);
-  }
-
-  error(...values: readonly unknown[]) {
-    this.emit(SeverityNumber.ERROR, "ERROR", values);
-  }
-
-  fatal(...values: readonly unknown[]) {
-    this.emit(SeverityNumber.FATAL, "FATAL", values);
-  }
-
   write(level: LogLevel, ...values: readonly unknown[]) {
-    const severityMap: Record<LogLevel, [SeverityNumber, string]> = {
-      [LogLevel.Trace]: [SeverityNumber.TRACE, "TRACE"],
-      [LogLevel.Debug]: [SeverityNumber.DEBUG, "DEBUG"],
-      [LogLevel.Info]: [SeverityNumber.INFO, "INFO"],
-      [LogLevel.Warn]: [SeverityNumber.WARN, "WARN"],
-      [LogLevel.Error]: [SeverityNumber.ERROR, "ERROR"],
-      [LogLevel.Fatal]: [SeverityNumber.FATAL, "FATAL"],
-      [LogLevel.None]: [SeverityNumber.UNSPECIFIED, "UNSPECIFIED"]
-    };
-    const [num, text] = severityMap[level] ?? [
-      SeverityNumber.INFO,
-      "INFO"
-    ];
-    this.emit(num, text, values);
-  }
-
-  private static readonly consoleMethods: Record<
-    string,
-    (...args: unknown[]) => void
-  > = {
-    TRACE: console.trace,
-    DEBUG: console.debug,
-    INFO: console.info,
-    WARN: console.warn,
-    ERROR: console.error,
-    FATAL: console.error
-  };
-
-  private emit(
-    severityNumber: SeverityNumber,
-    severityText: string,
-    values: readonly unknown[]
-  ) {
-    const consoleMethod =
-      EmbedlyLogger.consoleMethods[severityText] ?? console.log;
-    const first = values[0];
-    if (
-      first &&
-      typeof first === "object" &&
-      "body" in first &&
-      "attributes" in first
-    ) {
-      const log = first as FormattedLog;
-      consoleMethod(log.body, log.attributes);
-      this.otel.emit({
-        severityNumber,
-        severityText,
-        body: log.body,
-        attributes: log.attributes
-      });
-    } else {
-      consoleMethod(...values);
-      this.otel.emit({
-        severityNumber,
-        severityText,
-        body: values.map(String).join(" ")
-      });
+    if (level >= LogLevel.Info) {
+      const methods = {
+        [LogLevel.Info]: this.info,
+        [LogLevel.Warn]: this.warn,
+        [LogLevel.Error]: this.error,
+        [LogLevel.Fatal]: this.fatal
+      } as Record<LogLevel, (...v: readonly unknown[]) => void>;
+      methods[level]?.call(this, ...values);
     }
   }
 }
@@ -145,7 +70,7 @@ export class EmbedlyClient extends SapphireClient {
   }
 
   public override async login(token?: string) {
-    container.logger = new EmbedlyLogger("embedly-bot");
+    container.logger = new SapphireLogger("embedly-bot");
     container.embed_authors = new Map();
     container.embed_messages = new Map();
     container.posthog = new PostHog(process.env.POSTHOG_API_KEY!, {

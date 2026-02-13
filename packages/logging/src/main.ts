@@ -221,6 +221,78 @@ export function formatLog<T extends EmbedlyLogBase>(
   };
 }
 
+import {
+  logs,
+  type Logger as OtelLogger,
+  SeverityNumber
+} from "@opentelemetry/api-logs";
+
+export class EmbedlyLogger {
+  private otel: OtelLogger;
+
+  constructor(name: string) {
+    this.otel = logs.getLogger(name);
+  }
+
+  private static readonly consoleMethods: Record<
+    string,
+    (...args: unknown[]) => void
+  > = {
+    INFO: console.info,
+    WARN: console.warn,
+    ERROR: console.error,
+    FATAL: console.error
+  };
+
+  info(...values: readonly unknown[]) {
+    this.emit(SeverityNumber.INFO, "INFO", values);
+  }
+
+  warn(...values: readonly unknown[]) {
+    this.emit(SeverityNumber.WARN, "WARN", values);
+  }
+
+  error(...values: readonly unknown[]) {
+    this.emit(SeverityNumber.ERROR, "ERROR", values);
+  }
+
+  fatal(...values: readonly unknown[]) {
+    this.emit(SeverityNumber.FATAL, "FATAL", values);
+  }
+
+  private emit(
+    severityNumber: SeverityNumber,
+    severityText: string,
+    values: readonly unknown[]
+  ) {
+    const consoleMethod =
+      EmbedlyLogger.consoleMethods[severityText] ?? console.log;
+    const first = values[0];
+    if (
+      first &&
+      typeof first === "object" &&
+      "body" in first &&
+      "attributes" in first
+    ) {
+      const log = first as FormattedLog;
+      consoleMethod(log.body, log.attributes);
+      this.otel.emit({
+        severityNumber,
+        severityText,
+        body: log.body,
+        attributes: log.attributes
+      });
+    } else {
+      consoleMethod(...values);
+      this.otel.emit({
+        severityNumber,
+        severityText,
+        body: values.map(String).join(" ")
+      });
+    }
+  }
+}
+
 export function formatDiscord<
   T extends EmbedlyErrorBase<EmbedlyInteractionContext>
 >(err: T, ctx: T["context"]) {
