@@ -21,8 +21,6 @@ export interface CloudflareEnv {
   EMBED_USER_AGENT: string;
   THREADS_CSRF_TOKEN?: string;
   STORAGE: KVNamespace;
-  BETTERSTACK_SOURCE_TOKEN: string;
-  BETTERSTACK_INGESTING_HOST: string;
   DISCORD_BOT_TOKEN: string;
 }
 

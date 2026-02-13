@@ -1,5 +1,6 @@
 import { Embed } from "@embedly/builder";
 import he from "he";
+import packageJSON from "../package.json" with { type: "json" };
 import { CF_CACHE_OPTIONS } from "./constants.ts";
 import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
@@ -31,7 +32,7 @@ export class Twitter extends EmbedlyPlatform {
       {
         method: "GET",
         headers: {
-          "User-Agent": "Embedly/0.0.1"
+          "User-Agent": `Embedly/${packageJSON.version}`
         },
         ...CF_CACHE_OPTIONS
       }
