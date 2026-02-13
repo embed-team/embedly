@@ -1,5 +1,17 @@
 # @embedly/builder
 
+## 0.12.0
+
+### Minor Changes
+
+- [#42](https://github.com/embed-team/embedly/pull/42) [`5cdbcd7`](https://github.com/embed-team/embedly/commit/5cdbcd7f3fd957473b0ee00ca824fe6b2bcce1f7) Thanks [@ItsRauf](https://github.com/ItsRauf)! - Harden platform error handling, add messageDelete listener for automatic embed cleanup, and remove unnecessary comments
+
+- [#42](https://github.com/embed-team/embedly/pull/42) [`b526829`](https://github.com/embed-team/embedly/commit/b52682924a0eb926de98695145915c3fa0cf9444) Thanks [@ItsRauf](https://github.com/ItsRauf)! - refactored a bunch of the code surrounding types and parsing
+
+### Patch Changes
+
+- [#42](https://github.com/embed-team/embedly/pull/42) [`4b6f900`](https://github.com/embed-team/embedly/commit/4b6f900d9f483fcc01c817c8071d49904f94a9a7) Thanks [@ItsRauf](https://github.com/ItsRauf)! - limit descriptions to 1500 because discord has a global cap of 4k per message
+
 ## 0.11.0
 
 ### Patch Changes
