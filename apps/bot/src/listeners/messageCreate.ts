@@ -9,7 +9,7 @@ import {
   EMBEDLY_EMBED_CREATED_MESSAGE,
   type EmbedlyInteractionContext,
   type EmbedlyPostContext,
-  formatBetterStack
+  formatLog
 } from "@embedly/logging";
 import Platforms, {
   GENERIC_LINK_REGEX,
@@ -132,8 +132,8 @@ export class MessageListener extends Listener<
                   message_id: message.id,
                   user_id: message.author.id
                 };
-                this.container.betterstack.error(
-                  ...formatBetterStack(error.value, error_context)
+                this.container.logger.error(
+                  formatLog(error.value, error_context)
                 );
               }
               return;
@@ -199,8 +199,8 @@ export class MessageListener extends Listener<
               this.container.embed_messages.get(message.id) ?? [];
             existing.push(bot_message.id);
             this.container.embed_messages.set(message.id, existing);
-            this.container.betterstack.info(
-              ...formatBetterStack(EMBEDLY_EMBED_CREATED_MESSAGE, {
+            this.container.logger.info(
+              formatLog(EMBEDLY_EMBED_CREATED_MESSAGE, {
                 user_message_id: message.id,
                 bot_message_id: bot_message.id,
                 user_id: message.author.id,

@@ -3,8 +3,8 @@ import {
   EMBEDLY_DELETE_FAILED_WARN,
   EMBEDLY_DELETE_SUCCESS,
   EMBEDLY_DELETE_SUCCESS_INFO,
-  formatBetterStack,
-  formatDiscord
+  formatDiscord,
+  formatLog
 } from "@embedly/logging";
 import { Command } from "@sapphire/framework";
 import {
@@ -54,8 +54,8 @@ export class DeleteCommand extends Command {
     if (!interaction.inGuild()) return;
     const msg = interaction.targetMessage;
     if (msg.author.id !== this.container.client.id) {
-      this.container.betterstack.warn(
-        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+      this.container.logger.warn(
+        formatLog(EMBEDLY_DELETE_FAILED_WARN, {
           message_id: msg.id,
           user_id: interaction.user.id,
           reason: "not_bot_message"
@@ -74,8 +74,8 @@ export class DeleteCommand extends Command {
     });
 
     if (!msg.deletable) {
-      this.container.betterstack.warn(
-        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+      this.container.logger.warn(
+        formatLog(EMBEDLY_DELETE_FAILED_WARN, {
           message_id: msg.id,
           user_id: interaction.user.id,
           reason: "not_deletable"
@@ -95,8 +95,8 @@ export class DeleteCommand extends Command {
         const reference = await msg.fetchReference();
         original_author_id = reference.author.id;
       } catch {
-        this.container.betterstack.warn(
-          ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+        this.container.logger.warn(
+          formatLog(EMBEDLY_DELETE_FAILED_WARN, {
             message_id: msg.id,
             user_id: interaction.user.id,
             reason: "no_author_mapping_and_no_reference"
@@ -116,8 +116,8 @@ export class DeleteCommand extends Command {
       guild = await interaction.guild!.fetch();
       runner = await guild.members.fetch(interaction.member.user.id);
     } catch {
-      this.container.betterstack.warn(
-        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+      this.container.logger.warn(
+        formatLog(EMBEDLY_DELETE_FAILED_WARN, {
           message_id: msg.id,
           user_id: interaction.user.id,
           reason: "failed_to_fetch_guild_or_member"
@@ -137,8 +137,8 @@ export class DeleteCommand extends Command {
     const is_original_poster = runner.id === original_author_id;
 
     if (!has_manage_permission && !is_original_poster) {
-      this.container.betterstack.warn(
-        ...formatBetterStack(EMBEDLY_DELETE_FAILED_WARN, {
+      this.container.logger.warn(
+        formatLog(EMBEDLY_DELETE_FAILED_WARN, {
           message_id: msg.id,
           user_id: interaction.user.id,
           original_author_id,
@@ -166,8 +166,8 @@ export class DeleteCommand extends Command {
       }
       break;
     }
-    this.container.betterstack.info(
-      ...formatBetterStack(EMBEDLY_DELETE_SUCCESS_INFO, {
+    this.container.logger.info(
+      formatLog(EMBEDLY_DELETE_SUCCESS_INFO, {
         message_id: msg.id,
         user_id: interaction.user.id,
         original_author_id

@@ -12,8 +12,8 @@ import {
   EMBEDLY_NO_VALID_LINK,
   EMBEDLY_NO_VALID_LINK_WARN,
   type EmbedlyInteractionContext,
-  formatBetterStack,
-  formatDiscord
+  formatDiscord,
+  formatLog
 } from "@embedly/logging";
 import Platforms, {
   GENERIC_LINK_REGEX,
@@ -114,8 +114,8 @@ export class EmbedCommand extends Command {
       user_id: interaction.user.id
     } satisfies EmbedlyInteractionContext;
     if (!hasLink(content)) {
-      this.container.betterstack.warn(
-        ...formatBetterStack(EMBEDLY_NO_LINK_WARN, log_ctx)
+      this.container.logger.warn(
+        formatLog(EMBEDLY_NO_LINK_WARN, log_ctx)
       );
       return await interaction.reply({
         content: formatDiscord(EMBEDLY_NO_LINK_IN_MESSAGE, log_ctx),
@@ -134,8 +134,8 @@ export class EmbedCommand extends Command {
       }
     );
     if (!platform) {
-      this.container.betterstack.warn(
-        ...formatBetterStack(EMBEDLY_NO_VALID_LINK_WARN, log_ctx)
+      this.container.logger.warn(
+        formatLog(EMBEDLY_NO_VALID_LINK_WARN, log_ctx)
       );
       return await interaction.reply({
         content: formatDiscord(EMBEDLY_NO_VALID_LINK, log_ctx),
@@ -190,8 +190,8 @@ export class EmbedCommand extends Command {
         ...log_ctx,
         ...("context" in error.value ? error.value.context : {})
       };
-      this.container.betterstack.error(
-        ...formatBetterStack(error.value, error_context)
+      this.container.logger.error(
+        formatLog(error.value, error_context)
       );
       return await interaction.editReply({
         content: formatDiscord(error.value, error_context)
@@ -229,8 +229,8 @@ export class EmbedCommand extends Command {
       bot_message.id,
       interaction.user.id
     );
-    this.container.betterstack.info(
-      ...formatBetterStack(EMBEDLY_EMBED_CREATED_COMMAND, {
+    this.container.logger.info(
+      formatLog(EMBEDLY_EMBED_CREATED_COMMAND, {
         interaction_id: interaction.id,
         user_id: interaction.user.id,
         bot_message_id: bot_message.id,
