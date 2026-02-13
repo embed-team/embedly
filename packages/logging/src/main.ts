@@ -21,10 +21,14 @@ export const EMBEDLY_INVALID_REQUEST: EmbedlyErrorBase<{
   detail: "Failed to validate request from Discord."
 };
 
+export type EmbedlySource = "message" | "command" | "context_menu";
+
 export interface EmbedlyInteractionContext {
   interaction_id?: string;
   user_id?: string;
   message_id?: string;
+  source?: EmbedlySource;
+  platform?: PlatformName;
 }
 
 export const EMBEDLY_NO_LINK_IN_MESSAGE: EmbedlyErrorBase<EmbedlyInteractionContext> =

@@ -12,6 +12,7 @@ import {
   EMBEDLY_NO_VALID_LINK,
   EMBEDLY_NO_VALID_LINK_WARN,
   type EmbedlyInteractionContext,
+  type EmbedlySource,
   formatDiscord,
   formatLog
 } from "@embedly/logging";
@@ -107,11 +108,13 @@ export class EmbedCommand extends Command {
       | Command.ChatInputCommandInteraction
       | Command.ContextMenuCommandInteraction,
     content: string,
+    source: EmbedlySource,
     flags?: Partial<EmbedFlags>
   ) {
     const log_ctx = {
       interaction_id: interaction.id,
-      user_id: interaction.user.id
+      user_id: interaction.user.id,
+      source
     } satisfies EmbedlyInteractionContext;
     if (!hasLink(content)) {
       this.container.logger.warn(
@@ -188,6 +191,7 @@ export class EmbedCommand extends Command {
     if (error?.status === 400 || error?.status === 500) {
       const error_context = {
         ...log_ctx,
+        platform: platform.type,
         ...("context" in error.value ? error.value.context : {})
       };
       this.container.logger.error(
@@ -235,6 +239,7 @@ export class EmbedCommand extends Command {
         user_id: interaction.user.id,
         bot_message_id: bot_message.id,
         platform: platform.type,
+        source,
         url
       })
     );
@@ -257,7 +262,11 @@ export class EmbedCommand extends Command {
           "discord.message_id": msg.id
         });
         try {
-          await this.fetchEmbed(interaction, msg.content);
+          await this.fetchEmbed(
+            interaction,
+            msg.content,
+            "context_menu"
+          );
           root_span.setStatus({ code: SpanStatusCode.OK });
         } catch (error: any) {
           root_span.setStatus({
@@ -300,7 +309,7 @@ export class EmbedCommand extends Command {
         }
 
         try {
-          await this.fetchEmbed(interaction, url, {
+          await this.fetchEmbed(interaction, url, "command", {
             [EmbedFlagNames.MediaOnly]:
               interaction.options.getBoolean("media_only") ?? false,
             [EmbedFlagNames.SourceOnly]:

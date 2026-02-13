@@ -130,7 +130,9 @@ export class MessageListener extends Listener<
                     ? error.value.context
                     : {}),
                   message_id: message.id,
-                  user_id: message.author.id
+                  user_id: message.author.id,
+                  source: "message",
+                  platform: platform.type
                 };
                 this.container.logger.error(
                   formatLog(error.value, error_context)
@@ -205,6 +207,7 @@ export class MessageListener extends Listener<
                 bot_message_id: bot_message.id,
                 user_id: message.author.id,
                 platform: platform.type,
+                source: "message",
                 url
               })
             );
