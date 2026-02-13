@@ -21,5 +21,8 @@
     "@embedly/config": "workspace:*",
     "pkgroll": "^2.21.4",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@opentelemetry/api-logs": "^0.211.0"
   }
 }

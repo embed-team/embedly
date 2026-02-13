@@ -226,6 +226,10 @@ importers:
         version: 2.3.10
 
   packages/logging:
+    dependencies:
+      '@opentelemetry/api-logs':
+        specifier: ^0.211.0
+        version: 0.211.0
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.10
