@@ -38,6 +38,8 @@ const app = (env: Env, ctx: ExecutionContext) =>
         severityNumber: number;
         log: FormattedLog;
         timestamp: number;
+        traceId: string;
+        spanId: string;
       }[] = [];
 
       const emit = (
@@ -51,11 +53,15 @@ const app = (env: Env, ctx: ExecutionContext) =>
           | "warn"
           | "error";
         console[method]?.(log.body, log.attributes);
+        const span = trace.getActiveSpan();
+        const spanCtx = span?.spanContext();
         pending.push({
           severityText,
           severityNumber,
           log,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          traceId: spanCtx?.traceId ?? "",
+          spanId: spanCtx?.spanId ?? ""
         });
       };
 
@@ -80,10 +86,14 @@ const app = (env: Env, ctx: ExecutionContext) =>
                       severityText,
                       severityNumber,
                       log,
-                      timestamp
+                      timestamp,
+                      traceId,
+                      spanId
                     }) => ({
                       timeUnixNano: String(timestamp * 1_000_000),
                       severityNumber,
+                      traceId,
+                      spanId,
                       severityText,
                       body: { stringValue: log.body },
                       attributes: Object.entries(log.attributes)
