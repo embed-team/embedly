@@ -4,7 +4,8 @@ import {
   EMBEDLY_NO_LINK_IN_MESSAGE,
   EMBEDLY_NO_VALID_LINK,
   type EmbedlyPostContext,
-  formatBetterStack
+  type FormattedLog,
+  formatLog
 } from "@embedly/logging";
 import Platforms, {
   EmbedlyPlatformType,
@@ -12,7 +13,6 @@ import Platforms, {
   getPlatformFromURL,
   hasLink
 } from "@embedly/platforms";
-import { Logtail } from "@logtail/edge";
 import {
   instrument,
   type ResolveConfigFn
@@ -33,12 +33,110 @@ const app = (env: Env, ctx: ExecutionContext) =>
     })
     .decorate({ env, ctx })
     .derive(({ ctx, env }) => {
-      const logtail = new Logtail(env.BETTERSTACK_SOURCE_TOKEN, {
-        endpoint: env.BETTERSTACK_INGESTING_HOST
-      });
-      return {
-        logger: logtail.withExecutionContext(ctx)
+      const pending: {
+        severityText: string;
+        severityNumber: number;
+        log: FormattedLog;
+        timestamp: number;
+      }[] = [];
+
+      const emit = (
+        severityText: string,
+        severityNumber: number,
+        log: FormattedLog
+      ) => {
+        const method = severityText.toLowerCase() as
+          | "debug"
+          | "info"
+          | "warn"
+          | "error";
+        console[method]?.(log.body, log.attributes);
+        pending.push({
+          severityText,
+          severityNumber,
+          log,
+          timestamp: Date.now()
+        });
       };
+
+      const flush = () => {
+        if (pending.length === 0) return;
+        const body = {
+          resourceLogs: [
+            {
+              resource: {
+                attributes: [
+                  {
+                    key: "service.name",
+                    value: { stringValue: "embedly-api" }
+                  }
+                ]
+              },
+              scopeLogs: [
+                {
+                  scope: { name: "embedly-api" },
+                  logRecords: pending.map(
+                    ({
+                      severityText,
+                      severityNumber,
+                      log,
+                      timestamp
+                    }) => ({
+                      timeUnixNano: String(timestamp * 1_000_000),
+                      severityNumber,
+                      severityText,
+                      body: { stringValue: log.body },
+                      attributes: Object.entries(log.attributes)
+                        .filter(([, v]) => v !== undefined)
+                        .map(([key, value]) => ({
+                          key,
+                          value:
+                            typeof value === "number"
+                              ? { intValue: value }
+                              : typeof value === "boolean"
+                                ? { boolValue: value }
+                                : { stringValue: String(value) }
+                        }))
+                    })
+                  )
+                }
+              ]
+            }
+          ]
+        };
+
+        ctx.waitUntil(
+          fetch(
+            `${env.OTEL_ENDPOINT.replace("/v1/traces", "")}/v1/logs`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body)
+            }
+          ).catch(() => {})
+        );
+      };
+
+      return {
+        logger: {
+          debug(log: FormattedLog) {
+            emit("DEBUG", 5, log);
+          },
+          info(log: FormattedLog) {
+            emit("INFO", 9, log);
+          },
+          warn(log: FormattedLog) {
+            emit("WARN", 13, log);
+          },
+          error(log: FormattedLog) {
+            emit("ERROR", 17, log);
+          },
+          flush
+        }
+      };
+    })
+    .onAfterHandle(({ logger }) => {
+      logger.flush();
     })
     .guard({
       headers: t.Object(
@@ -138,10 +236,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
 
             if (!post_data) {
               logger.debug(
-                ...formatBetterStack(
-                  handler.log_messages.fetching,
-                  post_log_ctx
-                )
+                formatLog(handler.log_messages.fetching, post_log_ctx)
               );
 
               try {
@@ -175,7 +270,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
                 const err = handler.log_messages.failed;
                 err.context = post_log_ctx;
 
-                logger.error(...formatBetterStack(err, err.context));
+                logger.error(formatLog(err, err.context));
 
                 root_span.setStatus({
                   code: SpanStatusCode.ERROR,
@@ -188,7 +283,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
               if (!post_data) {
                 const err = handler.log_messages.failed;
 
-                logger.error(...formatBetterStack(err, post_log_ctx));
+                logger.error(formatLog(err, post_log_ctx));
 
                 root_span.setStatus({
                   code: SpanStatusCode.ERROR,
@@ -205,16 +300,13 @@ const app = (env: Env, ctx: ExecutionContext) =>
               await tracer.startActiveSpan("cache_store", async (s) => {
                 handler.addPostToCache(post_id, post_data, env.STORAGE);
                 logger.debug(
-                  ...formatBetterStack(
-                    EMBEDLY_CACHING_POST,
-                    post_log_ctx
-                  )
+                  formatLog(EMBEDLY_CACHING_POST, post_log_ctx)
                 );
                 s.end();
               });
             } else {
               logger.debug(
-                ...formatBetterStack(EMBEDLY_CACHED_POST, post_log_ctx)
+                formatLog(EMBEDLY_CACHED_POST, post_log_ctx)
               );
             }
 
