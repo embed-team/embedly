@@ -1,5 +1,14 @@
 # @embedly/api
 
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @embedly/builder@0.12.1
+  - @embedly/logging@0.12.1
+  - @embedly/platforms@0.12.1
+
 ## 0.12.0
 
 ### Minor Changes
