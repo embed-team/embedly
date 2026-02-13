@@ -27,16 +27,12 @@ class EmbedlyLogger implements ILogger {
   }
 
   has(level: LogLevel): boolean {
-    return level >= LogLevel.Debug;
+    return level >= LogLevel.Info;
   }
 
-  trace(...values: readonly unknown[]) {
-    this.emit(SeverityNumber.TRACE, "TRACE", values);
-  }
+  trace() {}
 
-  debug(...values: readonly unknown[]) {
-    this.emit(SeverityNumber.DEBUG, "DEBUG", values);
-  }
+  debug() {}
 
   info(...values: readonly unknown[]) {
     this.emit(SeverityNumber.INFO, "INFO", values);
@@ -71,11 +67,25 @@ class EmbedlyLogger implements ILogger {
     this.emit(num, text, values);
   }
 
+  private static readonly consoleMethods: Record<
+    string,
+    (...args: unknown[]) => void
+  > = {
+    TRACE: console.trace,
+    DEBUG: console.debug,
+    INFO: console.info,
+    WARN: console.warn,
+    ERROR: console.error,
+    FATAL: console.error
+  };
+
   private emit(
     severityNumber: SeverityNumber,
     severityText: string,
     values: readonly unknown[]
   ) {
+    const consoleMethod =
+      EmbedlyLogger.consoleMethods[severityText] ?? console.log;
     const first = values[0];
     if (
       first &&
@@ -84,6 +94,7 @@ class EmbedlyLogger implements ILogger {
       "attributes" in first
     ) {
       const log = first as FormattedLog;
+      consoleMethod(log.body, log.attributes);
       this.otel.emit({
         severityNumber,
         severityText,
@@ -91,6 +102,7 @@ class EmbedlyLogger implements ILogger {
         attributes: log.attributes
       });
     } else {
+      consoleMethod(...values);
       this.otel.emit({
         severityNumber,
         severityText,
