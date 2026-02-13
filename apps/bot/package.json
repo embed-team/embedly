@@ -48,7 +48,6 @@
     "@discordjs/rest": "^2.6.0",
     "@discordjs/ws": "^2.0.4",
     "@elysiajs/eden": "^1.4.5",
-    "@logtail/node": "^0.5.6",
     "@sapphire/discord.js-utilities": "^7.3.3",
     "@sapphire/framework": "^5.4.0",
     "discord.js": "~14.25.1",
