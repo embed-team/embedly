@@ -1,5 +1,11 @@
 # @embedly/bot
 
+## 0.12.1
+
+### Patch Changes
+
+- [#44](https://github.com/embed-team/embedly/pull/44) [`e5d49f4`](https://github.com/embed-team/embedly/commit/e5d49f49c292ee61c9c6d3fddd1b099e85e6f342) Thanks [@ItsRauf](https://github.com/ItsRauf)! - Fix bot suppressing native Discord embeds on messages with links that Embedly doesn't handle
+
 ## 0.12.0
 
 ### Minor Changes
