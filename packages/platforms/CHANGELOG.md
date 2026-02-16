@@ -1,5 +1,13 @@
 # @embedly/platforms
 
+## 0.12.3
+
+### Patch Changes
+
+- Updated dependencies [[`9f1368c`](https://github.com/embed-team/embedly/commit/9f1368c4f91a1af09ebf67eed0c36d57af9262f0)]:
+  - @embedly/builder@0.12.3
+  - @embedly/logging@0.12.3
+
 ## 0.12.2
 
 ### Patch Changes
