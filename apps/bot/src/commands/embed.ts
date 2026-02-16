@@ -6,11 +6,14 @@ import {
   type EmbedFlags
 } from "@embedly/builder";
 import {
+  EMBEDLY_CREATE_EMBED_FAILED,
   EMBEDLY_EMBED_CREATED_COMMAND,
   EMBEDLY_NO_LINK_IN_MESSAGE,
   EMBEDLY_NO_LINK_WARN,
   EMBEDLY_NO_VALID_LINK,
   EMBEDLY_NO_VALID_LINK_WARN,
+  EMBEDLY_SEND_MESSAGE_FAILED,
+  EMBEDLY_UNHANDLED_ERROR,
   type EmbedlyInteractionContext,
   type EmbedlySource,
   formatDiscord,
@@ -206,26 +209,66 @@ export class EmbedCommand extends Command {
       "create_embed",
       async (s) => {
         s.setAttribute("embedly.platform", platform.type);
-        const embed = await Platforms[platform.type].createEmbed(data);
-        s.end();
-        return embed;
+        try {
+          const embed =
+            await Platforms[platform.type].createEmbed(data);
+          return embed;
+        } catch (error: any) {
+          s.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error.message ?? String(error)
+          });
+          s.recordException(error);
+          this.container.logger.error(
+            formatLog(EMBEDLY_CREATE_EMBED_FAILED, {
+              interaction_id: interaction.id,
+              user_id: interaction.user.id,
+              source,
+              platform: platform.type,
+              error_message: error.message,
+              error_stack: error.stack
+            })
+          );
+          throw error;
+        } finally {
+          s.end();
+        }
       }
     );
 
     const bot_message = await this.container.tracer.startActiveSpan(
       "send_message",
       async (s) => {
-        const res = await interaction.editReply({
-          components: [Embed.getDiscordEmbed(embed, flags)!],
-          flags: ["IsComponentsV2"],
-          allowedMentions: {
-            parse: [],
-            repliedUser: false
-          }
-        });
-        s.setAttribute("discord.bot_message_id", res.id);
-        s.end();
-        return res;
+        try {
+          const res = await interaction.editReply({
+            components: [Embed.getDiscordEmbed(embed, flags)!],
+            flags: ["IsComponentsV2"],
+            allowedMentions: {
+              parse: [],
+              repliedUser: false
+            }
+          });
+          s.setAttribute("discord.bot_message_id", res.id);
+          return res;
+        } catch (error: any) {
+          s.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error.message ?? String(error)
+          });
+          s.recordException(error);
+          this.container.logger.error(
+            formatLog(EMBEDLY_SEND_MESSAGE_FAILED, {
+              interaction_id: interaction.id,
+              user_id: interaction.user.id,
+              source,
+              error_message: error.message,
+              error_stack: error.stack
+            })
+          );
+          throw error;
+        } finally {
+          s.end();
+        }
       }
     );
 
@@ -274,6 +317,15 @@ export class EmbedCommand extends Command {
             message: error.message
           });
           root_span.recordException(error);
+          this.container.logger.error(
+            formatLog(EMBEDLY_UNHANDLED_ERROR, {
+              interaction_id: interaction.id,
+              user_id: interaction.user.id,
+              source: "context_menu",
+              error_message: error.message,
+              error_stack: error.stack
+            })
+          );
         } finally {
           root_span.end();
         }
@@ -325,6 +377,15 @@ export class EmbedCommand extends Command {
             message: error.message
           });
           root_span.recordException(error);
+          this.container.logger.error(
+            formatLog(EMBEDLY_UNHANDLED_ERROR, {
+              interaction_id: interaction.id,
+              user_id: interaction.user.id,
+              source: "command",
+              error_message: error.message,
+              error_stack: error.stack
+            })
+          );
         } finally {
           root_span.end();
         }
