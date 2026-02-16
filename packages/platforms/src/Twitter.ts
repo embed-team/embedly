@@ -79,6 +79,21 @@ export class Twitter extends EmbedlyPlatform {
     return he.decode(text);
   }
 
+  resolveMediaUrl(media: any): string {
+    if (
+      media.type === "gif" &&
+      media.url.startsWith("https://video.twimg.com/tweet_video/")
+    ) {
+      return media.url
+        .replace(
+          "https://video.twimg.com/",
+          "https://gif.fxtwitter.com/"
+        )
+        .replace(/\.mp4$/, ".gif");
+    }
+    return media.url;
+  }
+
   transformRawData(raw_data: any): BaseEmbedData {
     return {
       platform: this.name,
@@ -111,7 +126,7 @@ export class Twitter extends EmbedlyPlatform {
       embed.setMedia(
         tweet_data.media.all.map((media: any) => ({
           media: {
-            url: media.url
+            url: this.resolveMediaUrl(media)
           },
           description: media.altText
         }))
@@ -131,7 +146,7 @@ export class Twitter extends EmbedlyPlatform {
         reply_embed.setMedia(
           reply_tweet.media.all.map((media: any) => ({
             media: {
-              url: media.url
+              url: this.resolveMediaUrl(media)
             },
             description: media.altText
           }))
@@ -150,7 +165,7 @@ export class Twitter extends EmbedlyPlatform {
         quote_embed.setMedia(
           quote_tweet.media.all.map((media: any) => ({
             media: {
-              url: media.url
+              url: this.resolveMediaUrl(media)
             },
             description: media.altText
           }))
