@@ -29,6 +29,8 @@ export interface EmbedlyInteractionContext {
   message_id?: string;
   source?: EmbedlySource;
   platform?: PlatformName;
+  error_message?: string;
+  error_stack?: string;
 }
 
 export const EMBEDLY_NO_LINK_IN_MESSAGE: EmbedlyErrorBase<EmbedlyInteractionContext> =
@@ -56,6 +58,8 @@ export interface EmbedlyPostContext {
   resp_status?: number;
   resp_message?: string;
   resp_data?: any;
+  error_message?: string;
+  error_stack?: string;
 }
 
 export const EMBEDLY_FETCH_PLATFORM = (
@@ -180,6 +184,39 @@ export const EMBEDLY_AUTO_DELETE_INFO: EmbedlyLogBase<EmbedlyDeleteContext> =
       "Bot embed automatically deleted because the original message was deleted."
   };
 
+export const EMBEDLY_UNHANDLED_ERROR: EmbedlyErrorBase<EmbedlyInteractionContext> =
+  {
+    type: "EMBEDLY_UNHANDLED_ERROR",
+    status: 500,
+    title: "Unhandled error.",
+    detail: "An unhandled error occurred while processing a request."
+  };
+
+export const EMBEDLY_CREATE_EMBED_FAILED: EmbedlyErrorBase<EmbedlyInteractionContext> =
+  {
+    type: "EMBEDLY_CREATE_EMBED_FAILED",
+    status: 500,
+    title: "Failed to create embed.",
+    detail: "An error occurred while creating the embed from post data."
+  };
+
+export const EMBEDLY_SEND_MESSAGE_FAILED: EmbedlyErrorBase<EmbedlyInteractionContext> =
+  {
+    type: "EMBEDLY_SEND_MESSAGE_FAILED",
+    status: 500,
+    title: "Failed to send message.",
+    detail:
+      "An error occurred while sending the embed message to Discord."
+  };
+
+export const EMBEDLY_PARSE_POST_ID_FAILED: EmbedlyErrorBase<EmbedlyPostContext> =
+  {
+    type: "EMBEDLY_PARSE_POST_ID_FAILED",
+    status: 400,
+    title: "Failed to parse post ID.",
+    detail: "An error occurred while parsing the post ID from the URL."
+  };
+
 export const EMBEDLY_NO_LINK_WARN: EmbedlyLogBase<EmbedlyInteractionContext> =
   {
     type: "EMBEDLY_NO_LINK_WARN",
@@ -300,5 +337,7 @@ export class EmbedlyLogger {
 export function formatDiscord<
   T extends EmbedlyErrorBase<EmbedlyInteractionContext>
 >(err: T, ctx: T["context"]) {
-  return `**__${err.title}__**\n${err.detail}\n\n-# [${err.type}]: ${ctx?.interaction_id || ctx?.message_id}`;
+  return `**__${err.title}__**\n${err.detail}\n\n-# [${err.type}]: ${
+    ctx?.interaction_id || ctx?.message_id
+  }`;
 }
