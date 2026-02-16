@@ -1,5 +1,16 @@
 # @embedly/api
 
+## 0.12.3
+
+### Patch Changes
+
+- [#48](https://github.com/embed-team/embedly/pull/48) [`9f1368c`](https://github.com/embed-team/embedly/commit/9f1368c4f91a1af09ebf67eed0c36d57af9262f0) Thanks [@ItsRauf](https://github.com/ItsRauf)! - add structured error logging with error message and stack trace to all span catch blocks across bot and API
+
+- Updated dependencies [[`9f1368c`](https://github.com/embed-team/embedly/commit/9f1368c4f91a1af09ebf67eed0c36d57af9262f0)]:
+  - @embedly/builder@0.12.3
+  - @embedly/logging@0.12.3
+  - @embedly/platforms@0.12.3
+
 ## 0.12.2
 
 ### Patch Changes
