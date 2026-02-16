@@ -3,6 +3,7 @@ import {
   EMBEDLY_CACHING_POST,
   EMBEDLY_NO_LINK_IN_MESSAGE,
   EMBEDLY_NO_VALID_LINK,
+  EMBEDLY_PARSE_POST_ID_FAILED,
   type EmbedlyPostContext,
   type FormattedLog,
   formatLog
@@ -216,6 +217,14 @@ const app = (env: Env, ctx: ExecutionContext) =>
                 message: error.message
               });
               root_span.recordException(error);
+              logger.error(
+                formatLog(EMBEDLY_PARSE_POST_ID_FAILED, {
+                  platform: handler.name,
+                  post_url: url,
+                  error_message: error.message,
+                  error_stack: error.stack
+                })
+              );
               root_span.end();
               return status(400, {
                 type: "EMBEDLY_INVALID_URL",
