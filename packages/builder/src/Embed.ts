@@ -326,7 +326,10 @@ export class Embed implements EmbedData {
     prefix_emoji: string
   ): string {
     const username_part = username
-      ? ` (${hyperlink(`@${escapeMarkdown(username, { italic: true, underline: true })}`, profile_url!)})`
+      ? ` (${hyperlink(
+          `@${escapeMarkdown(username, { italic: true, underline: true })}`,
+          profile_url!
+        )})`
       : "";
 
     const full_text = `${prefix_emoji} ${name}${username_part}`.trim();
@@ -347,7 +350,9 @@ export class Embed implements EmbedData {
 
     container.addTextDisplayComponents((builder) =>
       builder.setContent(
-        `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${embed.emoji} • ${time(
+        `${stats.length > 0 ? `${subtext(stats.join("      "))}\n` : ""}${
+          embed.emoji
+        } • ${time(
           embed.timestamp,
           TimestampStyles.LongDateShortTime
         )} • ${hyperlink(`View on ${embed.platform}`, embed.url)}`
@@ -366,7 +371,9 @@ export class Embed implements EmbedData {
 
     return Object.entries(stats_data).map(
       ([key, val]) =>
-        `${statEmojis[key as keyof StatEmojis]} ${Embed.NumberFormatter.format(val)}`
+        `${statEmojis[key as keyof StatEmojis]} ${Embed.NumberFormatter.format(
+          val
+        )}`
     );
   }
 }
