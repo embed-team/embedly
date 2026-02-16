@@ -1,5 +1,15 @@
 # @embedly/platforms
 
+## 0.12.2
+
+### Patch Changes
+
+- [#46](https://github.com/embed-team/embedly/pull/46) [`44d558f`](https://github.com/embed-team/embedly/commit/44d558ff10ae62d2698ac1215c253cdd05905d79) Thanks [@ItsRauf](https://github.com/ItsRauf)! - use gif.fxtwitter.com for twitter gif media URLs
+
+- Updated dependencies []:
+  - @embedly/builder@0.12.2
+  - @embedly/logging@0.12.2
+
 ## 0.12.1
 
 ### Patch Changes
