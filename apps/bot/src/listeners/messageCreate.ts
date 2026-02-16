@@ -6,7 +6,10 @@ import {
   type EmbedFlags
 } from "@embedly/builder";
 import {
+  EMBEDLY_CREATE_EMBED_FAILED,
   EMBEDLY_EMBED_CREATED_MESSAGE,
+  EMBEDLY_SEND_MESSAGE_FAILED,
+  EMBEDLY_UNHANDLED_ERROR,
   type EmbedlyInteractionContext,
   type EmbedlyPostContext,
   formatLog
@@ -145,10 +148,30 @@ export class MessageListener extends Listener<
               "create_embed",
               async (s) => {
                 s.setAttribute("embedly.platform", platform.type);
-                const embed =
-                  await Platforms[platform.type].createEmbed(data);
-                s.end();
-                return embed;
+                try {
+                  const embed =
+                    await Platforms[platform.type].createEmbed(data);
+                  return embed;
+                } catch (error: any) {
+                  s.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: error.message ?? String(error)
+                  });
+                  s.recordException(error);
+                  this.container.logger.error(
+                    formatLog(EMBEDLY_CREATE_EMBED_FAILED, {
+                      message_id: message.id,
+                      user_id: message.author.id,
+                      source: "message",
+                      platform: platform.type,
+                      error_message: error.message,
+                      error_stack: error.stack
+                    })
+                  );
+                  throw error;
+                } finally {
+                  s.end();
+                }
               }
             );
 
@@ -184,13 +207,32 @@ export class MessageListener extends Listener<
               await this.container.tracer.startActiveSpan(
                 "send_message",
                 async (s) => {
-                  const res =
-                    ind > 0 && message.channel.isSendable()
-                      ? await message.channel.send(msg)
-                      : await message.reply(msg);
-                  s.setAttribute("discord.bot_message_id", res.id);
-                  s.end();
-                  return res;
+                  try {
+                    const res =
+                      ind > 0 && message.channel.isSendable()
+                        ? await message.channel.send(msg)
+                        : await message.reply(msg);
+                    s.setAttribute("discord.bot_message_id", res.id);
+                    return res;
+                  } catch (error: any) {
+                    s.setStatus({
+                      code: SpanStatusCode.ERROR,
+                      message: error.message ?? String(error)
+                    });
+                    s.recordException(error);
+                    this.container.logger.error(
+                      formatLog(EMBEDLY_SEND_MESSAGE_FAILED, {
+                        message_id: message.id,
+                        user_id: message.author.id,
+                        source: "message",
+                        error_message: error.message,
+                        error_stack: error.stack
+                      })
+                    );
+                    throw error;
+                  } finally {
+                    s.end();
+                  }
                 }
               );
             this.container.embed_authors.set(
@@ -222,6 +264,15 @@ export class MessageListener extends Listener<
             message: error.message
           });
           root_span.recordException(error);
+          this.container.logger.error(
+            formatLog(EMBEDLY_UNHANDLED_ERROR, {
+              message_id: message.id,
+              user_id: message.author.id,
+              source: "message",
+              error_message: error.message,
+              error_stack: error.stack
+            })
+          );
         } finally {
           root_span.end();
         }
