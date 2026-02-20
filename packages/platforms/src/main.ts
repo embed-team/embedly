@@ -1,5 +1,6 @@
 import { CBC } from "./CBC.ts";
 import { Instagram } from "./Instagram.ts";
+import { NYTimes } from "./NYTimes.ts";
 import { Reddit } from "./Reddit.ts";
 import { Threads } from "./Threads.ts";
 import { TikTok } from "./TikTok.ts";
@@ -12,7 +13,8 @@ export const Platforms = {
   [EmbedlyPlatformType.TikTok]: new TikTok(),
   [EmbedlyPlatformType.CBC]: new CBC(),
   [EmbedlyPlatformType.Threads]: new Threads(),
-  [EmbedlyPlatformType.Reddit]: new Reddit()
+  [EmbedlyPlatformType.Reddit]: new Reddit(),
+  [EmbedlyPlatformType.NYTimes]: new NYTimes()
 } as const;
 
 export const EmbedlyPlatformColors = Object.fromEntries(

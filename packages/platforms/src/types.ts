@@ -4,7 +4,8 @@ export const EmbedlyPlatformType = {
   TikTok: "TikTok",
   CBC: "cbc.ca",
   Threads: "Threads",
-  Reddit: "Reddit"
+  Reddit: "Reddit",
+  NYTimes: "NYTimes"
 } as const;
 
 export type EmbedlyPlatformType =
@@ -39,5 +40,6 @@ export const emojis: Emojis = {
   [EmbedlyPlatformType.TikTok]: "<:tiktok:1386641825963708446>",
   [EmbedlyPlatformType.CBC]: "<:cbc:1409997044495683674>",
   [EmbedlyPlatformType.Threads]: "<:threads:1413343483929956446>",
-  [EmbedlyPlatformType.Reddit]: "<:reddit:1461320093240655922>"
+  [EmbedlyPlatformType.Reddit]: "<:reddit:1461320093240655922>",
+  [EmbedlyPlatformType.NYTimes]: ""
 };
