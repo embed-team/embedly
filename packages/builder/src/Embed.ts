@@ -77,6 +77,8 @@ export interface EmbedFlags {
   [EmbedFlagNames.LinkStyle]: "control" | "inline" | "none";
 }
 
+const MAX_GALLERY_ITEMS = 10;
+
 export class Embed implements EmbedData {
   public platform!: string;
   public color!: RGBTuple;
@@ -102,6 +104,7 @@ export class Embed implements EmbedData {
 
   constructor(data: BaseEmbedData) {
     Object.assign(this, data);
+    if (this.media) this.media = this.media.slice(0, MAX_GALLERY_ITEMS);
   }
 
   public setDescription(text: string) {
@@ -109,15 +112,22 @@ export class Embed implements EmbedData {
   }
 
   public setMedia(media: APIMediaGalleryItem[]) {
-    this.media = media;
+    this.media = media.slice(0, MAX_GALLERY_ITEMS);
   }
 
   public setQuote(quote: BaseEmbedDataWithoutPlatform) {
-    this.quote = quote;
+    this.quote = quote.media
+      ? { ...quote, media: quote.media.slice(0, MAX_GALLERY_ITEMS) }
+      : quote;
   }
 
   public setReplyingTo(replying_to: BaseEmbedDataWithoutPlatform) {
-    this.replying_to = replying_to;
+    this.replying_to = replying_to.media
+      ? {
+          ...replying_to,
+          media: replying_to.media.slice(0, MAX_GALLERY_ITEMS)
+        }
+      : replying_to;
   }
 
   static getDiscordEmbed(embed: Embed, flags?: Partial<EmbedFlags>) {
