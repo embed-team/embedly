@@ -1,5 +1,11 @@
 # @embedly/builder
 
+## 0.12.4
+
+### Patch Changes
+
+- [#51](https://github.com/embed-team/embedly/pull/51) [`8cb7b5e`](https://github.com/embed-team/embedly/commit/8cb7b5ee5dc9df9f592ac65a975983016d94cfef) Thanks [@ItsRauf](https://github.com/ItsRauf)! - cap media gallery items at Discord's 10-item limit
+
 ## 0.12.3
 
 ### Patch Changes
