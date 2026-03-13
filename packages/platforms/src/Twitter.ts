@@ -166,6 +166,19 @@ export class Twitter extends EmbedlyPlatform {
           }))
         );
       }
+
+      if (reply_tweet.article) {
+        reply_embed.setDescription(reply_tweet.article.preview_text);
+        reply_embed.setMedia([
+          {
+            media: {
+              url: reply_tweet.article.cover_media.media_info
+                .original_img_url
+            }
+          }
+        ]);
+      }
+
       embed.setReplyingTo(reply_embed);
     } else if (tweet_data.quote) {
       const quote_tweet = tweet_data.quote;
@@ -185,6 +198,19 @@ export class Twitter extends EmbedlyPlatform {
           }))
         );
       }
+
+      if (quote_tweet.article) {
+        quote_embed.setDescription(quote_tweet.article.preview_text);
+        quote_embed.setMedia([
+          {
+            media: {
+              url: quote_tweet.article.cover_media.media_info
+                .original_img_url
+            }
+          }
+        ]);
+      }
+
       embed.setQuote(quote_embed);
     }
     return embed;
