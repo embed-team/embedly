@@ -122,6 +122,7 @@ export class Twitter extends EmbedlyPlatform {
     if (tweet_data.translation?.text) {
       embed.setDescription(tweet_data.translation.text);
     }
+
     if (tweet_data.media) {
       embed.setMedia(
         tweet_data.media.all.map((media: any) => ({
@@ -132,6 +133,19 @@ export class Twitter extends EmbedlyPlatform {
         }))
       );
     }
+
+    if (tweet_data.article) {
+      embed.setDescription(tweet_data.article.preview_text);
+      embed.setMedia([
+        {
+          media: {
+            url: tweet_data.article.cover_media.media_info
+              .original_img_url
+          }
+        }
+      ]);
+    }
+
     if (tweet_data.replying_to_status) {
       const reply_tweet = await this.fetchPost(
         tweet_data.replying_to_status
