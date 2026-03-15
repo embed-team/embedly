@@ -205,7 +205,7 @@ const app = (env: Env, ctx: ExecutionContext) =>
               post_id = await tracer.startActiveSpan(
                 "parse_post_id",
                 async (s) => {
-                  const id = await handler.parsePostId(url);
+                  const id = await handler.parsePostId(url, env);
                   s.setAttribute("embedly.post_id", id);
                   s.end();
                   return id;

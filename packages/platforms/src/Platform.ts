@@ -45,7 +45,10 @@ export abstract class EmbedlyPlatform {
     return this.regex.test(url);
   }
 
-  abstract parsePostId(url: string): Promise<string>;
+  abstract parsePostId(
+    url: string,
+    env?: Partial<CloudflareEnv>
+  ): Promise<string>;
 
   public async getPostFromCache(
     post_id: string,
