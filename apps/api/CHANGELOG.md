@@ -1,5 +1,16 @@
 # @embedly/api
 
+## 0.12.6
+
+### Patch Changes
+
+- [#56](https://github.com/embed-team/embedly/pull/56) [`115b93d`](https://github.com/embed-team/embedly/commit/115b93dbc361bb746374e25ae368eb3031d02e44) Thanks [@rosethornbush](https://github.com/rosethornbush)! - fixed twitter reply and quote tweets not having translation and fixed reddit share links not functioning properly
+
+- Updated dependencies [[`115b93d`](https://github.com/embed-team/embedly/commit/115b93dbc361bb746374e25ae368eb3031d02e44)]:
+  - @embedly/platforms@0.12.6
+  - @embedly/builder@0.12.6
+  - @embedly/logging@0.12.6
+
 ## 0.12.5
 
 ### Patch Changes
