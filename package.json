@@ -17,7 +17,7 @@
     "commitlint-config-gitmoji": "^2.3.1",
     "gitmoji-cli": "^9.7.0",
     "lefthook": "^2.0.12",
-    "turbo": "^2.8.12",
+    "turbo": "^2.8.17",
     "typescript": "^5.9.3"
   },
   "scripts": {
