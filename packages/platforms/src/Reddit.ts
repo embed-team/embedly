@@ -8,18 +8,35 @@ import {
 import { EmbedlyPlatformType } from "./types.ts";
 import { validateRegexMatch } from "./utils.ts";
 
+const REDDIT_REGEX_MAIN =
+  /https?:\/\/(?:www\.|old\.)?(?:reddit\.com\/r\/[A-Za-z0-9_]+\/(?:comments\/[A-Za-z0-9]+(?:\/[^/\s]+)?|s\/[A-Za-z0-9]+)|redd\.it\/[A-Za-z0-9]+)\/?/;
+const REDDIT_REGEX_FOLLOWUP =
+  /https?:\/\/(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
+
 export class Reddit extends EmbedlyPlatform {
   readonly color = [255, 86, 0] as const;
   readonly emoji = "<:reddit:1461320093240655922>";
-  readonly regex =
-    /https?:\/\/(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
+  readonly regex = REDDIT_REGEX_MAIN;
 
   constructor() {
     super(EmbedlyPlatformType.Reddit, "reddit");
   }
 
-  async parsePostId(url: string): Promise<string> {
-    const match = this.regex.exec(url);
+  async parsePostId(
+    url: string,
+    env?: Partial<CloudflareEnv>
+  ): Promise<string> {
+    console.log(url);
+    const req = await fetch(url, {
+      redirect: "follow",
+      method: "GET",
+      headers: {
+        "User-Agent": env?.EMBED_USER_AGENT ?? ""
+      },
+      ...CF_CACHE_OPTIONS
+    });
+    console.log(req);
+    const match = REDDIT_REGEX_FOLLOWUP.exec(req.url);
     validateRegexMatch(
       match,
       "Invalid Reddit URL: could not extract post ID or subreddit"
