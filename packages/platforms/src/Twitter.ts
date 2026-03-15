@@ -156,6 +156,9 @@ export class Twitter extends EmbedlyPlatform {
           this.enrichTweetText(reply_tweet.raw_text)
         );
       }
+      if (reply_tweet.translation?.text) {
+        reply_embed.setDescription(reply_tweet.translation.text);
+      }
       if (reply_tweet.media) {
         reply_embed.setMedia(
           reply_tweet.media.all.map((media: any) => ({
@@ -187,6 +190,9 @@ export class Twitter extends EmbedlyPlatform {
         quote_embed.setDescription(
           this.enrichTweetText(quote_tweet.raw_text)
         );
+      }
+      if (quote_tweet.translation?.text) {
+        quote_embed.setDescription(quote_tweet.translation.text);
       }
       if (quote_tweet.media) {
         quote_embed.setMedia(
