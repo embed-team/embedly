@@ -20,7 +20,7 @@ export default defineConfig({
     react(),
     // please see https://tanstack.com/start/latest/docs/framework/react/guide/hosting#nitro for guides on hosting
     nitro({
-      preset: "cloudflare-pages",
+      preset: "cloudflare-module",
       cloudflare: {
         deployConfig: true
       }
