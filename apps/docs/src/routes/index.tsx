@@ -43,7 +43,7 @@ function Home() {
             </div>
           </div>
           <div className="row-start-1 col-start-1 z-5 grid grid-cols-[1fr_auto] grid-rows-[1fr_auto] w-full h-full p-8">
-            <p className="row-start-2 col-start-2">
+            <div className="row-start-2 col-start-2">
               <HalftoneDots
                 image={iconURL}
                 colorBack="#0000000"
@@ -62,7 +62,7 @@ function Home() {
                 fit="contain"
                 className="size-32 md:size-48 lg:size-64"
               />
-            </p>
+            </div>
           </div>
           <GrainGradient
             width="125%"
