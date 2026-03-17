@@ -26,7 +26,7 @@
 		"@embedly/logging": "workspace:*",
 		"@embedly/platforms": "workspace:*",
 		"discord-verify": "^1.2.0",
-		"elysia": "^1.4.19",
+		"elysia": "^1.4.27",
 		"wrangler": "^4.59.1"
 	},
 	"devDependencies": {
