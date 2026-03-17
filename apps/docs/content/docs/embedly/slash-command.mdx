@@ -1,0 +1,24 @@
+---
+title: Slash command
+description: Manually embed a link using /embed.
+icon: ph:terminal-window
+---
+
+Use `/embed` to create a rich embed from any supported link. The command is available in servers, DMs, and group DMs.
+
+```
+/embed url:<link> [media_only] [source_only] [spoiler]
+```
+
+## Options
+
+| Option | Type | Required | Description |
+| --- | --- | --- | --- |
+| `url` | string | Yes | The link to embed. Must be from a [supported platform](/docs/platforms). |
+| `media_only` | boolean | No | Show only the media — no text, author, or stats. Returns nothing if the post has no media. |
+| `source_only` | boolean | No | Show only the source post. Hides any quoted or replied-to content. |
+| `spoiler` | boolean | No | Wrap the embed in a spoiler. Users must click to reveal it. |
+
+## Combining flags
+
+`source_only` is always evaluated first. If both `source_only` and `media_only` are set, the embed is stripped of quote and reply context first, and then reduced to media only.

@@ -1,4 +1,8 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  notFound,
+  redirect
+} from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import browserCollections from "collections/browser";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
@@ -19,7 +23,10 @@ import { source } from "@/lib/source";
 export const Route = createFileRoute("/docs/$")({
   component: Page,
   loader: async ({ params }) => {
-    const slugs = params._splat?.split("/") ?? [];
+    const slugs = params._splat?.split("/").filter(Boolean) ?? [];
+    if (slugs.length === 0) {
+      throw redirect({ to: "/docs/$", params: { _splat: "embedly" } });
+    }
     const data = await serverLoader({ data: slugs });
     await clientLoader.preload(data.path);
     return data;
@@ -61,7 +68,7 @@ const clientLoader = browserCollections.docs.createClientLoader({
           <MarkdownCopyButton markdownUrl={markdownUrl} />
           <ViewOptionsPopover
             markdownUrl={markdownUrl}
-            githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/content/docs/${path}`}
+            githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/apps/docs/content/docs/${path}`}
           />
         </div>
         <DocsBody>

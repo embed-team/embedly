@@ -1,0 +1,45 @@
+---
+title: Messages
+description: Embedly automatically embeds supported links as they're posted.
+icon: ph:lightning
+---
+
+When a message is posted containing a supported link, Embedly responds automatically — no command needed.
+
+## Behavior
+
+<div className="fd-steps [&_h3]:fd-step">
+
+### Embedly detects supported links in the message
+
+Multiple links in a single message are all processed. Unsupported links and escaped links are skipped.
+
+### Embedly posts the embed
+
+The first link gets a reply. Each additional link is sent as a separate follow-up message in the same channel.
+
+### Discord's native embed is suppressed
+
+Once Embedly has posted, the original message's native embed preview is removed.
+
+</div>
+
+## Spoilers
+
+If a link is wrapped in Discord spoiler tags, the embed will be spoilered too.
+
+```
+||https://x.com/user/status/123||
+```
+
+## Escaping links
+
+Wrap a link in angle brackets to prevent Embedly from embedding it. Note that Discord will still suppress its own native embed for the link.
+
+```
+<https://x.com/user/status/123>
+```
+
+<Callout type="info">
+  Message events don't support flags like `media_only` or `source_only`. Use the [slash command](/docs/embedly/slash-command) if you need those.
+</Callout>
