@@ -1,0 +1,7 @@
+{
+  "title": "Embedly",
+  "icon": "ph:robot",
+  "defaultOpen": true,
+  "collapsible": false,
+  "pages": ["slash-command", "messages", "context-menu"]
+}

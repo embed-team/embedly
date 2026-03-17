@@ -1,0 +1,44 @@
+---
+title: Twitter / X
+icon: simple-icons:x
+description: Tweets, quote tweets, reply chains, and articles.
+---
+
+Both `twitter.com` and `x.com` URLs are supported and treated identically.
+
+## Supported URLs
+
+```
+https://x.com/user/status/123456789
+https://twitter.com/user/status/123456789
+```
+
+## Supported features
+
+### Text
+
+The full tweet body, with hashtags linked and media URLs stripped out.
+
+### Media
+
+Up to 10 items per tweet — images, videos, and GIFs. GIFs are converted to actual GIF format rather than MP4.
+
+### Stats
+
+Replies, reposts, likes, and bookmarks.
+
+### Quote tweets
+
+When a tweet quotes another, both are shown. The quoting tweet appears first with the quoted post below it.
+
+### Reply chains
+
+When a tweet is a reply, the post being replied to is shown below the reply.
+
+### Articles
+
+Twitter Articles are embedded with the article's cover image and preview text.
+
+<Callout type="info">
+  Use `source_only` on quote tweets or reply chains to show only the linked tweet without the surrounding context.
+</Callout>

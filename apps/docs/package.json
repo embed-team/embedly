@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@embedly/config": "workspace:*",
+    "@iconify-json/ph": "^1.2.2",
+    "@iconify-json/simple-icons": "^1.2.74",
     "@iconify/react": "^6.0.2",
     "@paper-design/shaders-react": "^0.0.71",
     "@radix-ui/react-collapsible": "^1.1.12",
