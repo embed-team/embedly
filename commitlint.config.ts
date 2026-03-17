@@ -8,6 +8,7 @@ export default {
         // Apps
         "api",
         "bot",
+        "docs",
 
         // Packages
         "builder",
@@ -21,7 +22,6 @@ export default {
         "workspace",
         "deps",
         "ci",
-        "docs",
         "release"
       ]
     ]
