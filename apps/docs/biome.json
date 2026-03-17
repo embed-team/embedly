@@ -1,0 +1,25 @@
+{
+  "root": false,
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["@embedly/config/biome.json"],
+  "files": {
+    "includes": [
+      "**",
+      "!src/components/layout",
+      "!src/routeTree.gen.ts"
+    ]
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noArrayIndexKey": "off"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "off"
+      },
+      "correctness": {
+        "useHookAtTopLevel": "off"
+      }
+    }
+  }
+}
