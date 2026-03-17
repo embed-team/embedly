@@ -6,6 +6,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import iconURL from "@/assets/share-globe.png?url";
 import { HomeLayout } from "@/components/layout/home";
 import { baseOptions } from "@/lib/layout.shared";
+import { BOT_VERSION } from "@/lib/version";
 
 export const Route = createFileRoute("/")({
   component: Home
@@ -112,7 +113,28 @@ function Home() {
             </div>
           </div>
         </div>
-        <hr className="w-full" />
+        <footer className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6 text-xs text-fd-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span className="border rounded-full px-2.5 py-1 font-mono">
+              v{BOT_VERSION}
+            </span>
+            <span className="text-fd-muted-foreground/40">·</span>
+            <a
+              href="/privacy"
+              className="hover:text-fd-foreground transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <span className="text-fd-muted-foreground/40">·</span>
+            <a
+              href="/terms"
+              className="hover:text-fd-foreground transition-colors"
+            >
+              Terms of Service
+            </a>
+          </div>
+          <p>💖 made with love by embed.team</p>
+        </footer>
       </div>
     </HomeLayout>
   );
