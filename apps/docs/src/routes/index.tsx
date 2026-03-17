@@ -17,16 +17,16 @@ function Home() {
       <div className="flex flex-col flex-1 gap-8 container mx-auto px-6 py-8">
         <div className="border rounded-2xl w-full overflow-clip grid grid-cols-1 grid-rows-1">
           <div className="row-start-1 col-start-1 z-10 flex flex-col px-12 pt-32 pb-48 gap-8 text-fd-accent dark:text-fd-foreground">
-            <p className="text-xs leading-none font-medium border border-indigo-400/75 px-3 py-2 w-fit rounded-full">
+            <p className="text-xs leading-4 font-medium border border-indigo-400/75 px-3 py-2 w-fit rounded-full">
               The missing link between social media and Discord.
             </p>
             <p className="text-5xl font-medium text-balance max-w-2xl mb-4">
               Share links that actually work, the way they should be.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <a
                 href="/invite"
-                className="rounded-full px-6 py-2 bg-indigo-500 border-2 border-indigo-400/25"
+                className="rounded-full px-6 py-2 bg-indigo-500 border-2 border-indigo-400/25 text-center"
               >
                 Invite to Discord
               </a>
@@ -35,7 +35,7 @@ function Home() {
                 params={{
                   _splat: ""
                 }}
-                className="rounded-full px-6 py-2 bg-fd-background text-fd-foreground border-2"
+                className="rounded-full px-6 py-2 bg-fd-background text-fd-foreground border-2 text-center"
               >
                 View Docs
               </Link>
@@ -44,8 +44,6 @@ function Home() {
           <div className="row-start-1 col-start-1 z-5 grid grid-cols-[1fr_auto] grid-rows-[1fr_auto] w-full h-full p-8">
             <p className="row-start-2 col-start-2">
               <HalftoneDots
-                height={256}
-                width={256}
                 image={iconURL}
                 colorBack="#0000000"
                 colorFront="#ffffff"
@@ -61,7 +59,7 @@ function Home() {
                 grainSize={0}
                 scale={1.0}
                 fit="contain"
-                className="w-full h-full"
+                className="size-32 md:size-48 lg:size-64"
               />
             </p>
           </div>
@@ -83,7 +81,7 @@ function Home() {
           <p className="text-3xl leading-none font-semibold tracking-tight">
             See Embedly in action
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex flex-col gap-3 bg-fd-accent/50 border border-fd-muted p-4 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
               <p className="text-sm leading-none font-medium italic">
                 Right-click to create an embed
