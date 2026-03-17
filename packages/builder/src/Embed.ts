@@ -136,6 +136,14 @@ export class Embed implements EmbedData {
     const hidden = flags?.[EmbedFlagNames.Spoiler];
     const link_style = flags?.[EmbedFlagNames.LinkStyle] ?? "control";
 
+    if (source_only) {
+      embed = {
+        ...embed,
+        quote: undefined,
+        replying_to: undefined
+      } as Embed;
+    }
+
     if (media_only) {
       return Embed.buildMediaOnlyEmbed(embed, hidden);
     }
@@ -160,8 +168,7 @@ export class Embed implements EmbedData {
   }
 
   private static buildMediaOnlyEmbed(embed: Embed, hidden?: boolean) {
-    const media =
-      embed.quote?.media || embed.media || embed.replying_to?.media;
+    const media = embed.media;
 
     if (!media || media.length === 0) {
       return null;
@@ -201,14 +208,14 @@ export class Embed implements EmbedData {
       author_description = embed.replying_to.description;
     }
 
-    const text_section = Embed.createAuthorSection(
-      author_name,
-      author_username,
-      author_profile_url,
-      author_avatar_url,
-      author_description,
+    const text_section = Embed.createAuthorSection({
+      name: author_name,
+      username: author_username,
+      profile_url: author_profile_url,
+      avatar_url: author_avatar_url,
+      description: author_description,
       prefix_emoji
-    );
+    });
 
     container.addSectionComponents(text_section);
   }
@@ -257,14 +264,14 @@ export class Embed implements EmbedData {
     container: ContainerBuilder,
     embed: Embed
   ) {
-    const reply_section = Embed.createAuthorSection(
-      embed.name,
-      embed.username,
-      embed.profile_url,
-      embed.avatar_url,
-      embed.description,
-      statEmojis.reply
-    );
+    const reply_section = Embed.createAuthorSection({
+      name: embed.name,
+      username: embed.username,
+      profile_url: embed.profile_url,
+      avatar_url: embed.avatar_url,
+      description: embed.description,
+      prefix_emoji: statEmojis.reply
+    });
 
     container.addSectionComponents(reply_section);
 
@@ -279,13 +286,13 @@ export class Embed implements EmbedData {
     container: ContainerBuilder,
     quote: BaseEmbedDataWithoutPlatform
   ) {
-    const quote_section = Embed.createAuthorSection(
-      quote.name,
-      quote.username,
-      quote.profile_url,
-      quote.avatar_url,
-      quote.description
-    );
+    const quote_section = Embed.createAuthorSection({
+      name: quote.name,
+      username: quote.username,
+      profile_url: quote.profile_url,
+      avatar_url: quote.avatar_url,
+      description: quote.description
+    });
 
     container.addSectionComponents(quote_section);
 
@@ -296,20 +303,27 @@ export class Embed implements EmbedData {
     }
   }
 
-  private static createAuthorSection(
-    name: string,
-    username: string | undefined,
-    profile_url: string | undefined,
-    avatar_url: string,
-    description: string | undefined,
-    prefix_emoji: string = ""
-  ): SectionBuilder {
-    const author_text = Embed.formatAuthorHeading(
+  private static createAuthorSection({
+    name,
+    username,
+    profile_url,
+    avatar_url,
+    description,
+    prefix_emoji = ""
+  }: {
+    name: string;
+    username?: string;
+    profile_url?: string;
+    avatar_url: string;
+    description?: string;
+    prefix_emoji?: string;
+  }): SectionBuilder {
+    const author_text = Embed.formatAuthorHeading({
       name,
       username,
       profile_url,
       prefix_emoji
-    );
+    });
 
     const section = new SectionBuilder()
       .addTextDisplayComponents((builder) =>
@@ -329,12 +343,17 @@ export class Embed implements EmbedData {
     return section;
   }
 
-  private static formatAuthorHeading(
-    name: string,
-    username: string | undefined,
-    profile_url: string | undefined,
-    prefix_emoji: string
-  ): string {
+  private static formatAuthorHeading({
+    name,
+    username,
+    profile_url,
+    prefix_emoji
+  }: {
+    name: string;
+    username?: string;
+    profile_url?: string;
+    prefix_emoji: string;
+  }): string {
     const username_part = username
       ? ` (${hyperlink(
           `@${escapeMarkdown(username, { italic: true, underline: true })}`,
