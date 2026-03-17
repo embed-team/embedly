@@ -12,7 +12,8 @@
     "postinstall": "fumadocs-mdx",
     "lint": "biome check",
     "format": "biome format --write",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "wrangler": "wrangler"
   },
   "dependencies": {
     "@embedly/config": "workspace:*",
