@@ -1,5 +1,11 @@
 # @embedly/builder
 
+## 0.12.7
+
+### Patch Changes
+
+- [#61](https://github.com/embed-team/embedly/pull/61) [`707272f`](https://github.com/embed-team/embedly/commit/707272fa428cd3d1250b7c85847b141e49029ddb) Thanks [@rosethornbush](https://github.com/rosethornbush)! - fix(builder): correct media_only source resolution and flag evaluation order
+
 ## 0.12.6
 
 ## 0.12.5
