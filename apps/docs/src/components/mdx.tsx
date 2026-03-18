@@ -1,6 +1,6 @@
-import { Icon } from "@iconify/react";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
+import { Icon } from "@/lib/icons";
 
 export function getMDXComponents(components?: MDXComponents) {
   return {

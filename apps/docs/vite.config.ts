@@ -5,6 +5,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import mdx from "fumadocs-mdx/vite";
 import { nitro } from "nitro/vite";
+import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 
 const bot_version = JSON.parse(
@@ -22,6 +23,7 @@ export default defineConfig({
     port: 3000
   },
   plugins: [
+    Icons({ compiler: "jsx", jsx: "react" }),
     mdx(await import("./source.config")),
     tailwindcss(),
     tanstackStart({

@@ -17,9 +17,6 @@
   },
   "dependencies": {
     "@embedly/config": "workspace:*",
-    "@iconify-json/ph": "^1.2.2",
-    "@iconify-json/simple-icons": "^1.2.74",
-    "@iconify/react": "^6.0.2",
     "@paper-design/shaders-react": "^0.0.71",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-navigation-menu": "^1.2.14",
@@ -43,6 +40,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.6",
+    "@iconify-json/ph": "^1.2.2",
+    "@iconify-json/simple-icons": "^1.2.74",
+    "@iconify-json/skill-icons": "^1.2.4",
+    "@iconify-json/tabler": "^1.2.31",
+    "@svgr/core": "^8.1.0",
+    "@svgr/plugin-jsx": "^8.1.0",
     "@tailwindcss/vite": "^4.2.1",
     "@types/mdx": "^2.0.13",
     "@types/node": "^25.5.0",
@@ -51,6 +54,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "nitro": "^3.0.260311-beta",
     "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "unplugin-icons": "^23.0.1"
   }
 }

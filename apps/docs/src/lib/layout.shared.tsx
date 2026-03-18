@@ -1,6 +1,6 @@
-import { Icon } from "@iconify/react";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { Logo } from "@/components/Logo";
+import DiscordIcon from "~icons/skill-icons/discordbots";
 
 // fill this with your actual GitHub info, for example:
 export const gitConfig = {
@@ -19,7 +19,7 @@ export function baseOptions(): BaseLayoutProps {
       {
         text: "Invite to Discord",
         type: "icon",
-        icon: <Icon icon="skill-icons:discordbots" />,
+        icon: <DiscordIcon />,
         url: "/invite",
         secondary: true
       }
