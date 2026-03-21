@@ -3,6 +3,7 @@ import { Instagram } from "./Instagram.ts";
 import { Reddit } from "./Reddit.ts";
 import { Threads } from "./Threads.ts";
 import { TikTok } from "./TikTok.ts";
+import { TruthSocial } from "./TruthSocial.ts";
 import { Twitter } from "./Twitter.ts";
 import { EmbedlyPlatformType } from "./types.ts";
 
@@ -12,7 +13,8 @@ export const Platforms = {
   [EmbedlyPlatformType.TikTok]: new TikTok(),
   [EmbedlyPlatformType.CBC]: new CBC(),
   [EmbedlyPlatformType.Threads]: new Threads(),
-  [EmbedlyPlatformType.Reddit]: new Reddit()
+  [EmbedlyPlatformType.Reddit]: new Reddit(),
+  [EmbedlyPlatformType.TruthSocial]: new TruthSocial()
 } as const;
 
 export const EmbedlyPlatformColors = Object.fromEntries(
@@ -49,6 +51,11 @@ export {
   type StatEmojis,
   statEmojis
 } from "./types.ts";
-export { hasLink, isEscaped, isSpoiler } from "./utils.ts";
+export {
+  hasLink,
+  isEscaped,
+  isSpoiler,
+  signProxyUrl
+} from "./utils.ts";
 
 export default Platforms;
