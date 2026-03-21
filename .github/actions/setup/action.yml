@@ -4,8 +4,6 @@ description: Checkout, install pnpm, Node.js, and dependencies
 runs:
   using: composite
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
     - name: Cache turbo build setup
       uses: actions/cache@v4
       with:

@@ -12,6 +12,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Lint and format check
         run: pnpm biome ci
@@ -22,6 +23,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Run tests
         run: pnpm test
