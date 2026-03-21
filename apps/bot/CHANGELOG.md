@@ -1,5 +1,11 @@
 # @embedly/bot
 
+## 0.14.0
+
+### Minor Changes
+
+- [#65](https://github.com/embed-team/embedly/pull/65) [`3bae341`](https://github.com/embed-team/embedly/commit/3bae341e71f1fd349e2b4948bffc73e47ba530b8) Thanks [@rosethornbush](https://github.com/rosethornbush)! - add direct fetch fallback when api fails
+
 ## 0.13.0
 
 ## 0.12.7
