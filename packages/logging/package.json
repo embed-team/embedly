@@ -14,8 +14,7 @@
   },
   "scripts": {
     "lint": "biome ci ./src/*",
-    "build": "pkgroll  --sourcemap=inline && tsc",
-    "test": "vitest run"
+    "build": "pkgroll  --sourcemap=inline && tsc"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10",

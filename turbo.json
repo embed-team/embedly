@@ -6,9 +6,7 @@
       "outputs": ["dist/**", ".output/**"]
     },
     "lint": {},
-    "test": {
-      "dependsOn": ["^build"]
-    },
+    "test": {},
     "dev": {
       "persistent": true,
       "cache": false
