@@ -59,7 +59,9 @@ export async function fetchPostData(
       try {
         const post_id = await handler.parsePostId(url);
         s.setAttribute("embedly.post_id", post_id);
-        const post_data = await handler.fetchPost(post_id);
+        const post_data = await handler.fetchPost(post_id, {
+          EMBED_USER_AGENT: process.env.EMBED_USER_AGENT ?? ""
+        });
         s.setStatus({ code: SpanStatusCode.OK });
         return post_data as Record<string, any>;
       } catch (fallback_error: any) {
