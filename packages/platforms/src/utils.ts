@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import type { URLPatternResult } from "node:url";
 import { GENERIC_LINK_REGEX } from "./constants.ts";
 
@@ -13,6 +14,13 @@ export function isSpoiler(url: string, content: string): boolean {
 
 export function isEscaped(url: string, content: string): boolean {
   return content.includes(`<${url}>`);
+}
+
+export function signProxyUrl(url: string): string {
+  const signature = createHmac("sha256", process.env.DISCORD_BOT_TOKEN!)
+    .update(url)
+    .digest("hex");
+  return `https://${process.env.EMBEDLY_API_DOMAIN!}/api/_image?url=${url}&sig=${signature}`;
 }
 
 export function validatePatternMatch(

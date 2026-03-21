@@ -1,11 +1,10 @@
-import { createHmac } from "node:crypto";
 import { Embed } from "@embedly/builder";
 import * as cheerio from "cheerio";
 import he from "he";
 import { CF_CACHE_OPTIONS } from "./constants.ts";
 import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
-import { validatePatternMatch } from "./utils.ts";
+import { signProxyUrl, validatePatternMatch } from "./utils.ts";
 
 export class CBC extends EmbedlyPlatform {
   readonly color = [215, 36, 42] as const;
@@ -81,7 +80,7 @@ export class CBC extends EmbedlyPlatform {
       color: [...this.color],
       emoji: this.emoji,
       name: he.decode(raw_data.name),
-      avatar_url: this.signProxyURL(raw_data.publisher.logo),
+      avatar_url: signProxyUrl(raw_data.publisher.logo),
       timestamp: Math.floor(
         new Date(raw_data.datePublished).getTime() / 1000
       ),
@@ -90,22 +89,12 @@ export class CBC extends EmbedlyPlatform {
     };
   }
 
-  signProxyURL(url: string) {
-    const signature = createHmac(
-      "sha256",
-      process.env.DISCORD_BOT_TOKEN!
-    )
-      .update(url)
-      .digest("hex");
-    return `https://${process.env.EMBEDLY_API_DOMAIN!}/api/_image?url=${url}&sig=${signature}`;
-  }
-
   createEmbed(post_data: any): Embed {
     const embed = new Embed(this.transformRawData(post_data));
     embed.setMedia([
       {
         media: {
-          url: this.signProxyURL(post_data.thumbnailUrl)
+          url: signProxyUrl(post_data.thumbnailUrl)
         }
       }
     ]);
