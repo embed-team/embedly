@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./tsconfig.json": "./tsconfig.json",
-    "./biome.json": "./biome.json"
+    "./biome.json": "./biome.json",
+    "./vitest.config": "./vitest.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10"
