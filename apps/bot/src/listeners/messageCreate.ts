@@ -1,5 +1,3 @@
-import { treaty } from "@elysiajs/eden";
-import type { App } from "@embedly/api";
 import {
   Embed,
   EmbedFlagNames,
@@ -28,8 +26,7 @@ import {
 } from "@opentelemetry/api";
 import { Events, Listener } from "@sapphire/framework";
 import { type Message, MessageFlags } from "discord.js";
-
-const app = treaty<App>(process.env.EMBEDLY_API_DOMAIN!);
+import { fetchPostData } from "../fetch.ts";
 
 export class MessageListener extends Listener<
   typeof Events.MessageCreate
@@ -84,63 +81,29 @@ export class MessageListener extends Listener<
               );
             if (!platform) continue;
 
-            const { data, error } =
-              await this.container.tracer.startActiveSpan(
-                "fetch_from_api",
-                async (s) => {
-                  s.setAttribute("embedly.platform", platform.type);
-                  s.setAttribute("embedly.url", url);
+            const otel_headers: Record<string, string> = {};
+            propagation.inject(context.active(), otel_headers);
 
-                  const otelHeaders: Record<string, string> = {};
-                  propagation.inject(context.active(), otelHeaders);
-
-                  const res = await app.api.scrape.post(
-                    {
-                      platform: platform.type,
-                      url
-                    },
-                    {
-                      headers: {
-                        authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
-                        ...otelHeaders
-                      }
-                    }
-                  );
-                  if (res.error) {
-                    s.setStatus({
-                      code: SpanStatusCode.ERROR,
-                      message:
-                        "detail" in res.error.value
-                          ? res.error.value.detail
-                          : res.error.value.type
-                    });
-                    s.recordException(
-                      "detail" in res.error.value
-                        ? res.error.value.detail
-                        : res.error.value.type
-                    );
-                  }
-                  s.end();
-                  return res;
-                }
+            let data: Record<string, any>;
+            try {
+              data = await fetchPostData(
+                platform.type,
+                url,
+                otel_headers
               );
-
-            if (error) {
-              if ("detail" in error.value) {
-                const error_context: EmbedlyInteractionContext &
-                  EmbedlyPostContext = {
-                  ...("context" in error.value
-                    ? error.value.context
-                    : {}),
-                  message_id: message.id,
-                  user_id: message.author.id,
-                  source: "message",
-                  platform: platform.type
-                };
-                this.container.logger.error(
-                  formatLog(error.value, error_context)
-                );
-              }
+            } catch (fetch_error: any) {
+              const error_context: EmbedlyInteractionContext &
+                EmbedlyPostContext = {
+                message_id: message.id,
+                user_id: message.author.id,
+                source: "message",
+                platform: platform.type,
+                error_message: fetch_error.message,
+                error_stack: fetch_error.stack
+              };
+              this.container.logger.error(
+                formatLog(EMBEDLY_UNHANDLED_ERROR, error_context)
+              );
               return;
             }
 

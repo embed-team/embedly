@@ -1,5 +1,3 @@
-import { treaty } from "@elysiajs/eden";
-import type { App } from "@embedly/api";
 import {
   Embed,
   EmbedFlagNames,
@@ -35,8 +33,7 @@ import {
   ApplicationIntegrationType,
   InteractionContextType
 } from "discord.js";
-
-const app = treaty<App>(process.env.EMBEDLY_API_DOMAIN!);
+import { fetchPostData } from "../fetch.ts";
 
 export class EmbedCommand extends Command {
   public constructor(
@@ -151,57 +148,24 @@ export class EmbedCommand extends Command {
 
     await interaction.deferReply();
 
-    const { data, error } = await this.container.tracer.startActiveSpan(
-      "fetch_from_api",
-      async (s) => {
-        s.setAttribute("embedly.platform", platform.type);
-        s.setAttribute("embedly.url", url);
+    const otel_headers: Record<string, string> = {};
+    propagation.inject(context.active(), otel_headers);
 
-        const otelHeaders: Record<string, string> = {};
-        propagation.inject(context.active(), otelHeaders);
-
-        const res = await app.api.scrape.post(
-          {
-            platform: platform.type,
-            url
-          },
-          {
-            headers: {
-              authorization: `Bearer ${process.env.DISCORD_BOT_TOKEN}`,
-              ...otelHeaders
-            }
-          }
-        );
-        if (res.error) {
-          s.setStatus({
-            code: SpanStatusCode.ERROR,
-            message:
-              "detail" in res.error.value
-                ? res.error.value.detail
-                : res.error.value.type
-          });
-          s.recordException(
-            "detail" in res.error.value
-              ? res.error.value.detail
-              : res.error.value.type
-          );
-        }
-        s.end();
-        return res;
-      }
-    );
-
-    if (error?.status === 400 || error?.status === 500) {
+    let data: Record<string, any>;
+    try {
+      data = await fetchPostData(platform.type, url, otel_headers);
+    } catch (fetch_error: any) {
       const error_context = {
         ...log_ctx,
         platform: platform.type,
-        ...("context" in error.value ? error.value.context : {})
+        error_message: fetch_error.message,
+        error_stack: fetch_error.stack
       };
       this.container.logger.error(
-        formatLog(error.value, error_context)
+        formatLog(EMBEDLY_UNHANDLED_ERROR, error_context)
       );
       return await interaction.editReply({
-        content: formatDiscord(error.value, error_context)
+        content: formatDiscord(EMBEDLY_UNHANDLED_ERROR, error_context)
       });
     }
 
