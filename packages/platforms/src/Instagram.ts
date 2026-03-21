@@ -6,13 +6,16 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
-import { validateRegexMatch } from "./utils.ts";
+import { validatePatternMatch } from "./utils.ts";
 
 export class Instagram extends EmbedlyPlatform {
   readonly color = [225, 48, 108] as const;
   readonly emoji = "<:instagram:1386639712013254748>";
-  readonly regex =
-    /instagram.com\/(?:[A-Za-z0-9_.]+\/)?(p|share|reels|reel|stories)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
+  readonly pattern = new URLPattern({
+    hostname: "{*.}?instagram.com",
+    pathname:
+      "/{:user/}?(p|share|reels|reel|stories)/:ig_shortcode{/*}?"
+  });
 
   constructor() {
     super(EmbedlyPlatformType.Instagram, "insta");
@@ -28,12 +31,12 @@ export class Instagram extends EmbedlyPlatform {
       });
       url = req.url;
     }
-    const match = this.regex.exec(url);
-    validateRegexMatch(
+    const match = this.pattern.exec(url);
+    validatePatternMatch(
       match,
       "Invalid Instagram URL: could not extract shortcode"
     );
-    const { ig_shortcode } = match.groups;
+    const { ig_shortcode } = match.pathname.groups;
     return ig_shortcode;
   }
 

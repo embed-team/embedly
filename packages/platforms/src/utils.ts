@@ -1,3 +1,4 @@
+import type { URLPatternResult } from "node:url";
 import { GENERIC_LINK_REGEX } from "./constants.ts";
 
 export function hasLink(content: string): boolean {
@@ -14,13 +15,13 @@ export function isEscaped(url: string, content: string): boolean {
   return content.includes(`<${url}>`);
 }
 
-export function validateRegexMatch(
-  match: RegExpExecArray | null,
+export function validatePatternMatch(
+  match: URLPatternResult | null,
   errorMessage?: string
-): asserts match is RegExpExecArray & {
-  groups: Record<string, string>;
-} {
-  if (match === null || match.groups === undefined) {
-    throw new Error(errorMessage ?? "Invalid URL: regex match failed");
+): asserts match is URLPatternResult {
+  if (match === null) {
+    throw new Error(
+      errorMessage ?? "Invalid URL: pattern match failed"
+    );
   }
 }

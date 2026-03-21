@@ -7,17 +7,21 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
-import { validateRegexMatch } from "./utils.ts";
+import { validatePatternMatch } from "./utils.ts";
 
-const TIKTOK_REGEX_MAIN = /(https?:\/\/)?(?:[\w-]+\.)*tiktok\.com/;
+const TIKTOK_PATTERN_MAIN = new URLPattern({
+  hostname: "{*.}?tiktok.com"
+});
 
-const TIKTOK_REGEX_DETAIL =
-  /https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@[\w.-]+)\/video\/(?<tiktok_id>\d+)/;
+const TIKTOK_PATTERN_DETAIL = new URLPattern({
+  hostname: "{(m|www|vm).}?tiktok.com",
+  pathname: "/:tiktok_user/video/:tiktok_id{/}?"
+});
 
 export class TikTok extends EmbedlyPlatform {
   readonly color = [57, 118, 132] as const;
   readonly emoji = "<:tiktok:1386641825963708446>";
-  readonly regex = TIKTOK_REGEX_MAIN;
+  readonly pattern = TIKTOK_PATTERN_MAIN;
 
   constructor() {
     super(EmbedlyPlatformType.TikTok, "tiktok");
@@ -25,12 +29,12 @@ export class TikTok extends EmbedlyPlatform {
 
   async parsePostId(url: string): Promise<string> {
     const req = await fetch(url, { redirect: "follow" });
-    const match = TIKTOK_REGEX_DETAIL.exec(req.url);
-    validateRegexMatch(
+    const match = TIKTOK_PATTERN_DETAIL.exec(req.url);
+    validatePatternMatch(
       match,
       "Invalid TikTok URL: could not extract user/id"
     );
-    const { tiktok_user, tiktok_id } = match.groups;
+    const { tiktok_user, tiktok_id } = match.pathname.groups;
     return `${tiktok_user}/${tiktok_id}`;
   }
 

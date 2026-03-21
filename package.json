@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
   "devDependencies": {
@@ -18,7 +18,8 @@
     "gitmoji-cli": "^9.7.0",
     "lefthook": "^2.0.12",
     "turbo": "^2.8.17",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   },
   "pnpm": {
     "overrides": {
@@ -31,9 +32,13 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "commit": "gitmoji -c",
+    "test": "turbo run test",
     "validate": "turbo run lint build",
     "prepare": "lefthook install",
     "deploy:api": "pnpm --filter=@embedly/api deploy",
     "clean": "turbo clean && rm -rf node_modules"
+  },
+  "volta": {
+    "node": "25.8.1"
   }
 }
