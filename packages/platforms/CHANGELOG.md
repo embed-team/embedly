@@ -1,5 +1,17 @@
 # @embedly/platforms
 
+## 0.13.0
+
+### Minor Changes
+
+- [#63](https://github.com/embed-team/embedly/pull/63) [`9483e46`](https://github.com/embed-team/embedly/commit/9483e46852540e21667452b1055a3a2458e0eab2) Thanks [@rosethornbush](https://github.com/rosethornbush)! - add mastodon base class with truth social and extract signProxyUrl util
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @embedly/builder@0.13.0
+  - @embedly/logging@0.13.0
+
 ## 0.12.7
 
 ### Patch Changes

@@ -1,5 +1,7 @@
 # @embedly/builder
 
+## 0.13.0
+
 ## 0.12.7
 
 ### Patch Changes
