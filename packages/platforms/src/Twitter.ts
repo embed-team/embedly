@@ -10,7 +10,7 @@ export class Twitter extends EmbedlyPlatform {
   readonly color = [29, 161, 242] as const;
   readonly emoji = "<:twitter:1386639732179599481>";
   readonly regex =
-    /(?:twitter|x).com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
+    /(?:twitter|x)\.com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
 
   constructor() {
     super(EmbedlyPlatformType.Twitter, "tweet");
