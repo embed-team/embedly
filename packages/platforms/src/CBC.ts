@@ -9,7 +9,7 @@ import { signProxyUrl, validateRegexMatch } from "./utils.ts";
 export class CBC extends EmbedlyPlatform {
   readonly color = [215, 36, 42] as const;
   readonly emoji = "<:cbc:1409997044495683674>";
-  readonly regex = /cbc.ca\/.*(?<cbc_id>\d\.\d+)/;
+  readonly regex = /cbc\.ca\/.*(?<cbc_id>\d\.\d+)/;
 
   constructor() {
     super(EmbedlyPlatformType.CBC, "cbc.ca");
