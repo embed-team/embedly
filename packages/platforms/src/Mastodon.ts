@@ -22,7 +22,7 @@ export abstract class EmbedlyMastodon extends EmbedlyPlatform {
     super(name, cache_prefix);
     const escapedHostname = hostname.replaceAll(".", "\\.");
     this.regex = new RegExp(
-      `(?:https?:\\/\\/)?(?:[\\w-]+\\.)*${escapedHostname}\\/@[^/]+\\/posts\\/(?<status_id>[^/?#]+)`
+      `^(?:https?:\\/\\/)?(?:[\\w-]+\\.)*${escapedHostname}\\/@[^/]+\\/posts\\/(?<status_id>[^/?#]+)`
     );
   }
 
