@@ -7,14 +7,12 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import type { EmbedlyPlatformType } from "./types.ts";
-import { signProxyUrl, validatePatternMatch } from "./utils.ts";
+import { signProxyUrl, validateRegexMatch } from "./utils.ts";
 
 export abstract class EmbedlyMastodon extends EmbedlyPlatform {
   abstract readonly base_url: string;
 
-  readonly pattern = new URLPattern({
-    hostname: "{*.}?__PLACEHOLDER__"
-  });
+  readonly regex: RegExp;
 
   constructor(
     name: EmbedlyPlatformType,
@@ -22,19 +20,19 @@ export abstract class EmbedlyMastodon extends EmbedlyPlatform {
     hostname: string
   ) {
     super(name, cache_prefix);
-    this.pattern = new URLPattern({
-      hostname: `{*.}?${hostname}`,
-      pathname: "/@:username/posts/:status_id{/}?"
-    });
+    const escapedHostname = hostname.replaceAll(".", "\\.");
+    this.regex = new RegExp(
+      `(?:https?:\\/\\/)?(?:[\\w-]+\\.)*${escapedHostname}\\/@[^/]+\\/posts\\/(?<status_id>[^/?#]+)`
+    );
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.pattern.exec(url);
-    validatePatternMatch(
+    const match = this.regex.exec(url);
+    validateRegexMatch(
       match,
       `Invalid ${this.name} URL: could not extract status ID`
     );
-    return match.pathname.groups.status_id;
+    return match.groups.status_id;
   }
 
   async fetchPost(

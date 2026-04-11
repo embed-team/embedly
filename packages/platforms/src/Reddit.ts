@@ -6,46 +6,17 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
-import { validatePatternMatch } from "./utils.ts";
+import { validateRegexMatch } from "./utils.ts";
 
-const REDDIT_PATTERN_COMMENTS = new URLPattern({
-  hostname: "{(www|old).}?reddit.com",
-  pathname: "/r/:subreddit/comments/:post_id{/*}?"
-});
-
-const REDDIT_PATTERN_SHARE = new URLPattern({
-  hostname: "{(www|old).}?reddit.com",
-  pathname: "/r/:subreddit/s/:share_id{/}?"
-});
-
-const REDDIT_PATTERN_SHORTLINK = new URLPattern({
-  hostname: "redd.it",
-  pathname: "/:short_id{/}?"
-});
-
-const REDDIT_PATTERN_FOLLOWUP = new URLPattern({
-  hostname: "{(www|old|m).}?reddit.com",
-  pathname: "/r/:subreddit/comments/:post_id{/*}?"
-});
+const REDDIT_REGEX_MAIN =
+  /https?:\/\/(?:www\.|old\.)?(?:reddit\.com\/r\/[A-Za-z0-9_]+\/(?:comments\/[A-Za-z0-9]+(?:\/[^/\s]+)?|s\/[A-Za-z0-9]+)|redd\.it\/[A-Za-z0-9]+)\/?/;
+const REDDIT_REGEX_FOLLOWUP =
+  /https?:\/\/(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
 
 export class Reddit extends EmbedlyPlatform {
   readonly color = [255, 86, 0] as const;
   readonly emoji = "<:reddit:1461320093240655922>";
-  readonly pattern = REDDIT_PATTERN_COMMENTS;
-
-  public matchesUrl(url: string): boolean {
-    return [
-      REDDIT_PATTERN_COMMENTS,
-      REDDIT_PATTERN_SHARE,
-      REDDIT_PATTERN_SHORTLINK
-    ].some((p) => {
-      try {
-        return p.test(url);
-      } catch {
-        return false;
-      }
-    });
-  }
+  readonly regex = REDDIT_REGEX_MAIN;
 
   constructor() {
     super(EmbedlyPlatformType.Reddit, "reddit");
@@ -65,12 +36,12 @@ export class Reddit extends EmbedlyPlatform {
       ...CF_CACHE_OPTIONS
     });
     console.log(req);
-    const match = REDDIT_PATTERN_FOLLOWUP.exec(req.url);
-    validatePatternMatch(
+    const match = REDDIT_REGEX_FOLLOWUP.exec(req.url);
+    validateRegexMatch(
       match,
       "Invalid Reddit URL: could not extract post ID or subreddit"
     );
-    const { post_id, subreddit } = match.pathname.groups;
+    const { post_id, subreddit } = match.groups;
     return `${subreddit}/${post_id}`;
   }
 

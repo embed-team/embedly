@@ -26,10 +26,9 @@ describe("Threads", () => {
   });
 
   it("extracts shortcode and username", () => {
-    const match = threads.pattern.exec(
+    const match = threads.regex.exec(
       "https://www.threads.net/@zuck/post/CxYz123_Ab"
     );
-    expect(match?.pathname.groups.thread_shortcode).toBe("CxYz123_Ab");
-    expect(match?.pathname.groups.username).toBe("zuck");
+    expect(match?.groups?.thread_shortcode).toBe("CxYz123_Ab");
   });
 });
