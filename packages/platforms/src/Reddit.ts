@@ -9,9 +9,9 @@ import { EmbedlyPlatformType } from "./types.ts";
 import { validateRegexMatch } from "./utils.ts";
 
 const REDDIT_REGEX_MAIN =
-  /https?:\/\/(?:www\.|old\.)?(?:reddit\.com\/r\/[A-Za-z0-9_]+\/(?:comments\/[A-Za-z0-9]+(?:\/[^/\s]+)?|s\/[A-Za-z0-9]+)|redd\.it\/[A-Za-z0-9]+)\/?/;
+  /^https?:\/\/(?:www\.|old\.)?(?:reddit\.com\/r\/[A-Za-z0-9_]+\/(?:comments\/[A-Za-z0-9]+(?:\/[^/\s]+)?|s\/[A-Za-z0-9]+)|redd\.it\/[A-Za-z0-9]+)\/?/;
 const REDDIT_REGEX_FOLLOWUP =
-  /https?:\/\/(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
+  /^https?:\/\/(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
 
 export class Reddit extends EmbedlyPlatform {
   readonly color = [255, 86, 0] as const;
