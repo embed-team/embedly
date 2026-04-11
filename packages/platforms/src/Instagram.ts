@@ -12,7 +12,7 @@ export class Instagram extends EmbedlyPlatform {
   readonly color = [225, 48, 108] as const;
   readonly emoji = "<:instagram:1386639712013254748>";
   readonly regex =
-    /instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(p|share|reels|reel|stories)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
+    /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(p|share|reels|reel|stories)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
 
   constructor() {
     super(EmbedlyPlatformType.Instagram, "insta");

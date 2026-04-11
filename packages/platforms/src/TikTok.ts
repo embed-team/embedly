@@ -9,10 +9,11 @@ import {
 import { EmbedlyPlatformType } from "./types.ts";
 import { validateRegexMatch } from "./utils.ts";
 
-const TIKTOK_REGEX_MAIN = /(https?:\/\/)?(?:[\w-]+\.)*tiktok\.com/;
+const TIKTOK_REGEX_MAIN =
+  /^(?:https?:\/\/)?(?:[\w-]+\.)*tiktok\.com(?:\/|$)/;
 
 const TIKTOK_REGEX_DETAIL =
-  /https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@[\w.-]+)\/video\/(?<tiktok_id>\d+)/;
+  /^https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@[\w.-]+)\/video\/(?<tiktok_id>\d+)/;
 
 export class TikTok extends EmbedlyPlatform {
   readonly color = [57, 118, 132] as const;
