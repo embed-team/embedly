@@ -24,9 +24,9 @@ describe("CBC", () => {
   });
 
   it("extracts cbc id", () => {
-    const match = cbc.pattern.exec(
+    const match = cbc.regex.exec(
       "https://www.cbc.ca/news/canada/1.7654321"
     );
-    expect(match?.pathname.groups.cbc_id).toBe("1.7654321");
+    expect(match?.groups?.cbc_id).toBe("1.7654321");
   });
 });

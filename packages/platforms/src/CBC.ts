@@ -4,27 +4,21 @@ import he from "he";
 import { CF_CACHE_OPTIONS } from "./constants.ts";
 import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
-import { signProxyUrl, validatePatternMatch } from "./utils.ts";
+import { signProxyUrl, validateRegexMatch } from "./utils.ts";
 
 export class CBC extends EmbedlyPlatform {
   readonly color = [215, 36, 42] as const;
   readonly emoji = "<:cbc:1409997044495683674>";
-  readonly pattern = new URLPattern({
-    hostname: "{*.}?cbc.ca",
-    pathname: "*/:cbc_id{/}?"
-  });
+  readonly regex = /cbc.ca\/.*(?<cbc_id>\d\.\d+)/;
 
   constructor() {
     super(EmbedlyPlatformType.CBC, "cbc.ca");
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.pattern.exec(url);
-    validatePatternMatch(
-      match,
-      "Invalid CBC URL: could not extract ID"
-    );
-    const { cbc_id } = match.pathname.groups;
+    const match = this.regex.exec(url);
+    validateRegexMatch(match, "Invalid CBC URL: could not extract ID");
+    const { cbc_id } = match.groups;
     return cbc_id;
   }
 

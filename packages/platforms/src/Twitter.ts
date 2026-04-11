@@ -4,27 +4,25 @@ import packageJSON from "../package.json" with { type: "json" };
 import { CF_CACHE_OPTIONS } from "./constants.ts";
 import { type BaseEmbedData, EmbedlyPlatform } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
-import { validatePatternMatch } from "./utils.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 export class Twitter extends EmbedlyPlatform {
   readonly color = [29, 161, 242] as const;
   readonly emoji = "<:twitter:1386639732179599481>";
-  readonly pattern = new URLPattern({
-    hostname: "{*.}?(twitter|x).com",
-    pathname: "/*/status{es}?/:tweet_id{/}?"
-  });
+  readonly regex =
+    /(?:twitter|x).com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
 
   constructor() {
     super(EmbedlyPlatformType.Twitter, "tweet");
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.pattern.exec(url);
-    validatePatternMatch(
+    const match = this.regex.exec(url);
+    validateRegexMatch(
       match,
       "Invalid Twitter URL: could not extract tweet ID"
     );
-    const { tweet_id } = match.pathname.groups;
+    const { tweet_id } = match.groups;
     return tweet_id;
   }
 

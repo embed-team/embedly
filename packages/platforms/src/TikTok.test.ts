@@ -26,16 +26,12 @@ describe("TikTok", () => {
   });
 
   it("extracts user and video id from detail pattern", () => {
-    const detail_pattern = new URLPattern({
-      hostname: "{(m|www|vm).}?tiktok.com",
-      pathname: "/:tiktok_user/video/:tiktok_id{/}?"
-    });
-    const match = detail_pattern.exec(
+    const detail_regex =
+      /https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@[\w.-]+)\/video\/(?<tiktok_id>\d+)/;
+    const match = detail_regex.exec(
       "https://www.tiktok.com/@cooluser/video/7234567890123456789"
     );
-    expect(match?.pathname.groups.tiktok_user).toBe("@cooluser");
-    expect(match?.pathname.groups.tiktok_id).toBe(
-      "7234567890123456789"
-    );
+    expect(match?.groups?.tiktok_user).toBe("@cooluser");
+    expect(match?.groups?.tiktok_id).toBe("7234567890123456789");
   });
 });

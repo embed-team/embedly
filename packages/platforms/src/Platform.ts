@@ -27,7 +27,7 @@ export interface CloudflareEnv {
 export abstract class EmbedlyPlatform {
   abstract readonly color: readonly [number, number, number];
   abstract readonly emoji: string;
-  abstract readonly pattern: URLPattern;
+  abstract readonly regex: RegExp;
 
   public log_messages: EmbedlyPlatformLogMessages;
 
@@ -42,11 +42,7 @@ export abstract class EmbedlyPlatform {
   }
 
   public matchesUrl(url: string): boolean {
-    try {
-      return this.pattern.test(url);
-    } catch {
-      return false;
-    }
+    return this.regex.test(url);
   }
 
   abstract parsePostId(

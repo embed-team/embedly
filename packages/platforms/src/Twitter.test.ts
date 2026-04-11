@@ -31,9 +31,9 @@ describe("Twitter", () => {
   });
 
   it("extracts tweet id", () => {
-    const match = twitter.pattern.exec(
+    const match = twitter.regex.exec(
       "https://x.com/elonmusk/status/1234567890"
     );
-    expect(match?.pathname.groups.tweet_id).toBe("1234567890");
+    expect(match?.groups?.tweet_id).toBe("1234567890");
   });
 });
