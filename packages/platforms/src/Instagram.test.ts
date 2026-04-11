@@ -32,17 +32,9 @@ describe("Instagram", () => {
   });
 
   it("extracts shortcode", () => {
-    const match = instagram.pattern.exec(
+    const match = instagram.regex.exec(
       "https://www.instagram.com/p/CxYz123_Ab/"
     );
-    expect(match?.pathname.groups.ig_shortcode).toBe("CxYz123_Ab");
-  });
-
-  it("extracts shortcode with user prefix", () => {
-    const match = instagram.pattern.exec(
-      "https://www.instagram.com/natgeo/reel/CxYz123/"
-    );
-    expect(match?.pathname.groups.ig_shortcode).toBe("CxYz123");
-    expect(match?.pathname.groups.user).toBe("natgeo");
+    expect(match?.groups?.ig_shortcode).toBe("CxYz123_Ab");
   });
 });

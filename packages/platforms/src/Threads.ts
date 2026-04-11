@@ -5,7 +5,7 @@ import {
   EmbedlyPlatform
 } from "./Platform.ts";
 import { EmbedlyPlatformType } from "./types.ts";
-import { validatePatternMatch } from "./utils.ts";
+import { validateRegexMatch } from "./utils.ts";
 
 const alphabet =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -13,22 +13,20 @@ const alphabet =
 export class Threads extends EmbedlyPlatform {
   readonly color = [0, 0, 0] as const;
   readonly emoji = "<:threads:1413343483929956446>";
-  readonly pattern = new URLPattern({
-    hostname: "{*.}?threads.net",
-    pathname: "/@:username/post/:thread_shortcode{/}?"
-  });
+  readonly regex =
+    /threads\.net\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
 
   constructor() {
     super(EmbedlyPlatformType.Threads, "threads");
   }
 
   async parsePostId(url: string): Promise<string> {
-    const match = this.pattern.exec(url);
-    validatePatternMatch(
+    const match = this.regex.exec(url);
+    validateRegexMatch(
       match,
       "Invalid Threads URL: could not extract shortcode"
     );
-    const { thread_shortcode } = match.pathname.groups;
+    const { thread_shortcode } = match.groups;
     const thread_id = thread_shortcode
       .split("")
       .reduce(
