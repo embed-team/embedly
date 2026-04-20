@@ -20,7 +20,7 @@ const getOrigin = createServerFn().handler(() => {
 export const Route = createRootRoute({
   loader: () => getOrigin(),
   head: ({ loaderData: origin }) => {
-    const og_image = `${origin ?? "https://bot.embeds.media"}/og.png`;
+    const og_image = `${origin ?? "https://bot.embeds.media"}/og.jpg`;
     return {
       meta: [
         { charSet: "utf-8" },

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://bot.embeds.media/og.png" alt="Embedly" />
+  <img src="https://bot.embeds.media/og.jpg" alt="Embedly" />
 </p>
 
 <h1 align="center">Embedly</h1>
