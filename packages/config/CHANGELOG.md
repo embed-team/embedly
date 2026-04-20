@@ -1,5 +1,11 @@
 # @embedly/config
 
+## 0.15.3
+
+### Patch Changes
+
+- [`aa10de5`](https://github.com/embed-team/embedly/commit/aa10de57423f32d3cbe587fac9b64a8bfd929268) Thanks [@rosethornbush](https://github.com/rosethornbush)! - fix(ci): change releases to a scoped pat so that tagging can run
+
 ## 0.15.2
 
 ## 0.15.1
