@@ -40,6 +40,6 @@ jobs:
       - name: Automatically Merge Version PR
         if: steps.changesets.outputs.pullRequestNumber
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
         run: gh pr merge --auto --squash --delete-branch "$PR_NUMBER"
