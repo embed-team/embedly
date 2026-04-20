@@ -1,5 +1,15 @@
 # @embedly/platforms
 
+## 0.15.2
+
+### Patch Changes
+
+- [#75](https://github.com/embed-team/embedly/pull/75) [`933512c`](https://github.com/embed-team/embedly/commit/933512c75cf9e8d1c3bac8b80342c498799ac400) Thanks [@rosethornbush](https://github.com/rosethornbush)! - fix(platforms): gracefully handle deleted parent tweet in replies
+
+- Updated dependencies []:
+  - @embedly/builder@0.15.2
+  - @embedly/logging@0.15.2
+
 ## 0.15.1
 
 ### Patch Changes
