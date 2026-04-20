@@ -3,6 +3,7 @@
   "compilerOptions": {
     "lib": ["WebWorker", "ESNext"],
     "types": ["@cloudflare/workers-types", "@types/node"],
+    "rootDir": "./src",
     "outDir": "./dist"
   },
   "exclude": ["node_modules", "src/**/*.test.ts"],

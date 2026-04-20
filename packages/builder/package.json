@@ -18,13 +18,13 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.10",
+    "@biomejs/biome": "2.4.12",
     "@embedly/config": "workspace:*",
-    "pkgroll": "^2.21.4",
-    "typescript": "^5.9.3"
+    "pkgroll": "^2.27.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@discordjs/builders": "^1.13.1",
-    "discord-api-types": "^0.38.37"
+    "@discordjs/builders": "^1.14.1",
+    "discord-api-types": "^0.38.47"
   }
 }

@@ -4,6 +4,7 @@
   "include": ["src"],
   "compilerOptions": {
     "types": ["./worker-configuration.d.ts", "@types/node"],
+    "rootDir": "./src",
     "outDir": "./dist"
   }
 }
