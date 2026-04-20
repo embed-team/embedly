@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-      - name: Install dependencies
+      - name: Install Dependencies
         run: pnpm install --frozen-lockfile
       - name: Get Release Version
         id: versioning
@@ -40,9 +40,16 @@ jobs:
             rm release.json
           fi
       - name: Create Release Pull Request
+        id: changesets
         uses: changesets/action@v1
         with:
           commit: '🔖 chore(release): v${{ steps.versioning.outputs.VERSION }}'
           title: '🔖 chore(release): v${{ steps.versioning.outputs.VERSION }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Automatically Merge Version PR
+        if: steps.changesets.outputs.pullRequestNumber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
+        run: gh pr merge --auto --squash --delete-branch "$PR_NUMBER"
