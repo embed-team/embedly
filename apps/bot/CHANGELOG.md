@@ -1,5 +1,11 @@
 # @embedly/bot
 
+## 0.15.0
+
+### Patch Changes
+
+- [#69](https://github.com/embed-team/embedly/pull/69) [`5b55696`](https://github.com/embed-team/embedly/commit/5b55696d09876b855856273b23ade276e68321af) Thanks [@rosethornbush](https://github.com/rosethornbush)! - add user agent for direct fetch
+
 ## 0.14.0
 
 ### Minor Changes
