@@ -1,5 +1,13 @@
 # @embedly/platforms
 
+## 0.15.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @embedly/builder@0.15.3
+  - @embedly/logging@0.15.3
+
 ## 0.15.2
 
 ### Patch Changes
