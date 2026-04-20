@@ -1,5 +1,15 @@
 # @embedly/platforms
 
+## 0.15.1
+
+### Patch Changes
+
+- [#72](https://github.com/embed-team/embedly/pull/72) [`502bd46`](https://github.com/embed-team/embedly/commit/502bd462e18450e104b027ffb72ee72c45006fb9) Thanks [@rosethornbush](https://github.com/rosethornbush)! - fix threads regex... was using threads .net instead of .com
+
+- Updated dependencies []:
+  - @embedly/builder@0.15.1
+  - @embedly/logging@0.15.1
+
 ## 0.15.0
 
 ### Minor Changes
