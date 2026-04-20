@@ -1,5 +1,17 @@
 # @embedly/platforms
 
+## 0.15.0
+
+### Minor Changes
+
+- [#69](https://github.com/embed-team/embedly/pull/69) [`ccf36d1`](https://github.com/embed-team/embedly/commit/ccf36d1c7ac0ee1ca56094135200e6482efd7645) Thanks [@rosethornbush](https://github.com/rosethornbush)! - Revert platform URL matching back to regex-based matchers.
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @embedly/builder@0.15.0
+  - @embedly/logging@0.15.0
+
 ## 0.14.0
 
 ### Patch Changes

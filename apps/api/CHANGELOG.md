@@ -1,5 +1,14 @@
 # @embedly/api
 
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [[`ccf36d1`](https://github.com/embed-team/embedly/commit/ccf36d1c7ac0ee1ca56094135200e6482efd7645)]:
+  - @embedly/platforms@0.15.0
+  - @embedly/builder@0.15.0
+  - @embedly/logging@0.15.0
+
 ## 0.14.0
 
 ### Patch Changes
