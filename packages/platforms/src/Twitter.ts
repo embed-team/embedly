@@ -147,9 +147,14 @@ export class Twitter extends EmbedlyPlatform {
     }
 
     if (tweet_data.replying_to_status) {
-      const reply_tweet = await this.fetchPost(
-        tweet_data.replying_to_status
-      );
+      let reply_tweet: any;
+      try {
+        reply_tweet = await this.fetchPost(
+          tweet_data.replying_to_status
+        );
+      } catch {
+        return embed;
+      }
       const reply_embed = new Embed(this.transformRawData(reply_tweet));
       if (reply_tweet.text !== "") {
         reply_embed.setDescription(
