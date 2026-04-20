@@ -14,7 +14,7 @@ export class Threads extends EmbedlyPlatform {
   readonly color = [0, 0, 0] as const;
   readonly emoji = "<:threads:1413343483929956446>";
   readonly regex =
-    /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.net\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
+    /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.com\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
 
   constructor() {
     super(EmbedlyPlatformType.Threads, "threads");
