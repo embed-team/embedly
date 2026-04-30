@@ -1,0 +1,18 @@
+{
+  "oxc.fmt.configPath": "packages/config/oxfmt.config.ts",
+  "oxc.lint.run": "onSave",
+  "oxc.configPath": "packages/config/oxlint.config.ts",
+  "oxc.enable": true,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ts": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false
+}

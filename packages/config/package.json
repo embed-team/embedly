@@ -1,0 +1,15 @@
+{
+  "name": "@embedly/config",
+  "version": "0.15.3",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig.json": "./tsconfig.json",
+    "./oxlint.config.ts": "./oxlint.config.ts",
+    "./oxfmt.config.ts": "./oxfmt.config.ts"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.47.0",
+    "oxlint": "^1.62.0"
+  }
+}

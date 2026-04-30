@@ -1,0 +1,6 @@
+projects: ["packages/*", "apps/*"]
+
+vcs:
+  client: "git"
+  defaultBranch: "rewrite"
+  provider: "github"

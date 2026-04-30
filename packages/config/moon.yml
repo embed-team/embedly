@@ -1,0 +1,6 @@
+layer: "configuration"
+language: "typescript"
+
+project:
+  title: "@embedly/config"
+  description: "Shared configurations for dev tools used within the Embedly project."

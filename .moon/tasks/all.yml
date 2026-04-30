@@ -1,0 +1,9 @@
+tasks:
+  fmt:
+    command: "oxfmt --no-error-on-unmatched-pattern"
+  fmt/check:
+    command: "oxfmt --check --no-error-on-unmatched-pattern"
+  lint:
+    command: "oxlint --no-error-on-unmatched-pattern"
+  lint/fix:
+    command: "oxlint --fix --no-error-on-unmatched-pattern"
