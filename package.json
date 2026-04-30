@@ -6,6 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@embedly/config": "workspace:*",
     "@moonrepo/cli": "^2.2.3",
     "typescript": "^6.0.3"
   },

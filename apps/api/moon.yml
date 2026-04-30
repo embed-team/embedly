@@ -1,0 +1,6 @@
+layer: "application"
+language: "typescript"
+
+project:
+  title: "@embedly/api"
+  description: "Hono API for fetching platform data in Embedly."

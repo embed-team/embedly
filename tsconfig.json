@@ -1,0 +1,12 @@
+{
+  "extends": "@embedly/config/tsconfig.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/config"
+    },
+    {
+      "path": "./apps/api"
+    }
+  ]
+}
