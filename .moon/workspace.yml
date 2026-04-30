@@ -4,6 +4,7 @@ vcs:
   client: "git"
   defaultBranch: "rewrite"
   provider: "github"
+  sync: true
   hooks:
     pre-commit:
       - "moon run :lint :format --affected --status=staged"
