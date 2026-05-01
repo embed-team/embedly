@@ -9,8 +9,10 @@
     "lib": ["ESNext"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "noEmit": true,
-    "types": ["./worker-configuration.d.ts"],
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationDir": "./types",
+    "types": ["./worker-configuration.d.ts", "node"],
     "rootDir": "./src"
   },
   "include": ["src/**/*", "*.js", "*.ts"],
