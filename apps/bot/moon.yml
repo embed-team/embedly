@@ -1,0 +1,12 @@
+layer: "application"
+language: "typescript"
+
+project:
+  title: "@embedly/bot"
+  description: "Discord bot for Embedly"
+
+tasks:
+  dev:
+    command: tsx src/main.ts
+    options:
+      envFile: true
