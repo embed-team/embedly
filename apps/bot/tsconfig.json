@@ -20,6 +20,9 @@
       "path": "../../packages/config"
     },
     {
+      "path": "../../packages/platforms"
+    },
+    {
       "path": "../api"
     }
   ]
