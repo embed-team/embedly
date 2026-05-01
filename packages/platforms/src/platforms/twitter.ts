@@ -33,7 +33,9 @@ function enrichText(raw?: RawText) {
   return he.decode(text);
 }
 
-export const Twitter: Platform<"Twitter", APITwitterStatus> = {
+type TwitterMeta = Pick<APITwitterStatus, "translation" | "article" | "community" | "poll">;
+
+export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
   type: "Twitter",
   match(url) {
     const groups = MATCH_RE.test(url) ? url.match(MATCH_RE)?.groups : null;
@@ -87,6 +89,11 @@ export const Twitter: Platform<"Twitter", APITwitterStatus> = {
       reply_to: raw.replying_to
         ? await this.transform(await this.fetch(raw.replying_to.status))
         : undefined,
+
+      article: raw.article,
+      community: raw.community,
+      poll: raw.poll,
+      translation: raw.translation,
     };
   },
 } as const;

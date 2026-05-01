@@ -24,9 +24,13 @@ export interface NormalizedPost {
   reply_to?: NormalizedPost;
 }
 
-export interface Platform<PlatformName extends string, PlatformData> {
+export interface Platform<
+  PlatformName extends string,
+  PlatformData,
+  Meta extends Record<string, unknown> = Record<never, never>,
+> {
   readonly type: PlatformName;
   match(url: string): string | null;
   fetch(id: string): Promise<PlatformData>;
-  transform(raw: PlatformData): Promise<NormalizedPost> | NormalizedPost;
+  transform(raw: PlatformData): Promise<NormalizedPost & Meta>;
 }
