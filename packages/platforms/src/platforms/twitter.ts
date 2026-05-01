@@ -37,11 +37,11 @@ type TwitterMeta = Pick<APITwitterStatus, "translation" | "article" | "community
 
 export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
   type: "Twitter",
-  match(url) {
+  async match(url) {
     const groups = url.match(MATCH_RE)?.groups;
     return groups?.tweet_id ?? null;
   },
-  async fetch(id: string) {
+  async fetch(id) {
     const resp = await fetch(`https://api.fxtwitter.com/2/status/${id}?lang=en`, {
       method: "GET",
       headers: {

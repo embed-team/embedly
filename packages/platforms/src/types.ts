@@ -1,6 +1,5 @@
 import type * as platforms from "./platforms";
 export type PlatformType = (typeof platforms)[keyof typeof platforms]["type"];
-
 export interface NormalizedPost {
   platform: PlatformType;
   author: {
@@ -24,13 +23,13 @@ export interface NormalizedPost {
   reply_to?: NormalizedPost;
 }
 
-export interface Platform<
-  PlatformName extends string,
-  PlatformData,
-  Meta extends Record<string, unknown> = Record<never, never>,
-> {
+interface FetchEnv {
+  EMBED_USER_AGENT: string;
+}
+
+export interface Platform<PlatformName extends string, PlatformData, PlatformMeta> {
   readonly type: PlatformName;
-  match(url: string): string | null;
-  fetch(id: string): Promise<PlatformData>;
-  transform(raw: PlatformData): Promise<NormalizedPost & Meta>;
+  match(url: string): Promise<string | null>;
+  fetch(id: string, env?: FetchEnv): Promise<PlatformData>;
+  transform(raw: PlatformData): Promise<NormalizedPost & PlatformMeta>;
 }
