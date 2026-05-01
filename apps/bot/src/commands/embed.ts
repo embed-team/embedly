@@ -7,6 +7,7 @@ import {
   MessageFlags,
 } from "discord.js";
 
+import { buildEmbed } from "../builder";
 import { extractURLs } from "../utils";
 export class EmbedCommand extends Command {
   public constructor(context: Command.LoaderContext, options: Command.Options) {
@@ -101,7 +102,18 @@ export class EmbedCommand extends Command {
       );
       const post = await req.json();
       await interaction.editReply({
-        content: post.text ?? "no text",
+        components: [
+          buildEmbed(post, {
+            MediaOnly: interaction.options.getBoolean("media_only") ?? false,
+            SourceOnly: interaction.options.getBoolean("source_only") ?? false,
+            Spoiler: interaction.options.getBoolean("spoiler") ?? false,
+          })!,
+        ],
+        flags: [MessageFlags.IsComponentsV2],
+        allowedMentions: {
+          parse: [],
+          repliedUser: false,
+        },
       });
     }
 
