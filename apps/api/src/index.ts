@@ -29,11 +29,15 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       try {
         // oxlint-disable-next-line import/namespace
         const p = Platforms[platform as keyof typeof Platforms];
-        const raw = await p.fetch(id);
-        const data = await p.transform(raw);
+        const raw = await p.fetch(id, { EMBED_USER_AGENT: c.env.EMBED_USER_AGENT });
+        const data = await p.transform(raw as any);
         return c.json(data, 200);
       } catch (cause) {
-        throw new HTTPException(500, { cause, message: `Failed to fetch ${platform}(${id})` });
+        console.log(platform, id, cause);
+        throw new HTTPException(500, {
+          cause,
+          message: JSON.stringify({ message: `Failed to fetch ${platform}(${id})` }),
+        });
       }
     },
   );
