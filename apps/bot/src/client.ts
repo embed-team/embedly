@@ -1,5 +1,7 @@
-import { SapphireClient } from "@sapphire/framework";
+import type { AppType } from "@embedly/api";
+import { container, SapphireClient } from "@sapphire/framework";
 import { ActivityType, GatewayIntentBits, Partials, PresenceUpdateStatus } from "discord.js";
+import { hc } from "hono/client";
 
 export class EmbedlyClient extends SapphireClient {
   public constructor() {
@@ -25,10 +27,17 @@ export class EmbedlyClient extends SapphireClient {
   }
 
   public override async login(token?: string) {
+    container.api = hc<AppType>(process.env.EMBEDLY_API_DOMAIN ?? "http://localhost:8787");
     return super.login(token);
   }
 
   public override async destroy() {
     return super.destroy();
+  }
+}
+
+declare module "@sapphire/framework" {
+  interface Container {
+    api: ReturnType<typeof hc<AppType>>;
   }
 }

@@ -7,6 +7,6 @@ project:
 
 tasks:
   dev:
-    command: tsx src/main.ts
+    command: tsx watch src/main.ts
     options:
       envFile: true
