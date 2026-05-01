@@ -71,10 +71,16 @@ export class EmbedCommand extends Command {
         flags: [MessageFlags.Ephemeral],
       });
     }
-    const matches = urls.flatMap((url) => {
-      const match = matchURL(url);
-      return match ? [{ url, ...match }] : [];
-    });
+
+    const matches = (
+      await Promise.all(
+        urls.map(async (url) => {
+          const match = await matchURL(url);
+          return match ? { url, ...match } : null;
+        }),
+      )
+    ).filter((m) => m !== null);
+
     if (matches.length === 0) {
       return await interaction.reply({
         content: "Failed to find any matching platforms.",
