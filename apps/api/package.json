@@ -1,5 +1,6 @@
 {
   "name": "@embedly/api",
+  "version": "0.15.3",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -7,10 +8,14 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@hono/otel": "^1.1.1",
+    "@microlabs/otel-cf-workers": "1.0.0-rc.52",
+    "@opentelemetry/api": "^1.9.1",
     "hono": "^4.12.15"
   },
   "devDependencies": {
     "@embedly/config": "workspace:*",
+    "@types/node": "^25.6.0",
     "oxfmt": "^0.47.0",
     "oxlint": "^1.62.0",
     "wrangler": "^4.4.0"

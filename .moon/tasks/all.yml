@@ -1,9 +1,14 @@
+taskOptions:
+  envFile: true
+
 tasks:
   fmt:
     command: "oxfmt --no-error-on-unmatched-pattern"
   fmt/check:
-    command: "oxfmt --check --no-error-on-unmatched-pattern"
+    extends: "fmt"
+    args: "--check"
   lint:
     command: "oxlint --no-error-on-unmatched-pattern"
   lint/fix:
-    command: "oxlint --fix --no-error-on-unmatched-pattern"
+    extends: "lint"
+    args: "--fix"

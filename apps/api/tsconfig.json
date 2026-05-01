@@ -9,9 +9,12 @@
     "lib": ["ESNext"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["./worker-configuration.d.ts"],
+    "rootDir": "./src"
   },
   "include": ["src/**/*", "*.js", "*.ts"],
+  "exclude": ["node_modules"],
   "references": [
     {
       "path": "../../packages/config"

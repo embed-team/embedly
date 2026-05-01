@@ -3,4 +3,4 @@ language: "typescript"
 
 project:
   title: "@embedly/api"
-  description: "Hono API for fetching platform data in Embedly."
+  description: "Hono API for fetching platform in Embedly."
