@@ -1,0 +1,6 @@
+layer: "library"
+language: "typescript"
+
+project:
+  title: "@embedly/platforms"
+  description: "Library for all the platforms Embedly supports"
