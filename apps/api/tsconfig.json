@@ -20,6 +20,9 @@
   "references": [
     {
       "path": "../../packages/config"
+    },
+    {
+      "path": "../../packages/platforms"
     }
   ]
 }
