@@ -7,8 +7,8 @@ import {
   MessageFlags,
 } from "discord.js";
 
-import { buildEmbed } from "../builder";
-import { extractURLs } from "../utils";
+import { buildEmbed } from "../lib/builder";
+import { extractURLs } from "../lib/utils";
 export class EmbedCommand extends Command {
   public constructor(context: Command.LoaderContext, options: Command.Options) {
     super(context, {
