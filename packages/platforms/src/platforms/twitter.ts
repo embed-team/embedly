@@ -9,6 +9,7 @@ const MATCH_RE =
 
 function enrichText(raw?: RawText) {
   if (!raw) return undefined;
+  console.log(raw);
   let text = raw.text;
   for (const facet of raw.facets) {
     if (facet.type === "url") {
@@ -29,11 +30,16 @@ function enrichText(raw?: RawText) {
         `[@${facet.original}](https://x.com/${facet.original})`,
       );
     }
+    if (facet.type === "url") {
+      text = text.replace(facet.display!, facet.replacement!);
+    }
   }
   return he.decode(text);
 }
 
-type TwitterMeta = Pick<APITwitterStatus, "translation" | "article" | "community" | "poll">;
+type TwitterMeta = Pick<APITwitterStatus, "translation" | "article" | "poll"> & {
+  community_note?: string;
+};
 
 export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
   type: "Twitter",
@@ -91,7 +97,7 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
         : undefined,
 
       article: raw.article,
-      community: raw.community,
+      community_note: enrichText(raw.community_note),
       poll: raw.poll,
       translation: raw.translation,
     };

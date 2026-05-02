@@ -28,6 +28,7 @@ export interface APITwitterStatus {
   views?: number | null;
   bookmarks?: number | null;
   community?: Community;
+  community_note?: RawText;
   article?: Article;
   at_uri?: string;
   cid?: string;

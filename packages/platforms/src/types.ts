@@ -31,5 +31,5 @@ export interface Platform<PlatformName extends string, PlatformData, PlatformMet
   readonly type: PlatformName;
   match(url: string): Promise<string | null>;
   fetch(id: string, env?: FetchEnv): Promise<PlatformData>;
-  transform(raw: PlatformData): Promise<NormalizedPost & PlatformMeta>;
+  transform(raw: PlatformData): Promise<NormalizedPost & PlatformMeta & { platform: PlatformName }>;
 }
