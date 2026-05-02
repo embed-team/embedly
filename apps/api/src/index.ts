@@ -33,7 +33,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         const data = await p.transform(raw as any);
         return c.json(data, 200);
       } catch (cause) {
-        console.log(platform, id, cause);
+        console.error(platform, id, cause);
         throw new HTTPException(500, {
           cause,
           message: JSON.stringify({ message: `Failed to fetch ${platform}(${id})` }),
