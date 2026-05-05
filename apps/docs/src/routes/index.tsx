@@ -90,7 +90,7 @@ function Home() {
               <div className="rounded-t-lg rounded-b-xl overflow-clip">
                 <video
                   muted
-                  src="https://roselyn.thornbush.dev/assets/projects/embedly/context-menu.mp4"
+                  src="https://roselynn.gay/assets/projects/embedly/context-menu.mp4"
                   loop
                   autoPlay
                   playsInline
@@ -104,7 +104,7 @@ function Home() {
               <div className="rounded-t-lg rounded-b-xl overflow-clip">
                 <video
                   muted
-                  src="https://roselyn.thornbush.dev/assets/projects/embedly/slash-command.mp4"
+                  src="https://roselynn.gay/assets/projects/embedly/slash-command.mp4"
                   loop
                   autoPlay
                   playsInline
