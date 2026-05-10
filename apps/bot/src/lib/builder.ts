@@ -63,7 +63,11 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
               HeadingLevel.Three,
             ),
           ),
-        (text) => text.setContent(escapeMarkdown(post.text ?? "").substring(0, 2000) + "..."),
+        (text) =>
+          text.setContent(
+            escapeMarkdown(post.text ?? "").substring(0, 2000) +
+              ((post.text?.length ?? 0) > 2000 ? "..." : ""),
+          ),
       ),
   );
   if (post.platform === "Twitter") {
