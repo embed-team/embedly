@@ -27,10 +27,21 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
     async (c) => {
       const { id, platform } = c.req.valid("json");
       try {
+        const cache = c.env.CACHE;
+        const cacheKey = `${platform}:${id}`;
+        const cachedItem = await cache.get<
+          Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>
+        >(cacheKey, "json");
+        if (cachedItem) {
+          return c.json(cachedItem, 200);
+        }
         // oxlint-disable-next-line import/namespace
         const p = Platforms[platform as keyof typeof Platforms];
         const raw = await p.fetch(id, { EMBED_USER_AGENT: c.env.EMBED_USER_AGENT });
         const data = await p.transform(raw as any);
+        await cache.put(cacheKey, JSON.stringify(data), {
+          expirationTtl: 60 * 60 * 24,
+        });
         return c.json(data, 200);
       } catch (cause) {
         console.error(platform, id, cause);

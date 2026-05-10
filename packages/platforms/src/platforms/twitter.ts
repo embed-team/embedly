@@ -9,7 +9,6 @@ const MATCH_RE =
 
 function enrichText(raw?: RawText) {
   if (!raw) return undefined;
-  console.log(raw);
   let text = raw.text;
   for (const facet of raw.facets) {
     if (facet.type === "url") {

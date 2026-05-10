@@ -19,4 +19,11 @@
       "destinations": ["embedly-traces"],
     },
   },
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "5e7f67c7865d4c3bbb1e6715cfa5f79d",
+      "preview_id": "7d4cb873b305429680da11d90d5298f3",
+    },
+  ],
 }

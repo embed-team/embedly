@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "moon run :dev"
   },
   "devDependencies": {
     "@embedly/config": "workspace:*",
