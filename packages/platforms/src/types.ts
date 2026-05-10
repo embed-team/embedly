@@ -29,7 +29,7 @@ interface FetchEnv {
 
 export interface Platform<PlatformName extends string, PlatformData, PlatformMeta> {
   readonly type: PlatformName;
-  match(url: string): Promise<string | null>;
+  match(url: string, env?: FetchEnv): Promise<string | null>;
   fetch(id: string, env?: FetchEnv): Promise<PlatformData>;
   transform(raw: PlatformData): Promise<NormalizedPost & PlatformMeta & { platform: PlatformName }>;
 }
