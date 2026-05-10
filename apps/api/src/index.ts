@@ -23,17 +23,22 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
   })
   .post(
     "/platforms/scrape",
-    zValidator("json", z.object({ platform: z.string(), id: z.string() })),
+    zValidator(
+      "json",
+      z.object({ platform: z.string(), id: z.string(), force: z.boolean().optional() }),
+    ),
     async (c) => {
-      const { id, platform } = c.req.valid("json");
+      const { id, platform, force } = c.req.valid("json");
       try {
         const cache = c.env.CACHE;
         const cacheKey = `${platform}:${id}`;
-        const cachedItem = await cache.get<
-          Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>
-        >(cacheKey, "json");
-        if (cachedItem) {
-          return c.json(cachedItem, 200);
+        if (!force) {
+          const cachedItem = await cache.get<
+            Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>
+          >(cacheKey, "json");
+          if (cachedItem) {
+            return c.json(cachedItem, 200);
+          }
         }
         // oxlint-disable-next-line import/namespace
         const p = Platforms[platform as keyof typeof Platforms];

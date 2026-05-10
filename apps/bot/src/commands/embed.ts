@@ -37,6 +37,9 @@ export class EmbedCommand extends Command {
           .addBooleanOption((opt) =>
             opt.setName("spoiler").setDescription("Hide embed content behind spoiler"),
           )
+          .addBooleanOption((opt) =>
+            opt.setName("force").setDescription("Force the bot to re-fetch the post."),
+          )
           .setContexts(
             InteractionContextType.BotDM,
             InteractionContextType.Guild,
@@ -93,7 +96,7 @@ export class EmbedCommand extends Command {
 
     for (const [_i, { platform, id }] of matches.entries()) {
       const req = await this.container.api.platforms.scrape.$post(
-        { json: { platform, id } },
+        { json: { platform, id, force: interaction.options.getBoolean("force") ?? false } },
         {
           headers: {
             Authorization: `Bearer ${process.env.EMBEDLY_AUTH_SECRET}`,
