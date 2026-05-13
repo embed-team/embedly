@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@types/he": "^1.2.3",
+    "cheerio": "^1.2.0",
     "he": "^1.2.0"
   }
 }

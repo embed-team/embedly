@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@embedly/config": "workspace:*",
-    "@moonrepo/cli": "^2.2.3",
+    "@moonrepo/cli": "^2.2.4",
     "typescript": "^6.0.3"
   },
   "engines": {
