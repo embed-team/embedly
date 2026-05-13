@@ -18,7 +18,7 @@ export interface NormalizedPost {
     bookmarks?: number;
     views?: number;
   };
-  media: Array<{ url: string; type: string }>;
+  media: Array<{ url: string; type: string; description?: string }>;
   quote?: NormalizedPost;
   reply_to?: NormalizedPost;
 }
