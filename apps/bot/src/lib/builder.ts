@@ -15,6 +15,7 @@ import {
 } from "discord.js";
 
 import { getEmojiByName } from "./emojis";
+import { truncate } from "./utils";
 
 const NumberFormatter = new Intl.NumberFormat("en", {
   roundingMode: "ceil",
@@ -68,21 +69,17 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
               HeadingLevel.Three,
             ),
           ),
-        (text) =>
-          text.setContent(
-            escapeMarkdown(post.text ?? "").substring(0, 2000) +
-              ((post.text?.length ?? 0) > 2000 ? "..." : ""),
-          ),
+        (text) => text.setContent(truncate(escapeMarkdown(post.text ?? ""), 2000)),
       ),
   );
-  if (post.platform === "Twitter") {
+  if (post.platform === "Twitter" || post.platform === "Threads") {
     if (post.community_note) {
       embed.addSeparatorComponents((sep) =>
         sep.setDivider(false).setSpacing(SeparatorSpacingSize.Large),
       );
       embed.addTextDisplayComponents((note) =>
         note.setContent(
-          `${subtext(`${getEmojiByName("community_note")} ${underline("Readers added context they thought people might want to know")}`)}\n${blockQuote(`${post.community_note}`)}`,
+          `${subtext(`${getEmojiByName("community_note")} ${underline("Readers added context they thought people might want to know")}`)}\n${blockQuote(truncate(`${post.community_note}`, 500))}`,
         ),
       );
     }
