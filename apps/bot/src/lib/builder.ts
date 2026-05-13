@@ -52,6 +52,11 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
   }
 
   const embed = new ContainerBuilder();
+
+  if (flags?.Spoiler) {
+    embed.setSpoiler(true);
+  }
+
   embed.addSectionComponents((section) =>
     section
       .setThumbnailAccessory((thumbnail) => thumbnail.setURL(post.author.avatar))
