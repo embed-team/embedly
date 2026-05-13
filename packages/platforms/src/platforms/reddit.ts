@@ -45,7 +45,7 @@ export const Reddit: Platform<"Reddit", Record<string, any>, {}> = {
   type: "Reddit",
   async match(url, env) {
     const match = url.match(MATCH_RE);
-    if (!match) return Promise.reject();
+    if (!match) return null;
     const req = await fetch(url, {
       method: "GET",
       redirect: "follow",
