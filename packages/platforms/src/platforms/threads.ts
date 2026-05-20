@@ -141,7 +141,7 @@ export const Threads: Platform<
       method: "POST",
       redirect: "follow",
       headers: {
-        "User-Agent": env?.EMBED_USER_AGENT ?? sessionResp.headers.get("User-Agent") ?? "",
+        "User-Agent": sessionResp.headers.get("User-Agent") ?? env?.EMBED_USER_AGENT ?? "",
         "X-ASBD-ID": "359341",
         "X-CSRFToken": csrfToken ?? "",
         "X-FB-LSD": lsd,
