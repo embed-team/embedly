@@ -32,11 +32,8 @@ export const TikTok: Platform<"TikTok", Record<string, any>, {}> = {
       },
     });
 
-    console.log(req.url);
-
     const groups = req.url.match(FOLLOWUP_RE)?.groups;
     if (!groups) return null;
-    console.log(groups);
     const { tiktok_user, tiktok_type, tiktok_id } = groups;
     return `${tiktok_user}/${tiktok_type}/${tiktok_id}`;
   },
@@ -87,7 +84,6 @@ export const TikTok: Platform<"TikTok", Record<string, any>, {}> = {
     return itemStruct;
   },
   async transform(raw) {
-    console.log(raw);
     return {
       platform: this.type,
       author: {

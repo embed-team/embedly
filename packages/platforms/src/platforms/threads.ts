@@ -48,7 +48,6 @@ export const Threads: Platform<
     if (!match) return null;
 
     const { thread_shortcode } = match.groups!;
-    console.log(thread_shortcode);
     const thread_id = thread_shortcode
       .trim()
       .split("")
@@ -59,7 +58,6 @@ export const Threads: Platform<
     return thread_id.toString();
   },
   async fetch(id, env) {
-    console.log(id);
     const sessionResp = await fetch("https://www.threads.com/", {
       method: "GET",
       redirect: "follow",
