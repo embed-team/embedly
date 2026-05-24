@@ -8,3 +8,5 @@ vcs:
   hooks:
     pre-commit:
       - "moon run :lint :format --affected --status=staged"
+    commit-msg:
+      - "pnpm commitlint --edit $ARG1"
