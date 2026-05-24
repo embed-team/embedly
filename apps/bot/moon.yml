@@ -10,3 +10,9 @@ tasks:
     command: tsx watch src/main.ts
     options:
       envFile: true
+  build:
+    command: tsdown
+  start:
+    command: node dist/main.mjs
+    options:
+      envFile: true

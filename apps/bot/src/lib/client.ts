@@ -1,11 +1,13 @@
+import { resolve } from "node:path";
+
 import type { AppType } from "@embedly/api";
 import { container, SapphireClient } from "@sapphire/framework";
 import { ActivityType, GatewayIntentBits, Partials, PresenceUpdateStatus } from "discord.js";
 import { hc } from "hono/client";
-
 export class EmbedlyClient extends SapphireClient {
   public constructor() {
     super({
+      baseUserDirectory: resolve(import.meta.dirname, ".."),
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,

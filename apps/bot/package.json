@@ -2,9 +2,11 @@
   "name": "@embedly/bot",
   "version": "0.15.3",
   "type": "module",
-  "main": "src/main.ts",
+  "main": "./dist/main.mjs",
   "scripts": {
-    "dev": "tsx watch src/main.ts"
+    "dev": "tsx watch src/main.ts",
+    "build": "tsdown",
+    "start": "node dist/main.mjs"
   },
   "dependencies": {
     "@embedly/api": "workspace:*",
@@ -19,6 +21,7 @@
     "dotenv": "^17.4.2",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
+    "tsdown": "^0.22.0",
     "tsx": "^4.21.0"
   }
 }
