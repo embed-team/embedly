@@ -10,7 +10,8 @@
     "@commitlint/config-conventional": "^21.0.1",
     "@embedly/config": "workspace:*",
     "@moonrepo/cli": "^2.2.4",
-    "typescript": "^6.0.3"
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=24"

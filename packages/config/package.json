@@ -9,7 +9,7 @@
     "./oxfmt.config.ts": "./oxfmt.config.ts"
   },
   "devDependencies": {
-    "oxfmt": "^0.47.0",
-    "oxlint": "^1.62.0"
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:"
   }
 }
