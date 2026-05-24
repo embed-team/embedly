@@ -58,20 +58,24 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
     embed.setSpoiler(true);
   }
 
-  embed.addSectionComponents((section) =>
+  embed.addSectionComponents((section) => {
     section
       .setThumbnailAccessory((thumbnail) => thumbnail.setURL(post.author.avatar))
-      .addTextDisplayComponents(
-        (author) =>
-          author.setContent(
-            heading(
-              `${post.author.name} ${post.author.handle && post.author.url ? `(${hyperlink(`@${post.author.handle}`, post.author.url)})` : ""}`,
-              HeadingLevel.Three,
-            ),
+      .addTextDisplayComponents((author) =>
+        author.setContent(
+          heading(
+            `${post.author.name} ${post.author.handle && post.author.url ? `(${hyperlink(`@${post.author.handle}`, post.author.url)})` : ""}`,
+            HeadingLevel.Three,
           ),
-        (text) => text.setContent(truncate(escapeMarkdown(post.text ?? ""), 2000)),
-      ),
-  );
+        ),
+      );
+    if (post.text && post.text.length > 0) {
+      section.addTextDisplayComponents((text) =>
+        text.setContent(truncate(escapeMarkdown(post.text ?? ""), 2000)),
+      );
+    }
+    return section;
+  });
   if (post.platform === "Twitter" || post.platform === "Threads") {
     if (post.community_note) {
       embed.addSeparatorComponents((sep) =>
