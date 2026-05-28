@@ -1,13 +1,14 @@
 import { matchURL } from "@embedly/platforms";
-import { Command } from "@sapphire/framework";
+import { Command, container } from "@sapphire/framework";
 import {
   ApplicationCommandType,
   ApplicationIntegrationType,
   InteractionContextType,
+  Message,
   MessageFlags,
 } from "discord.js";
 
-import { buildEmbed } from "../lib/builder";
+import { buildEmbed, EmbedFlags } from "../lib/builder";
 import { extractURLs } from "../lib/utils";
 export class EmbedCommand extends Command {
   public constructor(context: Command.LoaderContext, options: Command.Options) {
@@ -66,15 +67,26 @@ export class EmbedCommand extends Command {
       );
   }
 
-  public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
-    const url = interaction.options.getString("url", true);
-    const urls = extractURLs(url);
+  static async handleUrls(
+    content: string,
+    flags: Partial<EmbedFlags>,
+    force: boolean = false,
+    interactionOrMessage:
+      | Command.ChatInputCommandInteraction
+      | Command.ContextMenuCommandInteraction
+      | Message,
+  ) {
+    const isMessage = interactionOrMessage instanceof Message;
+    const urls = extractURLs(content);
     if (urls.length === 0) {
-      return await interaction.reply({
+      if (isMessage) return;
+      return await interactionOrMessage.reply({
         content: "No URLs Found.",
         flags: [MessageFlags.Ephemeral],
       });
     }
+
+    if (!isMessage) await interactionOrMessage.deferReply();
 
     const matches = (
       await Promise.all(
@@ -85,18 +97,14 @@ export class EmbedCommand extends Command {
       )
     ).filter((m) => m !== null);
 
-    if (matches.length === 0) {
-      return await interaction.reply({
-        content: "Failed to find any matching platforms.",
-        flags: [MessageFlags.Ephemeral],
+    if (!isMessage)
+      await interactionOrMessage.editReply({
+        content: "No matches found.",
       });
-    }
 
-    await interaction.deferReply();
-
-    for (const [_i, { platform, id }] of matches.entries()) {
-      const req = await this.container.api.platforms.scrape.$post(
-        { json: { platform, id, force: interaction.options.getBoolean("force") ?? false } },
+    for (const [i, { platform, id }] of matches.entries()) {
+      const req = await container.api.platforms.scrape.$post(
+        { json: { platform, id, force } },
         {
           headers: {
             Authorization: `Bearer ${process.env.EMBEDLY_AUTH_SECRET}`,
@@ -104,14 +112,14 @@ export class EmbedCommand extends Command {
         },
       );
       const post = await req.json();
-      await interaction.editReply({
-        components: [
-          buildEmbed(post, {
-            MediaOnly: interaction.options.getBoolean("media_only") ?? false,
-            SourceOnly: interaction.options.getBoolean("source_only") ?? false,
-            Spoiler: interaction.options.getBoolean("spoiler") ?? false,
-          })!,
-        ],
+      await (
+        isMessage
+          ? interactionOrMessage.reply
+          : i === 0
+            ? interactionOrMessage.editReply
+            : interactionOrMessage.followUp
+      )({
+        components: [buildEmbed(post, flags)!],
         flags: [MessageFlags.IsComponentsV2],
         allowedMentions: {
           parse: [],
@@ -119,7 +127,26 @@ export class EmbedCommand extends Command {
         },
       });
     }
-
     return;
+  }
+
+  public override async contextMenuRun(interaction: Command.ContextMenuCommandInteraction) {
+    if (!interaction.isMessageContextMenuCommand()) return;
+    const msg = interaction.targetMessage;
+    await EmbedCommand.handleUrls(msg.content, {}, false, interaction);
+  }
+
+  public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
+    const url = interaction.options.getString("url", true);
+    await EmbedCommand.handleUrls(
+      url,
+      {
+        MediaOnly: interaction.options.getBoolean("media_only") ?? false,
+        SourceOnly: interaction.options.getBoolean("source_only") ?? false,
+        Spoiler: interaction.options.getBoolean("spoiler") ?? false,
+      },
+      interaction.options.getBoolean("force") ?? false,
+      interaction,
+    );
   }
 }
