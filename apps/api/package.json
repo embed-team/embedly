@@ -3,7 +3,6 @@
   "version": "0.15.3",
   "type": "module",
   "main": "./src/index.ts",
-  "types": "./types/index.d.ts",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify",

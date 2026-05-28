@@ -10,8 +10,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "emitDeclarationOnly": true,
-    "declaration": true,
-    "declarationDir": "./types",
+    "declaration": false,
     "types": ["./worker-configuration.d.ts", "node"]
   },
   "include": ["src/**/*", "*.js", "*.ts"],
