@@ -12,8 +12,7 @@
     "emitDeclarationOnly": true,
     "declaration": true,
     "declarationDir": "./types",
-    "types": ["./worker-configuration.d.ts", "node"],
-    "rootDir": "./src"
+    "types": ["./worker-configuration.d.ts", "node"]
   },
   "include": ["src/**/*", "*.js", "*.ts"],
   "exclude": ["node_modules"],
