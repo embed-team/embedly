@@ -1,6 +1,7 @@
 import { docs } from "collections/server";
 import { type InferPageType, loader } from "fumadocs-core/source";
 import { createElement } from "react";
+
 import { icon_map } from "./icons";
 
 export const source = loader({

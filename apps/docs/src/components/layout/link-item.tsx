@@ -2,6 +2,7 @@
 import { usePathname } from "fumadocs-core/framework";
 import Link from "fumadocs-core/link";
 import type { ComponentProps, ReactNode } from "react";
+
 import { isActive } from "../../lib/urls";
 
 interface Filterable {

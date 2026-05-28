@@ -12,6 +12,7 @@ import {
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import { Suspense } from "react";
+
 import { useMDXComponents } from "@/components/mdx";
 import { baseOptions, gitConfig } from "@/lib/layout.shared";
 import { source } from "@/lib/source";

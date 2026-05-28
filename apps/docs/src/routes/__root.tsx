@@ -2,6 +2,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
+
 import appCss from "@/styles/app.css?url";
 
 const DESCRIPTION =

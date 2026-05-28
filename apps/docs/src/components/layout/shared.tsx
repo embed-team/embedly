@@ -1,6 +1,7 @@
 import type { I18nConfig } from "fumadocs-core/i18n";
 import Link from "fumadocs-core/link";
 import { type ComponentProps, type ReactNode, useMemo } from "react";
+
 import type { LinkItemType } from "./link-item";
 
 export interface NavOptions {

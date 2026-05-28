@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "moon sync hooks",
     "dev": "moon run :dev",
     "ci": "moon ci :lint :fmt/check",
     "lint": "moon run :lint",
