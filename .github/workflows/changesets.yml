@@ -1,0 +1,45 @@
+name: Changesets
+
+env:
+  PNPM_VERSION: "10.15.1"
+  NODE_VERSION: "24"
+
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: Get Release Version
+        id: versioning
+        run: |
+          if pnpm changeset status --output release.json; then
+            echo "VERSION=$(jq -r '.releases.[0].newVersion' release.json)" >> $GITHUB_OUTPUT
+            rm release.json
+          fi
+      - name: Create Release Pull Request
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          commit: "chore(release): v${{ steps.versioning.outputs.VERSION }}"
+          title: "chore(release): v${{ steps.versioning.outputs.VERSION }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Automatically Merge Version PR
+        if: steps.changesets.outputs.pullRequestNumber
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
+        run: gh pr merge --auto --squash --delete-branch "$PR_NUMBER"

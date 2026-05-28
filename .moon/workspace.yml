@@ -2,7 +2,7 @@ projects: ["packages/*", "apps/*"]
 
 vcs:
   client: "git"
-  defaultBranch: "rewrite"
+  defaultBranch: "main"
   provider: "github"
   sync: true
   hooks:
