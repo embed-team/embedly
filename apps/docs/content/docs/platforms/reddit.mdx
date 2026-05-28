@@ -1,0 +1,33 @@
+---
+title: Reddit
+icon: simple-icons:reddit
+description: Posts with text, images, galleries, and video.
+---
+
+All Reddit URL formats are supported. Short links (`redd.it`) and old/mobile URLs are automatically resolved before fetching.
+
+## Supported URLs
+
+```
+https://reddit.com/r/<subreddit>/comments/<id>/<slug>
+https://old.reddit.com/r/<subreddit>/comments/<id>
+https://redd.it/<id>
+```
+
+## Supported features
+
+### Text
+
+The post title and body. For link posts with no media, the linked URL is appended to the description.
+
+### Media
+
+Up to 10 items — single images, image galleries, Reddit-hosted videos, and preview images for external link posts.
+
+### Author
+
+The subreddit is shown as the display name, with the post author as the username.
+
+<Callout type="info">
+  Reddit doesn't expose upvote or comment counts reliably, so stats are not shown.
+</Callout>

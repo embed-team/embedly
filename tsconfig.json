@@ -3,16 +3,19 @@
   "files": [],
   "references": [
     {
-      "path": "./packages/config"
-    },
-    {
-      "path": "./packages/platforms"
-    },
-    {
       "path": "./apps/api"
     },
     {
       "path": "./apps/bot"
+    },
+    {
+      "path": "./apps/docs"
+    },
+    {
+      "path": "./packages/config"
+    },
+    {
+      "path": "./packages/platforms"
     }
   ]
 }

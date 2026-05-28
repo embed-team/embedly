@@ -1,0 +1,6 @@
+layer: "application"
+language: "typescript"
+
+project:
+  title: "@embedly/docs"
+  description: "Docs website for Embedly"
