@@ -1,4 +1,4 @@
-import { Platforms } from "@embedly/platforms";
+import { Platforms, type NormalizedPost } from "@embedly/platforms";
 import {
   ContainerBuilder,
   escapeMarkdown,
@@ -32,32 +32,14 @@ export interface EmbedFlags {
 
 type PostData = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
 
-function buildMediaEmbed(media: PostData["media"], spoiler?: EmbedFlags["Spoiler"]) {
+function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["Spoiler"]) {
   const gallery = new MediaGalleryBuilder();
   gallery.addItems(media.map((m) => ({ media: { url: m.url }, spoiler })));
 
   return gallery.toJSON();
 }
 
-export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
-  if (flags?.MediaOnly) {
-    return buildMediaEmbed(post.media, flags?.Spoiler);
-  }
-
-  if (flags?.SourceOnly) {
-    post = {
-      ...post,
-      quote: undefined,
-      reply_to: undefined,
-    };
-  }
-
-  const embed = new ContainerBuilder();
-
-  if (flags?.Spoiler) {
-    embed.setSpoiler(true);
-  }
-
+function addPostComponents(embed: ContainerBuilder, post: PostData) {
   embed.addSectionComponents((section) => {
     section
       .setThumbnailAccessory((thumbnail) => thumbnail.setURL(post.author.avatar))
@@ -92,7 +74,7 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
     embed.addMediaGalleryComponents(buildMediaEmbed(post.media));
   }
   embed
-    .addSeparatorComponents((sep) => sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+    .addSeparatorComponents((sep) => sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small))
     .addTextDisplayComponents(
       (stats) =>
         stats.setContent(
@@ -107,5 +89,39 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
           `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${post.platform}`, post.url)}`,
         ),
     );
+}
+
+export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
+  if (flags?.MediaOnly) {
+    return buildMediaEmbed(post.media, flags?.Spoiler);
+  }
+
+  const embed = new ContainerBuilder();
+
+  if (flags?.Spoiler) {
+    embed.setSpoiler(true);
+  }
+
+  if (flags?.SourceOnly) {
+    addPostComponents(embed, post);
+    return embed.toJSON();
+  }
+
+  if (post.reply_to) {
+    addPostComponents(embed, post.reply_to);
+    embed.addSeparatorComponents((sep) =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
+    );
+  }
+
+  addPostComponents(embed, post);
+
+  if (post.quote) {
+    embed.addSeparatorComponents((sep) =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
+    );
+    addPostComponents(embed, post.quote);
+  }
+
   return embed.toJSON();
 }
