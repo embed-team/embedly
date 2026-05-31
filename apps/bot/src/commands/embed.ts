@@ -97,10 +97,11 @@ export class EmbedCommand extends Command {
       )
     ).filter((m) => m !== null);
 
-    if (!isMessage)
-      await interactionOrMessage.editReply({
+    if (!isMessage && matches.length === 0) {
+      return await interactionOrMessage.editReply({
         content: "No matches found.",
       });
+    }
 
     for (const [i, { platform, id }] of matches.entries()) {
       const req = await container.api.platforms.scrape.$post(
@@ -112,20 +113,21 @@ export class EmbedCommand extends Command {
         },
       );
       const post = await req.json();
-      await (
-        isMessage
-          ? interactionOrMessage.reply
-          : i === 0
-            ? interactionOrMessage.editReply
-            : interactionOrMessage.followUp
-      )({
+      const embed = {
         components: [buildEmbed(post, flags)!],
         flags: [MessageFlags.IsComponentsV2],
         allowedMentions: {
           parse: [],
           repliedUser: false,
         },
-      });
+      } as const;
+      if (isMessage) {
+        return await interactionOrMessage.reply(embed);
+      }
+      if (i === 0) {
+        return await interactionOrMessage.editReply(embed);
+      }
+      return await interactionOrMessage.followUp(embed);
     }
     return;
   }
