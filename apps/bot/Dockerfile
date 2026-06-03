@@ -1,7 +1,7 @@
 #### BASE STAGE
 #### Installs moon.
 
-FROM node:24-trixie-slim AS base
+FROM node:24-trixie AS base
 WORKDIR /app
 
 # Install moon binary

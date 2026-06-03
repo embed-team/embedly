@@ -4,6 +4,8 @@ import type { AppType } from "@embedly/api";
 import { container, SapphireClient } from "@sapphire/framework";
 import { ActivityType, GatewayIntentBits, Partials, PresenceUpdateStatus } from "discord.js";
 import { hc } from "hono/client";
+
+import { MessageCache } from "./messageCache";
 export class EmbedlyClient extends SapphireClient {
   public constructor() {
     super({
@@ -30,10 +32,12 @@ export class EmbedlyClient extends SapphireClient {
 
   public override async login(token?: string) {
     container.api = hc<AppType>(process.env.EMBEDLY_API_DOMAIN ?? "http://localhost:8787");
+    container.messageCache = await MessageCache.connect();
     return super.login(token);
   }
 
   public override async destroy() {
+    await container.messageCache?.close();
     return super.destroy();
   }
 }
@@ -41,5 +45,6 @@ export class EmbedlyClient extends SapphireClient {
 declare module "@sapphire/framework" {
   interface Container {
     api: ReturnType<typeof hc<AppType>>;
+    messageCache: MessageCache;
   }
 }

@@ -77,13 +77,15 @@ export class EmbedCommand extends Command {
       | Message,
   ) {
     const isMessage = interactionOrMessage instanceof Message;
+    let sentEmbed = false;
     const urls = extractURLs(content);
     if (urls.length === 0) {
-      if (isMessage) return;
-      return await interactionOrMessage.reply({
+      if (isMessage) return sentEmbed;
+      await interactionOrMessage.reply({
         content: "No URLs Found.",
         flags: [MessageFlags.Ephemeral],
       });
+      return sentEmbed;
     }
 
     if (!isMessage) await interactionOrMessage.deferReply();
@@ -98,9 +100,10 @@ export class EmbedCommand extends Command {
     ).filter((m) => m !== null);
 
     if (!isMessage && matches.length === 0) {
-      return await interactionOrMessage.editReply({
+      await interactionOrMessage.editReply({
         content: "No matches found.",
       });
+      return sentEmbed;
     }
 
     for (const [i, { platform, id }] of matches.entries()) {
@@ -122,14 +125,27 @@ export class EmbedCommand extends Command {
         },
       } as const;
       if (isMessage) {
-        return await interactionOrMessage.reply(embed);
+        const botMessage =
+          i > 0 && interactionOrMessage.channel.isSendable()
+            ? await interactionOrMessage.channel.send(embed)
+            : await interactionOrMessage.reply(embed);
+        await container.messageCache.save(
+          interactionOrMessage.id,
+          botMessage.id,
+          interactionOrMessage.author.id,
+        );
+        sentEmbed = true;
+        continue;
       }
       if (i === 0) {
-        return await interactionOrMessage.editReply(embed);
+        await interactionOrMessage.editReply(embed);
+        sentEmbed = true;
+        continue;
       }
-      return await interactionOrMessage.followUp(embed);
+      await interactionOrMessage.followUp(embed);
+      sentEmbed = true;
     }
-    return;
+    return sentEmbed;
   }
 
   public override async contextMenuRun(interaction: Command.ContextMenuCommandInteraction) {

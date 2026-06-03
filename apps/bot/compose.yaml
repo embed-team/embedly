@@ -1,0 +1,26 @@
+services:
+  cache:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
+    command: dragonfly --cache_mode=true
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 1s
+      retries: 30
+    ports:
+      - "6379:6379"
+
+  bot:
+    build:
+      context: ../..
+      dockerfile: apps/bot/Dockerfile
+    depends_on:
+      cache:
+        condition: service_healthy
+    environment:
+      CACHE_URL: redis://cache:6379
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      EMBEDLY_API_DOMAIN: ${EMBEDLY_API_DOMAIN}
+      EMBEDLY_AUTH_SECRET: ${EMBEDLY_AUTH_SECRET}
+      EMBED_USER_AGENT: ${EMBED_USER_AGENT}
+      MESSAGE_CACHE_TTL_SECONDS: ${MESSAGE_CACHE_TTL_SECONDS:-86400}

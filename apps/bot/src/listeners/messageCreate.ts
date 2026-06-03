@@ -15,7 +15,8 @@ export class ReadyListener extends Listener<typeof Events.MessageCreate> {
     if (msg.author.bot) return;
     if (msg.author.id === this.container.client.id) return;
 
-    await EmbedCommand.handleUrls(msg.content, {}, false, msg);
+    const sentEmbed = await EmbedCommand.handleUrls(msg.content, {}, false, msg);
+    if (!sentEmbed) return;
 
     await msg.edit({ flags: MessageFlags.SuppressEmbeds });
   }
