@@ -3,7 +3,7 @@ import { MessageFlags, type Message } from "discord.js";
 
 import { EmbedCommand } from "../commands/embed";
 
-export class ReadyListener extends Listener<typeof Events.MessageCreate> {
+export class MessageCreateListener extends Listener<typeof Events.MessageCreate> {
   public constructor(context: Listener.LoaderContext, options: Listener.Options) {
     super(context, {
       ...options,
