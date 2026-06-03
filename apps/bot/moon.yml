@@ -7,7 +7,7 @@ project:
 
 tasks:
   dev:
-    command: docker compose up --build
+    command: docker compose up --build --watch
     options:
       interactive: true
     deps:

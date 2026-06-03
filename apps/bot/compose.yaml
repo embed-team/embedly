@@ -14,6 +14,14 @@ services:
     build:
       context: ../..
       dockerfile: apps/bot/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../../apps/bot
+        - action: rebuild
+          path: ../../packages
+        - action: rebuild
+          path: ../../pnpm-lock.yaml
     depends_on:
       cache:
         condition: service_healthy

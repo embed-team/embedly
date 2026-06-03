@@ -22,6 +22,7 @@ export class MessageCache {
   public async save(sourceMessageId: string, botMessageId: string, authorId: string) {
     const messageKey = this.getSourceMessageKey(sourceMessageId);
     const authorKey = this.getBotMessageAuthorKey(botMessageId);
+    const sourceKey = this.getBotMessageSourceKey(botMessageId);
     const existing = await this.getSourceMessage(sourceMessageId);
     const botMessageIds = existing?.botMessageIds ?? [];
 
@@ -33,7 +34,43 @@ export class MessageCache {
       .multi()
       .set(messageKey, JSON.stringify({ botMessageIds }), { EX: MESSAGE_CACHE_TTL_SECONDS })
       .set(authorKey, authorId, { EX: MESSAGE_CACHE_TTL_SECONDS })
+      .set(sourceKey, sourceMessageId, { EX: MESSAGE_CACHE_TTL_SECONDS })
       .exec();
+  }
+
+  public async getOriginalAuthorId(botMessageId: string) {
+    return await this.client.get(this.getBotMessageAuthorKey(botMessageId));
+  }
+
+  public async removeBotMessage(botMessageId: string) {
+    const sourceMessageId = await this.client.get(this.getBotMessageSourceKey(botMessageId));
+    const keys = [
+      this.getBotMessageAuthorKey(botMessageId),
+      this.getBotMessageSourceKey(botMessageId),
+    ];
+
+    if (!sourceMessageId) {
+      await this.client.del(keys);
+      return;
+    }
+
+    const sourceMessage = await this.getSourceMessage(sourceMessageId);
+    const botMessageIds = sourceMessage?.botMessageIds.filter((id) => id !== botMessageId) ?? [];
+    const transaction = this.client.multi().del(keys);
+
+    if (botMessageIds.length === 0) {
+      transaction.del(this.getSourceMessageKey(sourceMessageId));
+    } else {
+      transaction.set(
+        this.getSourceMessageKey(sourceMessageId),
+        JSON.stringify({ botMessageIds }),
+        {
+          EX: MESSAGE_CACHE_TTL_SECONDS,
+        },
+      );
+    }
+
+    await transaction.exec();
   }
 
   public async getBotMessageIds(sourceMessageId: string) {
@@ -46,6 +83,7 @@ export class MessageCache {
     const keys = [
       this.getSourceMessageKey(sourceMessageId),
       ...botMessageIds.map((id) => this.getBotMessageAuthorKey(id)),
+      ...botMessageIds.map((id) => this.getBotMessageSourceKey(id)),
     ];
 
     await this.client.del(keys);
@@ -68,5 +106,9 @@ export class MessageCache {
 
   private getBotMessageAuthorKey(messageId: string) {
     return `embedly:bot-author:${messageId}`;
+  }
+
+  private getBotMessageSourceKey(messageId: string) {
+    return `embedly:bot-source:${messageId}`;
   }
 }
