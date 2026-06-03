@@ -53,7 +53,16 @@ function addPostComponents(embed: ContainerBuilder, post: PostData) {
       );
     if (post.text && post.text.length > 0) {
       section.addTextDisplayComponents((text) =>
-        text.setContent(truncate(escapeMarkdown(post.text ?? ""), 2000)),
+        text.setContent(
+          truncate(
+            escapeMarkdown(
+              post.platform === "Twitter" && post.translation
+                ? `${getEmojiByName("translation", `${post.translation.provider}_${post.translation.source_lang}_${post.translation.target_lang}`)} ${post.translation.text}`
+                : (post.text ?? ""),
+            ),
+            2000,
+          ),
+        ),
       );
     }
     return section;

@@ -42,11 +42,11 @@ export async function syncEmojis() {
   container.logger.info(`Emojis: Synced ${Object.keys(emojis).length} Emojis`);
 }
 
-export function getEmojiByName(name: string) {
+export function getEmojiByName(name: string, nameOverride?: string) {
   const emoji = container.emojis[name];
   return formatEmoji({
     id: emoji,
-    name,
+    name: nameOverride ?? name,
   });
 }
 
