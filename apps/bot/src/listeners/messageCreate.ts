@@ -17,6 +17,7 @@ export class MessageCreateListener extends Listener<typeof Events.MessageCreate>
 
     const sentEmbed = await EmbedCommand.handleUrls(msg.content, {}, false, msg);
     if (!sentEmbed) return;
+    if (msg.embeds.length === 0) return;
 
     await msg.edit({ flags: MessageFlags.SuppressEmbeds });
   }
