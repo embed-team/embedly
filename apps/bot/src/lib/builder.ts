@@ -24,6 +24,8 @@ const NumberFormatter = new Intl.NumberFormat("en", {
   maximumFractionDigits: 2,
 });
 
+const MAX_GALLERY_ITEMS = 10;
+
 export interface EmbedFlags {
   MediaOnly: boolean;
   SourceOnly: boolean;
@@ -33,8 +35,12 @@ export interface EmbedFlags {
 type PostData = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
 
 function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["Spoiler"]) {
+  if (media.length === 0) return null;
+
   const gallery = new MediaGalleryBuilder();
-  gallery.addItems(media.map((m) => ({ media: { url: m.url }, spoiler })));
+  gallery.addItems(
+    media.slice(0, MAX_GALLERY_ITEMS).map((m) => ({ media: { url: m.url }, spoiler })),
+  );
 
   return gallery.toJSON();
 }
@@ -60,7 +66,7 @@ function addPostComponents(embed: ContainerBuilder, post: PostData) {
                 ? `${getEmojiByName("translation", `${post.translation.provider}_${post.translation.source_lang}_${post.translation.target_lang}`)} ${post.translation.text}`
                 : (post.text ?? ""),
             ),
-            2000,
+            1500,
           ),
         ),
       );
@@ -80,7 +86,7 @@ function addPostComponents(embed: ContainerBuilder, post: PostData) {
     }
   }
   if (post.media.length > 0) {
-    embed.addMediaGalleryComponents(buildMediaEmbed(post.media));
+    embed.addMediaGalleryComponents(buildMediaEmbed(post.media)!);
   }
   embed
     .addSeparatorComponents((sep) => sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small))

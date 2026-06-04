@@ -116,19 +116,25 @@ export class EmbedCommand extends Command {
         },
       );
       const post = await req.json();
-      const embed = {
-        components: [buildEmbed(post, flags)!],
-        flags: [MessageFlags.IsComponentsV2],
-        allowedMentions: {
-          parse: [],
-          repliedUser: false,
-        },
-      } as const;
+      const component = buildEmbed(post, flags);
+      if (!component) {
+        if (isMessage) continue;
+      }
+      const response = component
+        ? ({
+            components: [component],
+            flags: [MessageFlags.IsComponentsV2],
+            allowedMentions: {
+              parse: [],
+              repliedUser: false,
+            },
+          } as const)
+        : { content: "No media found." };
       if (isMessage) {
         const botMessage =
           i > 0 && interactionOrMessage.channel.isSendable()
-            ? await interactionOrMessage.channel.send(embed)
-            : await interactionOrMessage.reply(embed);
+            ? await interactionOrMessage.channel.send(response)
+            : await interactionOrMessage.reply(response);
         await container.messageCache.save(
           interactionOrMessage.id,
           botMessage.id,
@@ -138,11 +144,11 @@ export class EmbedCommand extends Command {
         continue;
       }
       if (i === 0) {
-        await interactionOrMessage.editReply(embed);
+        await interactionOrMessage.editReply(response);
         sentEmbed = true;
         continue;
       }
-      await interactionOrMessage.followUp(embed);
+      await interactionOrMessage.followUp(response);
       sentEmbed = true;
     }
     return sentEmbed;
