@@ -1,3 +1,4 @@
+import { EmbedlyErrors, EmbedlyLogs, formatLog, getErrorContext } from "@embedly/logging";
 import { Events, Listener } from "@sapphire/framework";
 import type { Message, PartialMessage } from "discord.js";
 
@@ -17,7 +18,24 @@ export class MessageDeleteListener extends Listener<typeof Events.MessageDelete>
       try {
         const botMessage = await message.channel.messages.fetch(botMessageId);
         await botMessage.delete();
-      } catch {}
+      } catch (error) {
+        this.container.logger.warn(
+          formatLog("warn", EmbedlyErrors.DeleteFailed, {
+            request_id: `message:${message.id}`,
+            message_id: message.id,
+            bot_message_id: botMessageId,
+            ...getErrorContext(error),
+          }),
+        );
+      }
     }
+
+    this.container.logger.info(
+      formatLog("info", EmbedlyLogs.AutoDeleteSucceeded, {
+        request_id: `message:${message.id}`,
+        message_id: message.id,
+        bot_message_count: botMessageIds.length,
+      }),
+    );
   }
 }

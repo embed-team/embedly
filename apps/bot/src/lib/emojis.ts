@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
+import { EmbedlyErrors, formatLog, getErrorContext } from "@embedly/logging";
 import { container } from "@sapphire/framework";
 import { formatEmoji } from "discord.js";
 
@@ -33,7 +34,12 @@ export async function syncEmojis() {
       container.logger.debug(`Emojis: Uploaded ${emoji} emoji.`);
     } catch (error) {
       const err = new Error(`Emojis: Failed to upload ${emoji} emoji!`, { cause: error });
-      container.logger.error(err);
+      container.logger.error(
+        formatLog("error", EmbedlyErrors.EmojiUploadFailed, {
+          emoji,
+          ...getErrorContext(error),
+        }),
+      );
       throw err;
     }
   }

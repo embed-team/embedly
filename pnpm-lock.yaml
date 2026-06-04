@@ -53,6 +53,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@embedly/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
       '@embedly/platforms':
         specifier: workspace:*
         version: link:../../packages/platforms
@@ -87,6 +90,9 @@ importers:
       '@embedly/api':
         specifier: workspace:*
         version: link:../api
+      '@embedly/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
       '@embedly/platforms':
         specifier: workspace:*
         version: link:../../packages/platforms
@@ -248,6 +254,21 @@ importers:
 
   packages/config:
     devDependencies:
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.47.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.62.0
+
+  packages/logging:
+    devDependencies:
+      '@embedly/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.6.0
       oxfmt:
         specifier: 'catalog:'
         version: 0.47.0

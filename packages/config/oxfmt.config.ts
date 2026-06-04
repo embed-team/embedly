@@ -2,5 +2,5 @@ import { defineConfig } from "oxfmt";
 
 export default defineConfig({
   sortImports: true,
-  ignorePatterns: ["dist/**"],
+  ignorePatterns: ["dist/**", "types/**"],
 });

@@ -1,0 +1,6 @@
+layer: "library"
+language: "typescript"
+
+project:
+  title: "@embedly/logging"
+  description: "Shared logging and error formatting for Embedly."

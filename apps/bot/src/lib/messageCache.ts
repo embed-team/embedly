@@ -1,3 +1,4 @@
+import { EmbedlyErrors, formatLog, getErrorContext } from "@embedly/logging";
 import { createClient, type RedisClientType } from "redis";
 
 const MESSAGE_CACHE_TTL_SECONDS = Number(process.env.MESSAGE_CACHE_TTL_SECONDS ?? 60 * 60 * 24);
@@ -13,7 +14,11 @@ export class MessageCache {
   public static async connect() {
     const client = createClient({ url: CACHE_URL });
     client.on("error", (error) => {
-      console.error("Message cache error", error);
+      console.error(
+        formatLog("error", EmbedlyErrors.MessageCacheFailed, {
+          ...getErrorContext(error),
+        }),
+      );
     });
     await client.connect();
     return new MessageCache(client as RedisClientType);

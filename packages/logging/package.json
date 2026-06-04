@@ -1,0 +1,14 @@
+{
+  "name": "@embedly/logging",
+  "version": "0.15.3",
+  "type": "module",
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "devDependencies": {
+    "@embedly/config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:"
+  }
+}

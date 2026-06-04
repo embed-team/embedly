@@ -6,26 +6,19 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "WebWorker"],
     "emitDeclarationOnly": true,
     "declaration": true,
-    "declarationDir": "./types",
-    "types": ["node"]
+    "declarationDir": "./types"
   },
   "include": ["src/**/*", "*.js", "*.ts"],
-  "exclude": ["node_modules", "dist", "tsdown.config.ts"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     {
       "path": "../../packages/config"
     },
     {
-      "path": "../../packages/logging"
-    },
-    {
-      "path": "../../packages/platforms"
-    },
-    {
-      "path": "../api"
+      "path": "../config"
     }
   ]
 }

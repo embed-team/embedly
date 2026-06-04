@@ -11,7 +11,7 @@ export default defineConfig({
   sourcemap: false,
   copy: ["src/emojis"],
   deps: {
-    alwaysBundle: ["@embedly/platforms", "@embedly/api"],
+    alwaysBundle: ["@embedly/platforms", "@embedly/api", "@embedly/logging"],
     onlyBundle: false,
   },
 });

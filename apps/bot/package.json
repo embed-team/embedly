@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@embedly/api": "workspace:*",
+    "@embedly/logging": "workspace:*",
     "@embedly/platforms": "workspace:*",
     "@sapphire/framework": "^5.5.0",
     "discord.js": "~14.26.3",

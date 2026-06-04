@@ -5,5 +5,5 @@ export default defineConfig({
   rules: {
     "no-debugger": "error",
   },
-  ignorePatterns: ["dist/**"],
+  ignorePatterns: ["dist/**", "types/**"],
 });
