@@ -58,10 +58,10 @@ importers:
         version: link:../../packages/platforms
       '@hono/zod-validator':
         specifier: ^0.7.6
-        version: 0.7.6(hono@4.12.15)(zod@4.4.1)
+        version: 0.7.6(hono@4.12.18)(zod@4.4.1)
       hono:
-        specifier: ^4.12.15
-        version: 4.12.15
+        specifier: ^4.12.18
+        version: 4.12.18
       zod:
         specifier: ^4.4.1
         version: 4.4.1
@@ -97,8 +97,8 @@ importers:
         specifier: ~14.26.3
         version: 14.26.3
       hono:
-        specifier: ^4.12.15
-        version: 4.12.15
+        specifier: ^4.12.18
+        version: 4.12.18
       redis:
         specifier: ^6.0.0
         version: 6.0.0
@@ -3423,8 +3423,8 @@ packages:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
 
-  hono@4.12.15:
-    resolution: {integrity: sha512-qM0jDhFEaCBb4TxoW7f53Qrpv9RBiayUHo0S52JudprkhvpjIrGoU1mnnr29Fvd1U335ZFPZQY1wlkqgfGXyLg==}
+  hono@4.12.18:
+    resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
     engines: {node: '>=16.9.0'}
 
   hookable@6.1.1:
@@ -5542,9 +5542,9 @@ snapshots:
       '@tailwindcss/oxide': 4.3.0
       tailwindcss: 4.3.0
 
-  '@hono/zod-validator@0.7.6(hono@4.12.15)(zod@4.4.1)':
+  '@hono/zod-validator@0.7.6(hono@4.12.18)(zod@4.4.1)':
     dependencies:
-      hono: 4.12.15
+      hono: 4.12.18
       zod: 4.4.1
 
   '@iconify-json/ph@1.2.2':
@@ -7813,7 +7813,7 @@ snapshots:
 
   he@1.2.0: {}
 
-  hono@4.12.15: {}
+  hono@4.12.18: {}
 
   hookable@6.1.1: {}
 
