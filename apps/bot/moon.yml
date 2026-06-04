@@ -7,9 +7,14 @@ project:
 
 tasks:
   dev:
-    command: docker compose up --build --watch
+    script: |
+      set -e
+
+      trap 'docker compose stop cache' EXIT
+      docker compose up --detach cache
+      pnpm dev
     options:
-      interactive: true
+      envFile: true
     deps:
       - api:dev
   build:
