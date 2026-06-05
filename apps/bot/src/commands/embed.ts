@@ -24,6 +24,12 @@ import { extractURLs } from "../lib/utils";
 type EmbedSource = "message" | "command" | "context_menu";
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
 
+export interface EmbedURLRequest {
+  url: string;
+  flags?: Partial<EmbedFlags>;
+  force?: boolean;
+}
+
 export class EmbedCommand extends Command {
   public constructor(context: Command.LoaderContext, options: Command.Options) {
     super(context, {
@@ -82,9 +88,7 @@ export class EmbedCommand extends Command {
   }
 
   static async handleUrls(
-    content: string,
-    flags: Partial<EmbedFlags>,
-    force: boolean = false,
+    urls: EmbedURLRequest[],
     interactionOrMessage:
       | Command.ChatInputCommandInteraction
       | Command.ContextMenuCommandInteraction
@@ -94,7 +98,6 @@ export class EmbedCommand extends Command {
     const isMessage = interactionOrMessage instanceof Message;
     const embedSource = source ?? (isMessage ? "message" : "command");
     let sentEmbed = false;
-    const urls = extractURLs(content);
     if (urls.length === 0) {
       if (isMessage) return sentEmbed;
       const requestId = `${embedSource}:${interactionOrMessage.id}`;
@@ -119,9 +122,9 @@ export class EmbedCommand extends Command {
 
     const matches = (
       await Promise.all(
-        urls.map(async (url) => {
-          const match = await matchURL(url);
-          return match ? { url, ...match } : null;
+        urls.map(async (request) => {
+          const match = await matchURL(request.url);
+          return match ? { ...request, ...match } : null;
         }),
       )
     ).filter((m) => m !== null);
@@ -144,7 +147,7 @@ export class EmbedCommand extends Command {
       return sentEmbed;
     }
 
-    for (const [i, { platform, id }] of matches.entries()) {
+    for (const [i, { platform, id, flags, force }] of matches.entries()) {
       const requestId = isMessage
         ? `message:${interactionOrMessage.id}`
         : `${embedSource}:${interactionOrMessage.id}`;
@@ -167,7 +170,7 @@ export class EmbedCommand extends Command {
       let post: ScrapeResponse;
       try {
         const req = await container.api.platforms.scrape.$post(
-          { json: { platform, id, force } },
+          { json: { platform, id, force: force ?? false } },
           {
             headers: {
               Authorization: `Bearer ${process.env.EMBEDLY_AUTH_SECRET}`,
@@ -307,19 +310,25 @@ export class EmbedCommand extends Command {
   public override async contextMenuRun(interaction: Command.ContextMenuCommandInteraction) {
     if (!interaction.isMessageContextMenuCommand()) return;
     const msg = interaction.targetMessage;
-    await EmbedCommand.handleUrls(msg.content, {}, false, interaction, "context_menu");
+    await EmbedCommand.handleUrls(
+      extractURLs(msg.content).map(({ url }) => ({ url })),
+      interaction,
+      "context_menu",
+    );
   }
 
   public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
     const url = interaction.options.getString("url", true);
     await EmbedCommand.handleUrls(
-      url,
-      {
-        MediaOnly: interaction.options.getBoolean("media_only") ?? false,
-        SourceOnly: interaction.options.getBoolean("source_only") ?? false,
-        Spoiler: interaction.options.getBoolean("spoiler") ?? false,
-      },
-      interaction.options.getBoolean("force") ?? false,
+      extractURLs(url).map(({ url }) => ({
+        url,
+        flags: {
+          MediaOnly: interaction.options.getBoolean("media_only") ?? false,
+          SourceOnly: interaction.options.getBoolean("source_only") ?? false,
+          Spoiler: interaction.options.getBoolean("spoiler") ?? false,
+        },
+        force: interaction.options.getBoolean("force") ?? false,
+      })),
       interaction,
       "command",
     );

@@ -1,7 +1,47 @@
 import { Events, Listener } from "@sapphire/framework";
 import { MessageFlags, type Message } from "discord.js";
 
-import { EmbedCommand } from "../commands/embed";
+import { EmbedCommand, type EmbedURLRequest } from "../commands/embed";
+import type { EmbedFlags } from "../lib/builder";
+import { extractURLs } from "../lib/utils";
+
+function parseMessageURLs(content: string) {
+  const urls: EmbedURLRequest[] = [];
+  let suppressNativeEmbeds = true;
+
+  for (const match of extractURLs(content)) {
+    const before = content.slice(0, match.index);
+    const after = content.slice(match.endIndex);
+
+    if (before.endsWith("<") && after.startsWith(">")) continue;
+
+    if (before.endsWith("~")) {
+      suppressNativeEmbeds = false;
+      continue;
+    }
+
+    const flags: Partial<EmbedFlags> = {};
+    let force = false;
+
+    if (before.endsWith("?@")) {
+      flags.SourceOnly = true;
+      force = true;
+    } else if (before.endsWith("?!")) {
+      flags.MediaOnly = true;
+      force = true;
+    } else if (before.endsWith("@")) {
+      flags.SourceOnly = true;
+    } else if (before.endsWith("!")) {
+      flags.MediaOnly = true;
+    } else if (before.endsWith("?")) {
+      force = true;
+    }
+
+    urls.push({ url: match.url, flags, force });
+  }
+
+  return { urls, suppressNativeEmbeds };
+}
 
 export class MessageCreateListener extends Listener<typeof Events.MessageCreate> {
   public constructor(context: Listener.LoaderContext, options: Listener.Options) {
@@ -15,8 +55,10 @@ export class MessageCreateListener extends Listener<typeof Events.MessageCreate>
     if (msg.author.bot) return;
     if (msg.author.id === this.container.client.id) return;
 
-    const sentEmbed = await EmbedCommand.handleUrls(msg.content, {}, false, msg);
+    const { urls, suppressNativeEmbeds } = parseMessageURLs(msg.content);
+    const sentEmbed = await EmbedCommand.handleUrls(urls, msg);
     if (!sentEmbed) return;
+    if (!suppressNativeEmbeds) return;
     if (msg.embeds.length === 0) return;
 
     await msg.edit({ flags: MessageFlags.SuppressEmbeds });
