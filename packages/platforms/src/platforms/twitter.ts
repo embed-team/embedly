@@ -6,6 +6,7 @@ import type { APITwitterStatus, FxTweetResponse, RawText } from "./twitter.d";
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*(?:twitter|x)\.com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
+const MAX_CONTEXT_DEPTH = 1;
 
 function enrichText(raw?: RawText) {
   if (!raw) return undefined;
@@ -70,7 +71,9 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
 
     return status!;
   },
-  async transform(raw) {
+  async transform(raw, options) {
+    const depth = options?.depth ?? 0;
+    const includeContext = depth < MAX_CONTEXT_DEPTH;
     const text = raw.article?.preview_text ?? enrichText(raw.raw_text) ?? raw.text;
     const media = raw.article
       ? [{ url: raw.article.cover_media.media_info.original_img_url, type: "photo" }]
@@ -95,10 +98,14 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
         bookmarks: raw.bookmarks ?? undefined,
       },
       media,
-      quote: raw.quote?.type === "status" ? await this.transform(raw.quote) : undefined,
-      reply_to: raw.replying_to
-        ? await this.transform(await this.fetch(raw.replying_to.status))
-        : undefined,
+      quote:
+        includeContext && raw.quote?.type === "status"
+          ? await this.transform(raw.quote, { depth: depth + 1 })
+          : undefined,
+      reply_to:
+        includeContext && raw.replying_to
+          ? await this.transform(await this.fetch(raw.replying_to.status), { depth: depth + 1 })
+          : undefined,
 
       article: raw.article,
       community_note: enrichText(raw.community_note),

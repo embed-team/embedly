@@ -23,6 +23,10 @@ export interface NormalizedPost {
   reply_to?: NormalizedPost;
 }
 
+interface TransformOptions {
+  depth?: number;
+}
+
 interface FetchEnv {
   EMBED_USER_AGENT: string;
 }
@@ -31,5 +35,8 @@ export interface Platform<PlatformName extends string, PlatformData, PlatformMet
   readonly type: PlatformName;
   match(url: string, env?: FetchEnv): Promise<string | null>;
   fetch(id: string, env?: FetchEnv): Promise<PlatformData>;
-  transform(raw: PlatformData): Promise<NormalizedPost & PlatformMeta & { platform: PlatformName }>;
+  transform(
+    raw: PlatformData,
+    options?: TransformOptions,
+  ): Promise<NormalizedPost & PlatformMeta & { platform: PlatformName }>;
 }

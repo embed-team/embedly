@@ -171,7 +171,8 @@ export const Threads: Platform<
 
     return posts;
   },
-  async transform(raws) {
+  async transform(raws, options) {
+    const depth = options?.depth ?? 0;
     const raw = raws.at(-1)!;
     return {
       platform: this.type,
@@ -188,7 +189,10 @@ export const Threads: Platform<
         likes: raw.like_count,
         reposts: raw.text_post_app_info.reshare_count,
       },
-      reply_to: raws.length > 1 ? await this.transform([raws.at(-2)!]) : undefined,
+      reply_to:
+        depth < 1 && raws.length > 1
+          ? await this.transform([raws.at(-2)!], { depth: depth + 1 })
+          : undefined,
       url: `https://threads.net/@${raw.user.username}/post/${raw.code}`,
       timestamp: raw.taken_at,
       community_note: raw.media_overlay_info?.buttons?.[0].text,

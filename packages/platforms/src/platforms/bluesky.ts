@@ -221,7 +221,9 @@ export const Bluesky: Platform<"Bluesky", BlueskyData, BlueskyMeta> = {
       throw error;
     }
   },
-  async transform(raw) {
+  async transform(raw, options) {
+    const depth = options?.depth ?? 0;
+    const includeContext = depth < 1;
     const post: BlueskyPost = "post" in raw ? raw.post : raw;
     const record = AppBskyFeedPost.validateRecord("value" in post ? post.value : post.record);
     if (!record.success) {
@@ -271,10 +273,11 @@ export const Bluesky: Platform<"Bluesky", BlueskyData, BlueskyMeta> = {
         likes: post.likeCount,
       },
       media: await parseMedia(post, record.value),
-      quote: quote ? await this.transform(quote) : undefined,
+      quote:
+        includeContext && quote ? await this.transform(quote, { depth: depth + 1 }) : undefined,
       reply_to:
-        "post" in raw && AppBskyFeedDefs.isThreadViewPost(raw.parent)
-          ? await this.transform(raw.parent)
+        includeContext && "post" in raw && AppBskyFeedDefs.isThreadViewPost(raw.parent)
+          ? await this.transform(raw.parent, { depth: depth + 1 })
           : undefined,
       external,
     };
