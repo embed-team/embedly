@@ -248,7 +248,9 @@ export interface Article {
     id: string;
     media_key: string;
     media_id: string;
-    media_info: unknown;
+    media_info: {
+      original_img_url: string;
+    };
   };
   content: {
     blocks: Array<{

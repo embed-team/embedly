@@ -71,6 +71,11 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
     return status!;
   },
   async transform(raw) {
+    const text = raw.article?.preview_text ?? enrichText(raw.raw_text) ?? raw.text;
+    const media = raw.article
+      ? [{ url: raw.article.cover_media.media_info.original_img_url, type: "photo" }]
+      : (raw.media?.all?.map((m) => ({ url: m.url ?? "", type: m.type })) ?? []);
+
     return {
       platform: this.type,
       author: {
@@ -80,7 +85,7 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
         avatar: raw.author.avatar_url ?? "",
       },
       url: raw.url,
-      text: enrichText(raw.raw_text) ?? raw.text,
+      text,
       timestamp: raw.created_timestamp,
       stats: {
         comments: raw.replies,
@@ -89,7 +94,7 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
         views: raw.views ?? undefined,
         bookmarks: raw.bookmarks ?? undefined,
       },
-      media: raw.media?.all?.map((m) => ({ url: m.url ?? "", type: m.type })) ?? [],
+      media,
       quote: raw.quote?.type === "status" ? await this.transform(raw.quote) : undefined,
       reply_to: raw.replying_to
         ? await this.transform(await this.fetch(raw.replying_to.status))
@@ -98,7 +103,7 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
       article: raw.article,
       community_note: enrichText(raw.community_note),
       poll: raw.poll,
-      translation: raw.translation,
+      translation: raw.article ? undefined : raw.translation,
     };
   },
 } as const;
