@@ -9,8 +9,7 @@
     "lib": ["ESNext", "WebWorker"],
     "emitDeclarationOnly": true,
     "declaration": true,
-    "declarationDir": "./types",
-    "rootDir": "./src"
+    "declarationDir": "./types"
   },
   "include": ["src/**/*", "*.js", "*.ts"],
   "exclude": ["node_modules", "dist"],
