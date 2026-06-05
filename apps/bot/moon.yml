@@ -19,14 +19,18 @@ tasks:
       - api:dev
   docker/stop:
     command: docker compose down
+    options:
+      cache: false
   docker/start:
     command: docker compose up -d
     options:
       envFile: true
+      cache: false
   docker/build:
     command: docker compose up --build -d
     options:
       envFile: true
+      cache: false
   build:
     command: tsdown
   start:
