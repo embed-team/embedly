@@ -17,9 +17,19 @@ tasks:
       envFile: true
     deps:
       - api:dev
+  docker/stop:
+    command: docker compose down
+  docker/start:
+    command: docker compose up -d
+    options:
+      envFile: true
+  docker/build:
+    command: docker compose up --build -d
+    options:
+      envFile: true
   build:
     command: tsdown
   start:
-    command: docker compose up --build
+    command: node dist/main.mjs
     options:
       envFile: true
