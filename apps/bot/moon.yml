@@ -20,6 +20,6 @@ tasks:
   build:
     command: tsdown
   start:
-    command: node dist/main.mjs
+    command: docker compose up --build
     options:
       envFile: true
