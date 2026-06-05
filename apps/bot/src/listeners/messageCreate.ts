@@ -3,7 +3,7 @@ import { MessageFlags, type Message } from "discord.js";
 
 import { EmbedCommand, type EmbedURLRequest } from "../commands/embed";
 import type { EmbedFlags } from "../lib/builder";
-import { extractURLs } from "../lib/utils";
+import { extractURLs, isSpoiler } from "../lib/utils";
 
 function parseMessageURLs(content: string) {
   const urls: EmbedURLRequest[] = [];
@@ -20,7 +20,9 @@ function parseMessageURLs(content: string) {
       continue;
     }
 
-    const flags: Partial<EmbedFlags> = {};
+    const flags: Partial<EmbedFlags> = {
+      Spoiler: isSpoiler(match.url, content),
+    };
     let force = false;
 
     if (before.endsWith("?@")) {
