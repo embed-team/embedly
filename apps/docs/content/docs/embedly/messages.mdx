@@ -32,15 +32,23 @@ If a link is wrapped in Discord spoiler tags, the embed will be spoilered too.
 ||https://x.com/user/status/123||
 ```
 
+## Inline flags
+
+Put a flag directly before a link to change how Embedly handles that link.
+
+| Format                            | Behavior                                        |
+| --------------------------------- | ----------------------------------------------- |
+| `@https://x.com/user/status/123`  | Show only the source post.                      |
+| `!https://x.com/user/status/123`  | Show only the media.                            |
+| `?https://x.com/user/status/123`  | Refresh the post instead of using cached data.  |
+| `?@https://x.com/user/status/123` | Refresh the post and show only the source post. |
+| `?!https://x.com/user/status/123` | Refresh the post and show only the media.       |
+| `~https://x.com/user/status/123`  | Let Discord handle the link instead of Embedly. |
+
 ## Escaping links
 
-Wrap a link in angle brackets to prevent Embedly from embedding it. Note that Discord will still suppress its own native embed for the link.
+Wrap a link in angle brackets to prevent Embedly and Discord from embedding it.
 
 ```
 <https://x.com/user/status/123>
 ```
-
-<Callout type="info">
-  Message events don't support flags like `media_only` or `source_only`. Use the [slash
-  command](/docs/embedly/slash-command) if you need those.
-</Callout>

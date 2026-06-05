@@ -30,7 +30,18 @@ There are three ways to trigger an embed.
 
 Embedly automatically detects and embeds links as they're posted, no command needed. Multiple links in a single message are all processed. The first link gets a reply, and each additional link is sent as a follow-up in the same channel. Once Embedly has posted, Discord's native embed preview is suppressed.
 
-If a link is wrapped in Discord spoiler tags, the embed is spoilered too. Wrap a link in angle brackets to prevent Embedly from embedding it.
+If a link is wrapped in Discord spoiler tags, the embed is spoilered too. Wrap a link in angle brackets to prevent Embedly and Discord from embedding it.
+
+Put a flag directly before a link to change how Embedly handles it.
+
+| Format | Behavior |
+| --- | --- |
+| `@<link>` | Show only the source post. |
+| `!<link>` | Show only the media. |
+| `?<link>` | Refresh the post instead of using cached data. |
+| `?@<link>` | Refresh the post and show only the source post. |
+| `?!<link>` | Refresh the post and show only the media. |
+| `~<link>` | Let Discord handle the link instead of Embedly. |
 
 ### Slash command
 
