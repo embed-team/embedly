@@ -26,8 +26,13 @@ tasks:
     options:
       envFile: true
       cache: false
+  docker/restart:
+    command: docker compose up -d --build --force-recreate --no-deps bot
+    options:
+      envFile: true
+      cache: false
   docker/build:
-    command: docker compose up --build -d
+    command: docker compose build
     options:
       envFile: true
       cache: false
