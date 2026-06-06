@@ -37,6 +37,16 @@ function enrichText(raw?: RawText) {
   return he.decode(text);
 }
 
+function resolveMediaUrl(media: { type: string; url?: string }) {
+  if (media.type === "gif" && media.url?.startsWith("https://video.twimg.com/tweet_video/")) {
+    return media.url
+      .replace("https://video.twimg.com/", "https://gif.fxtwitter.com/")
+      .replace(/\.mp4$/, ".gif");
+  }
+
+  return media.url ?? "";
+}
+
 type TwitterMeta = Pick<APITwitterStatus, "translation" | "article" | "poll"> & {
   community_note?: string;
 };
@@ -77,7 +87,11 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
     const text = raw.article?.preview_text ?? enrichText(raw.raw_text) ?? raw.text;
     const media = raw.article
       ? [{ url: raw.article.cover_media.media_info.original_img_url, type: "photo" }]
-      : (raw.media?.all?.map((m) => ({ url: m.url ?? "", type: m.type })) ?? []);
+      : (raw.media?.all?.map((m) => ({
+          url: resolveMediaUrl(m),
+          type: m.type,
+          description: "altText" in m && typeof m.altText === "string" ? m.altText : undefined,
+        })) ?? []);
 
     return {
       platform: this.type,
