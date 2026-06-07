@@ -13,7 +13,11 @@ function enrichText(raw?: RawText) {
   let text = raw.text;
   for (const facet of raw.facets) {
     if (facet.type === "url") {
-      text = text.replace(facet.original!, facet.replacement!);
+      const source =
+        facet.original && text.includes(facet.original) ? facet.original : facet.display;
+      if (source && facet.replacement) {
+        text = text.replace(source, facet.replacement);
+      }
     }
     if (facet.type === "hashtag") {
       text = text.replace(
@@ -29,9 +33,6 @@ function enrichText(raw?: RawText) {
         new RegExp(`@${facet.original}`, "i"),
         `[@${facet.original}](https://x.com/${facet.original})`,
       );
-    }
-    if (facet.type === "url") {
-      text = text.replace(facet.display!, facet.replacement!);
     }
   }
   return he.decode(text);
