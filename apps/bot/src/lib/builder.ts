@@ -46,6 +46,14 @@ function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["S
 }
 
 function addPostComponents(embed: ContainerBuilder, post: PostData) {
+  const translation =
+    post.platform === "Twitter" &&
+    post.translation &&
+    post.translation.text.trim().length > 0 &&
+    post.translation.source_lang !== "en"
+      ? post.translation
+      : undefined;
+
   embed.addSectionComponents((section) => {
     section
       .setThumbnailAccessory((thumbnail) => thumbnail.setURL(post.author.avatar))
@@ -62,8 +70,8 @@ function addPostComponents(embed: ContainerBuilder, post: PostData) {
         text.setContent(
           truncate(
             escapeMarkdown(
-              post.platform === "Twitter" && post.translation
-                ? `${getEmojiByName("translation", `${post.translation.provider}_${post.translation.source_lang}_${post.translation.target_lang}`)} ${post.translation.text}`
+              translation
+                ? `${getEmojiByName("translation", `${translation.provider}_${translation.source_lang}_${translation.target_lang}`)} ${translation.text}`
                 : (post.text ?? ""),
             ),
             1500,
