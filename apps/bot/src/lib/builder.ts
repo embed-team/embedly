@@ -45,7 +45,7 @@ function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["S
   return gallery.toJSON();
 }
 
-function addPostComponents(embed: ContainerBuilder, post: PostData) {
+function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefix?: string) {
   const translation =
     post.platform === "Twitter" &&
     post.translation &&
@@ -53,17 +53,17 @@ function addPostComponents(embed: ContainerBuilder, post: PostData) {
     post.translation.source_lang !== "en"
       ? post.translation
       : undefined;
+  const authorHandle =
+    post.author.handle && post.author.url
+      ? `(${hyperlink(`@${post.author.handle}`, post.author.url)})`
+      : "";
+  const authorHeading = [headingPrefix, post.author.name, authorHandle].filter(Boolean).join(" ");
 
   embed.addSectionComponents((section) => {
     section
       .setThumbnailAccessory((thumbnail) => thumbnail.setURL(post.author.avatar))
       .addTextDisplayComponents((author) =>
-        author.setContent(
-          heading(
-            `${post.author.name} ${post.author.handle && post.author.url ? `(${hyperlink(`@${post.author.handle}`, post.author.url)})` : ""}`,
-            HeadingLevel.Three,
-          ),
-        ),
+        author.setContent(heading(authorHeading, HeadingLevel.Three)),
       );
     if (post.text && post.text.length > 0) {
       section.addTextDisplayComponents((text) =>
@@ -137,7 +137,11 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
     );
   }
 
-  addPostComponents(embed, post);
+  addPostComponents(
+    embed,
+    post,
+    post.reply_to ? getEmojiByName("reply") : post.quote ? getEmojiByName("quote") : undefined,
+  );
 
   if (post.quote) {
     embed.addSeparatorComponents((sep) =>
