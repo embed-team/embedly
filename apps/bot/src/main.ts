@@ -1,3 +1,4 @@
+import "./otel";
 import { EmbedlyClient } from "./lib/client";
 
 const client = new EmbedlyClient();

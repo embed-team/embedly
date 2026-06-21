@@ -116,10 +116,25 @@ export const EmbedlyLogs = {
     title: "Cache store.",
     detail: "Stored post data in cache.",
   }),
+  ApiScrape: defineLog({
+    type: "api.scrape",
+    title: "API scrape.",
+    detail: "Handled API scrape request.",
+  }),
+  EmbedRequest: defineLog({
+    type: "embed.request",
+    title: "Embed request.",
+    detail: "Handled embed request.",
+  }),
   EmbedCreated: defineLog({
     type: "embed.created",
     title: "Embed created.",
     detail: "Created an Embedly response.",
+  }),
+  DeleteRequest: defineLog({
+    type: "discord.delete_request",
+    title: "Delete request.",
+    detail: "Handled delete request.",
   }),
   EmbedSkipped: defineLog({
     type: "embed.skipped",
