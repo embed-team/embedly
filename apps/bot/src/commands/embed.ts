@@ -4,7 +4,6 @@ import {
   EmbedlyLogs,
   formatDiscordError,
   formatLog,
-  formatProblemLog,
   getErrorContext,
   isEmbedlyProblem,
 } from "@embedly/logging";
@@ -19,6 +18,18 @@ import {
 } from "discord.js";
 
 import { buildEmbed, EmbedFlags } from "../lib/builder";
+import {
+  botEmbedsCreated,
+  botErrors,
+  botInvocations,
+  botRequestDuration,
+  getActiveTraceContext,
+  injectTraceHeaders,
+  log,
+  markError,
+  recordError,
+  span,
+} from "../lib/observability";
 import { extractURLs } from "../lib/utils";
 
 type EmbedSource = "message" | "command" | "context_menu";
@@ -148,161 +159,231 @@ export class EmbedCommand extends Command {
     }
 
     for (const [i, { platform, id, flags, force }] of matches.entries()) {
+      const startedAt = Date.now();
       const requestId = isMessage
-        ? `message:${interactionOrMessage.id}`
-        : `${embedSource}:${interactionOrMessage.id}`;
-      const logContext = {
+        ? `message:${interactionOrMessage.id}:${i}`
+        : `${embedSource}:${interactionOrMessage.id}:${i}`;
+      const logContext: Record<string, unknown> = {
         request_id: requestId,
         source: embedSource,
         platform,
         post_id: id,
+        force: force ?? false,
+        outcome: "success",
+        status_code: 200,
         ...(isMessage
           ? {
               message_id: interactionOrMessage.id,
+              channel_id: interactionOrMessage.channelId,
+              guild_id: interactionOrMessage.guildId ?? "dm",
               user_id: interactionOrMessage.author.id,
             }
           : {
               interaction_id: interactionOrMessage.id,
+              channel_id: interactionOrMessage.channelId,
+              guild_id: interactionOrMessage.guildId ?? "dm",
               user_id: interactionOrMessage.user.id,
             }),
       };
 
-      let post: ScrapeResponse;
-      try {
-        const req = await container.api.platforms.scrape.$post(
-          { json: { platform, id, force: force ?? false } },
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.EMBEDLY_AUTH_SECRET}`,
-              "X-Embedly-Request-Id": requestId,
-              "X-Embedly-Source": embedSource,
-            },
-          },
-        );
-        const body = await req.json();
+      const spanAttributes = {
+        "embedly.request_id": requestId,
+        "embedly.source": embedSource,
+        "embedly.platform": platform,
+        "embedly.post_id": id,
+      };
+      const metricContext = { source: embedSource, platform };
+      botInvocations.add(1, metricContext);
 
-        if (!req.ok) {
-          const problem = isEmbedlyProblem(body)
-            ? body
-            : createProblem(EmbedlyErrors.ApiUnexpectedResponse, {
-                request_id: requestId,
-                context: { ...logContext, response_status: req.status },
-              });
-          container.logger.error(formatProblemLog("error", problem));
-          if (isMessage) continue;
-          await interactionOrMessage.editReply({
-            content: formatDiscordError(problem),
-          });
-          continue;
-        }
-
-        post = body as ScrapeResponse;
-      } catch (error) {
-        const problem = createProblem(EmbedlyErrors.ApiUnexpectedResponse, {
-          request_id: requestId,
-          context: { ...logContext, ...getErrorContext(error) },
-        });
-        container.logger.error(
-          formatLog("error", EmbedlyErrors.ApiUnexpectedResponse, problem.context),
-        );
-        if (isMessage) continue;
-        await interactionOrMessage.editReply({
-          content: formatDiscordError(problem),
-        });
-        continue;
-      }
-
-      const component = buildEmbed(post, flags);
-      if (!component) {
-        const problem = createProblem(EmbedlyErrors.NoMediaFound, {
-          request_id: requestId,
-          context: logContext,
-        });
-        container.logger.warn(formatLog("warn", EmbedlyErrors.NoMediaFound, problem.context));
-        if (isMessage) continue;
-        const response = { content: formatDiscordError(problem) };
-        if (i === 0) {
-          await interactionOrMessage.editReply(response);
-        } else {
-          await interactionOrMessage.followUp(response);
-        }
-        continue;
-      }
-      const response = {
-        components: [component],
-        flags: [MessageFlags.IsComponentsV2],
-        allowedMentions: {
-          parse: [],
-          repliedUser: false,
+      await span(
+        "embed.request",
+        {
+          ...spanAttributes,
+          "discord.guild_id": String(logContext.guild_id),
+          "discord.channel_id": String(logContext.channel_id),
+          "discord.user_id": String(logContext.user_id),
         },
-      } as const;
-      if (isMessage) {
-        try {
-          const botMessage =
-            i > 0 && interactionOrMessage.channel.isSendable()
-              ? await interactionOrMessage.channel.send(response)
-              : await interactionOrMessage.reply(response);
-          await container.messageCache.save(
-            interactionOrMessage.id,
-            botMessage.id,
-            interactionOrMessage.author.id,
-          );
-          container.logger.info(
-            formatLog("info", EmbedlyLogs.EmbedCreated, {
-              ...logContext,
-              bot_message_id: botMessage.id,
-            }),
-          );
-          sentEmbed = true;
-        } catch (error) {
-          container.logger.error(
-            formatLog("error", EmbedlyErrors.DiscordSendFailed, {
-              ...logContext,
-              ...getErrorContext(error),
-            }),
-          );
-        }
-        continue;
-      }
-      if (i === 0) {
-        try {
-          const botMessage = await interactionOrMessage.editReply(response);
-          container.logger.info(
-            formatLog("info", EmbedlyLogs.EmbedCreated, {
-              ...logContext,
-              bot_message_id: botMessage.id,
-            }),
-          );
-          sentEmbed = true;
-        } catch (error) {
-          const problem = createProblem(EmbedlyErrors.DiscordSendFailed, {
-            request_id: requestId,
-            context: { ...logContext, ...getErrorContext(error) },
-          });
-          container.logger.error(
-            formatLog("error", EmbedlyErrors.DiscordSendFailed, problem.context),
-          );
-        }
-        continue;
-      }
-      try {
-        const botMessage = await interactionOrMessage.followUp(response);
-        container.logger.info(
-          formatLog("info", EmbedlyLogs.EmbedCreated, {
-            ...logContext,
-            bot_message_id: botMessage.id,
-          }),
-        );
-        sentEmbed = true;
-      } catch (error) {
-        const problem = createProblem(EmbedlyErrors.DiscordSendFailed, {
-          request_id: requestId,
-          context: { ...logContext, ...getErrorContext(error) },
-        });
-        container.logger.error(
-          formatLog("error", EmbedlyErrors.DiscordSendFailed, problem.context),
-        );
-      }
+        async (requestSpan) => {
+          try {
+            let post: ScrapeResponse;
+            try {
+              const req = await span(
+                "api.scrape",
+                {
+                  ...spanAttributes,
+                },
+                async (apiSpan) => {
+                  const response = await container.api.platforms.scrape.$post(
+                    { json: { platform, id, force: force ?? false } },
+                    {
+                      headers: injectTraceHeaders({
+                        Authorization: `Bearer ${process.env.EMBEDLY_AUTH_SECRET}`,
+                        "X-Embedly-Request-Id": requestId,
+                        "X-Embedly-Source": embedSource,
+                      }),
+                    },
+                  );
+                  apiSpan.setAttribute("http.response.status_code", response.status);
+                  if (!response.ok) {
+                    markError(apiSpan, `API returned ${response.status}`, {
+                      "http.response.status_code": response.status,
+                    });
+                  }
+                  return response;
+                },
+              );
+              const body = await req.json();
+
+              if (!req.ok) {
+                const problem = isEmbedlyProblem(body)
+                  ? body
+                  : createProblem(EmbedlyErrors.ApiUnexpectedResponse, {
+                      request_id: requestId,
+                      context: { ...logContext, response_status: req.status },
+                    });
+                markError(requestSpan, problem.type, {
+                  "http.response.status_code": req.status,
+                  "embedly.error_type": problem.type,
+                });
+                Object.assign(logContext, {
+                  outcome: "error",
+                  status_code: req.status,
+                  error_type: problem.type,
+                });
+                botErrors.add(1, { ...metricContext, error_type: problem.type });
+                if (isMessage) return;
+                await interactionOrMessage.editReply({
+                  content: formatDiscordError(problem),
+                });
+                return;
+              }
+
+              post = body as ScrapeResponse;
+            } catch (error) {
+              recordError(requestSpan, error);
+              const problem = createProblem(EmbedlyErrors.ApiUnexpectedResponse, {
+                request_id: requestId,
+                context: { ...logContext, ...getErrorContext(error) },
+              });
+              Object.assign(logContext, getErrorContext(error), {
+                outcome: "error",
+                status_code: problem.status,
+                error_type: problem.type,
+              });
+              botErrors.add(1, { ...metricContext, error_type: problem.type });
+              if (isMessage) return;
+              await interactionOrMessage.editReply({
+                content: formatDiscordError(problem),
+              });
+              return;
+            }
+
+            const component = await span(
+              "embed.build",
+              {
+                ...spanAttributes,
+              },
+              async () => buildEmbed(post, flags),
+            );
+            if (!component) {
+              const problem = createProblem(EmbedlyErrors.NoMediaFound, {
+                request_id: requestId,
+                context: logContext,
+              });
+              Object.assign(logContext, {
+                outcome: "skipped",
+                status_code: problem.status,
+                error_type: problem.type,
+              });
+              if (isMessage) return;
+              const response = { content: formatDiscordError(problem) };
+              if (i === 0) {
+                await interactionOrMessage.editReply(response);
+              } else {
+                await interactionOrMessage.followUp(response);
+              }
+              return;
+            }
+
+            const response = {
+              components: [component],
+              flags: [MessageFlags.IsComponentsV2],
+              allowedMentions: {
+                parse: [],
+                repliedUser: false,
+              },
+            } as const;
+
+            try {
+              const botMessage = await span(
+                "discord.send",
+                {
+                  ...spanAttributes,
+                  "discord.guild_id": String(logContext.guild_id),
+                  "discord.channel_id": String(logContext.channel_id),
+                },
+                async (sendSpan) => {
+                  const message = isMessage
+                    ? i > 0 && interactionOrMessage.channel.isSendable()
+                      ? await interactionOrMessage.channel.send(response)
+                      : await interactionOrMessage.reply(response)
+                    : i === 0
+                      ? await interactionOrMessage.editReply(response)
+                      : await interactionOrMessage.followUp(response);
+                  sendSpan.setAttribute("discord.bot_message_id", message.id);
+                  return message;
+                },
+              );
+              logContext.bot_message_id = botMessage.id;
+              if (isMessage) {
+                await span(
+                  "message_cache.save",
+                  {
+                    ...spanAttributes,
+                    "discord.source_message_id": interactionOrMessage.id,
+                    "discord.bot_message_id": botMessage.id,
+                  },
+                  async () => {
+                    await container.messageCache.save(
+                      interactionOrMessage.id,
+                      botMessage.id,
+                      interactionOrMessage.author.id,
+                    );
+                  },
+                );
+              }
+              botEmbedsCreated.add(1, metricContext);
+              sentEmbed = true;
+            } catch (error) {
+              recordError(requestSpan, error);
+              const problem = createProblem(EmbedlyErrors.DiscordSendFailed, {
+                request_id: requestId,
+                context: { ...logContext, ...getErrorContext(error) },
+              });
+              Object.assign(logContext, getErrorContext(error), {
+                outcome: "error",
+                status_code: problem.status,
+                error_type: problem.type,
+              });
+              botErrors.add(1, { ...metricContext, error_type: problem.type });
+              if (isMessage) return;
+              await interactionOrMessage.editReply(formatDiscordError(problem));
+            }
+          } finally {
+            Object.assign(logContext, getActiveTraceContext(), {
+              duration_ms: Date.now() - startedAt,
+            });
+            botRequestDuration.record(Number(logContext.duration_ms), metricContext);
+            const level =
+              logContext.outcome === "success"
+                ? "info"
+                : logContext.outcome === "skipped"
+                  ? "warn"
+                  : "error";
+            log(level, EmbedlyLogs.EmbedRequest, logContext);
+          }
+        },
+      );
     }
     return sentEmbed;
   }

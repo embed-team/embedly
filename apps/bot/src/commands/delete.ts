@@ -3,7 +3,6 @@ import {
   EmbedlyErrors,
   EmbedlyLogs,
   formatDiscordError,
-  formatLog,
   getErrorContext,
 } from "@embedly/logging";
 import { Command } from "@sapphire/framework";
@@ -14,6 +13,16 @@ import {
   MessageFlags,
   PermissionFlagsBits,
 } from "discord.js";
+
+import {
+  botErrors,
+  botRequestDuration,
+  getActiveTraceContext,
+  log,
+  markError,
+  recordError,
+  span,
+} from "../lib/observability";
 
 const DELETE_SUCCESS_MESSAGES = [
   "embed successfully yeeted into the void! ✨",
@@ -51,123 +60,174 @@ export class DeleteCommand extends Command {
   public override async contextMenuRun(interaction: Command.ContextMenuCommandInteraction) {
     if (!interaction.isMessageContextMenuCommand()) return;
 
+    const startedAt = Date.now();
     const requestId = `context_menu:${interaction.id}`;
-    const logContext = {
+    const logContext: Record<string, unknown> = {
       request_id: requestId,
       source: "context_menu",
       interaction_id: interaction.id,
+      channel_id: interaction.channelId,
+      guild_id: interaction.guildId ?? "dm",
       user_id: interaction.user.id,
+      outcome: "success",
+      status_code: 200,
     };
-    const msg = interaction.targetMessage;
-    if (msg.author.id !== this.container.client.user?.id) {
-      const problem = createProblem(EmbedlyErrors.DeleteFailed, {
-        request_id: requestId,
-        context: {
-          ...logContext,
-          message_id: msg.id,
-          reason: "not_bot_message",
-        },
-      });
-      this.container.logger.warn(formatLog("warn", EmbedlyErrors.DeleteFailed, problem.context));
-      await interaction.reply({
-        content: formatDiscordError(problem),
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
+    const metricContext = { source: "context_menu", command: "delete" };
 
-    await interaction.deferReply({
-      flags: MessageFlags.Ephemeral,
-    });
+    await span(
+      "delete.request",
+      {
+        "embedly.request_id": requestId,
+        "embedly.source": "context_menu",
+        "discord.interaction_id": interaction.id,
+        "discord.guild_id": interaction.guildId ?? "dm",
+        "discord.channel_id": interaction.channelId ?? "unknown",
+        "discord.user_id": interaction.user.id,
+      },
+      async (requestSpan) => {
+        try {
+          const msg = interaction.targetMessage;
+          logContext.message_id = msg.id;
+          if (msg.author.id !== this.container.client.user?.id) {
+            const problem = createProblem(EmbedlyErrors.DeleteFailed, {
+              request_id: requestId,
+              context: {
+                ...logContext,
+                reason: "not_bot_message",
+              },
+            });
+            markError(requestSpan, problem.type, { "embedly.error_type": problem.type });
+            Object.assign(logContext, {
+              outcome: "error",
+              status_code: problem.status,
+              error_type: problem.type,
+              reason: "not_bot_message",
+            });
+            botErrors.add(1, { ...metricContext, error_type: problem.type });
+            await interaction.reply({
+              content: formatDiscordError(problem),
+              flags: MessageFlags.Ephemeral,
+            });
+            return;
+          }
 
-    if (!msg.deletable) {
-      const problem = createProblem(EmbedlyErrors.DeleteFailed, {
-        request_id: requestId,
-        context: {
-          ...logContext,
-          message_id: msg.id,
-          reason: "not_deletable",
-        },
-      });
-      this.container.logger.warn(formatLog("warn", EmbedlyErrors.DeleteFailed, problem.context));
-      await interaction.editReply(formatDiscordError(problem));
-      return;
-    }
+          await interaction.deferReply({
+            flags: MessageFlags.Ephemeral,
+          });
 
-    let originalAuthorId = await this.container.messageCache.getOriginalAuthorId(msg.id);
+          if (!msg.deletable) {
+            const problem = createProblem(EmbedlyErrors.DeleteFailed, {
+              request_id: requestId,
+              context: {
+                ...logContext,
+                reason: "not_deletable",
+              },
+            });
+            markError(requestSpan, problem.type, { "embedly.error_type": problem.type });
+            Object.assign(logContext, {
+              outcome: "error",
+              status_code: problem.status,
+              error_type: problem.type,
+              reason: "not_deletable",
+            });
+            botErrors.add(1, { ...metricContext, error_type: problem.type });
+            await interaction.editReply(formatDiscordError(problem));
+            return;
+          }
 
-    if (!originalAuthorId) {
-      try {
-        const reference = await msg.fetchReference();
-        originalAuthorId = reference.author.id;
-      } catch (error) {
-        const problem = createProblem(EmbedlyErrors.DeleteFailed, {
-          request_id: requestId,
-          context: {
-            ...logContext,
-            message_id: msg.id,
-            reason: "missing_original_author",
-            ...getErrorContext(error),
-          },
-        });
-        this.container.logger.warn(formatLog("warn", EmbedlyErrors.DeleteFailed, problem.context));
-        await interaction.editReply(formatDiscordError(problem));
-        return;
-      }
-    }
+          let originalAuthorId = await this.container.messageCache.getOriginalAuthorId(msg.id);
 
-    const isOriginalPoster = interaction.user.id === originalAuthorId;
-    let hasManagePermission = false;
+          if (!originalAuthorId) {
+            try {
+              const reference = await msg.fetchReference();
+              originalAuthorId = reference.author.id;
+            } catch (error) {
+              const problem = createProblem(EmbedlyErrors.DeleteFailed, {
+                request_id: requestId,
+                context: {
+                  ...logContext,
+                  reason: "missing_original_author",
+                  ...getErrorContext(error),
+                },
+              });
+              recordError(requestSpan, error);
+              Object.assign(logContext, getErrorContext(error), {
+                outcome: "error",
+                status_code: problem.status,
+                error_type: problem.type,
+                reason: "missing_original_author",
+              });
+              botErrors.add(1, { ...metricContext, error_type: problem.type });
+              await interaction.editReply(formatDiscordError(problem));
+              return;
+            }
+          }
 
-    if (interaction.inGuild()) {
-      const guild = await interaction.guild!.fetch();
-      const runner = await guild.members.fetch(interaction.member.user.id);
-      hasManagePermission = runner.permissions.has(PermissionFlagsBits.ManageMessages, true);
-    }
+          logContext.original_author_id = originalAuthorId;
+          const isOriginalPoster = interaction.user.id === originalAuthorId;
+          let hasManagePermission = false;
 
-    if (!hasManagePermission && !isOriginalPoster) {
-      const problem = createProblem(EmbedlyErrors.DeleteFailed, {
-        request_id: requestId,
-        context: {
-          ...logContext,
-          message_id: msg.id,
-          original_author_id: originalAuthorId,
-          has_manage_permission: hasManagePermission,
-          reason: "insufficient_permissions",
-        },
-      });
-      this.container.logger.warn(formatLog("warn", EmbedlyErrors.DeleteFailed, problem.context));
-      await interaction.editReply(formatDiscordError(problem));
-      return;
-    }
+          if (interaction.inGuild()) {
+            const guild = await interaction.guild!.fetch();
+            const runner = await guild.members.fetch(interaction.member.user.id);
+            hasManagePermission = runner.permissions.has(PermissionFlagsBits.ManageMessages, true);
+          }
 
-    try {
-      await msg.delete();
-      await this.container.messageCache.removeBotMessage(msg.id);
-    } catch (error) {
-      const problem = createProblem(EmbedlyErrors.DeleteFailed, {
-        request_id: requestId,
-        context: {
-          ...logContext,
-          message_id: msg.id,
-          original_author_id: originalAuthorId,
-          ...getErrorContext(error),
-        },
-      });
-      this.container.logger.error(formatLog("error", EmbedlyErrors.DeleteFailed, problem.context));
-      await interaction.editReply(formatDiscordError(problem));
-      return;
-    }
+          logContext.has_manage_permission = hasManagePermission;
+          if (!hasManagePermission && !isOriginalPoster) {
+            const problem = createProblem(EmbedlyErrors.DeleteFailed, {
+              request_id: requestId,
+              context: {
+                ...logContext,
+                reason: "insufficient_permissions",
+              },
+            });
+            markError(requestSpan, problem.type, { "embedly.error_type": problem.type });
+            Object.assign(logContext, {
+              outcome: "error",
+              status_code: problem.status,
+              error_type: problem.type,
+              reason: "insufficient_permissions",
+            });
+            botErrors.add(1, { ...metricContext, error_type: problem.type });
+            await interaction.editReply(formatDiscordError(problem));
+            return;
+          }
 
-    this.container.logger.info(
-      formatLog("info", EmbedlyLogs.DeleteSucceeded, {
-        ...logContext,
-        message_id: msg.id,
-        original_author_id: originalAuthorId,
-      }),
-    );
-    await interaction.editReply(
-      DELETE_SUCCESS_MESSAGES[~~(DELETE_SUCCESS_MESSAGES.length * Math.random())],
+          try {
+            await msg.delete();
+            await this.container.messageCache.removeBotMessage(msg.id);
+          } catch (error) {
+            const problem = createProblem(EmbedlyErrors.DeleteFailed, {
+              request_id: requestId,
+              context: {
+                ...logContext,
+                ...getErrorContext(error),
+              },
+            });
+            recordError(requestSpan, error);
+            Object.assign(logContext, getErrorContext(error), {
+              outcome: "error",
+              status_code: problem.status,
+              error_type: problem.type,
+            });
+            botErrors.add(1, { ...metricContext, error_type: problem.type });
+            await interaction.editReply(formatDiscordError(problem));
+            return;
+          }
+
+          await interaction.editReply(
+            DELETE_SUCCESS_MESSAGES[~~(DELETE_SUCCESS_MESSAGES.length * Math.random())],
+          );
+        } finally {
+          Object.assign(logContext, getActiveTraceContext(), {
+            duration_ms: Date.now() - startedAt,
+          });
+          botRequestDuration.record(Number(logContext.duration_ms), metricContext);
+          const level = logContext.outcome === "success" ? "info" : "error";
+          log(level, EmbedlyLogs.DeleteRequest, logContext);
+        }
+      },
     );
   }
 }

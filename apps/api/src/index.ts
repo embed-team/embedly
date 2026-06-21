@@ -11,7 +11,6 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 import { prettyJSON } from "hono/pretty-json";
 import z from "zod";
 
@@ -19,9 +18,15 @@ import { version } from "../package.json";
 
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
 
+function getTraceId(request: Request) {
+  const traceparent = request.headers.get("traceparent");
+  const traceId = traceparent?.split("-")[1];
+  if (!traceId || !/^[a-f0-9]{32}$/.test(traceId)) return undefined;
+  return traceId;
+}
+
 const app = new Hono<{ Bindings: CloudflareBindings }>()
   .use(cors())
-  .use(logger())
   .use(prettyJSON())
   .get("/health", (c) => {
     return c.json({ version }, 200);
@@ -37,13 +42,19 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       z.object({ platform: z.string(), id: z.string(), force: z.boolean().optional() }),
     ),
     async (c) => {
+      const startedAt = Date.now();
       const { id, platform, force } = c.req.valid("json");
       const requestId = getRequestId(c.req.raw);
-      const logContext = {
+      const logContext: Record<string, unknown> = {
         request_id: requestId,
+        trace_id: getTraceId(c.req.raw),
         source: c.req.header("X-Embedly-Source") ?? "api",
         platform,
         post_id: id,
+        force: force ?? false,
+        cache_status: force ? "skipped" : "miss",
+        outcome: "success",
+        status_code: 200,
       };
 
       try {
@@ -53,7 +64,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           try {
             const cachedItem = await cache.get<ScrapeResponse>(cacheKey, "json");
             if (cachedItem) {
-              console.info(formatLog("info", EmbedlyLogs.ApiCacheHit, logContext));
+              logContext.cache_status = "hit";
               return c.json(cachedItem as ScrapeResponse, 200);
             }
           } catch (cause) {
@@ -61,7 +72,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
               request_id: requestId,
               context: { ...logContext, ...getErrorContext(cause) },
             });
-            console.error(formatLog("error", EmbedlyErrors.CacheReadFailed, problem.context));
+            Object.assign(logContext, getErrorContext(cause), {
+              outcome: "error",
+              status_code: problem.status,
+              error_type: problem.type,
+            });
             return c.json(problem, problem.status);
           }
         }
@@ -74,7 +89,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             context: logContext,
             detail: `No supported platform matched ${platform}.`,
           });
-          console.warn(formatLog("warn", EmbedlyErrors.NoMatchesFound, problem.context));
+          Object.assign(logContext, {
+            outcome: "error",
+            status_code: problem.status,
+            error_type: problem.type,
+          });
           return c.json(problem, problem.status);
         }
 
@@ -86,7 +105,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             request_id: requestId,
             context: { ...logContext, ...getErrorContext(cause) },
           });
-          console.error(formatLog("error", EmbedlyErrors.PlatformFetchFailed, problem.context));
+          Object.assign(logContext, getErrorContext(cause), {
+            outcome: "error",
+            status_code: problem.status,
+            error_type: problem.type,
+          });
           return c.json(problem, problem.status);
         }
 
@@ -98,7 +121,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             request_id: requestId,
             context: { ...logContext, ...getErrorContext(cause) },
           });
-          console.error(formatLog("error", EmbedlyErrors.PlatformTransformFailed, problem.context));
+          Object.assign(logContext, getErrorContext(cause), {
+            outcome: "error",
+            status_code: problem.status,
+            error_type: problem.type,
+          });
           return c.json(problem, problem.status);
         }
 
@@ -106,13 +133,17 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           await cache.put(cacheKey, JSON.stringify(data), {
             expirationTtl: 60 * 60 * 24,
           });
-          console.info(formatLog("info", EmbedlyLogs.ApiCacheStore, logContext));
+          logContext.cache_status = "stored";
         } catch (cause) {
           const problem = createProblem(EmbedlyErrors.CacheWriteFailed, {
             request_id: requestId,
             context: { ...logContext, ...getErrorContext(cause) },
           });
-          console.error(formatLog("error", EmbedlyErrors.CacheWriteFailed, problem.context));
+          Object.assign(logContext, getErrorContext(cause), {
+            outcome: "error",
+            status_code: problem.status,
+            error_type: problem.type,
+          });
           return c.json(problem, problem.status);
         }
 
@@ -122,8 +153,16 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           request_id: requestId,
           context: { ...logContext, ...getErrorContext(cause) },
         });
-        console.error(formatLog("error", EmbedlyErrors.ApiUnexpectedResponse, problem.context));
+        Object.assign(logContext, getErrorContext(cause), {
+          outcome: "error",
+          status_code: problem.status,
+          error_type: problem.type,
+        });
         return c.json(problem, problem.status);
+      } finally {
+        logContext.duration_ms = Date.now() - startedAt;
+        const level = logContext.outcome === "success" ? "info" : "error";
+        console[level](formatLog(level, EmbedlyLogs.ApiScrape, logContext));
       }
     },
   );
