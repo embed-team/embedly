@@ -5,6 +5,50 @@ const MATCH_RE =
 const FOLLOWUP_RE =
   /^(?:https?:\/\/)?(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
 
+async function fetchAccessToken(env: {
+  EMBED_USER_AGENT: string;
+  REDDIT_CLIENT_ID?: string;
+  REDDIT_CLIENT_SECRET?: string;
+}) {
+  if (!env.REDDIT_CLIENT_ID || !env.REDDIT_CLIENT_SECRET) {
+    throw {
+      code: 500,
+      message: "Reddit credentials are not configured",
+    };
+  }
+
+  const resp = await fetch("https://www.reddit.com/api/v1/access_token", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${btoa(`${env.REDDIT_CLIENT_ID}:${env.REDDIT_CLIENT_SECRET}`)}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": env.EMBED_USER_AGENT,
+    },
+    body: new URLSearchParams({ grant_type: "client_credentials" }),
+  });
+
+  if (!resp.ok) {
+    throw { code: resp.status, message: resp.statusText };
+  }
+
+  const data = (await resp.json()) as Record<string, any>;
+  return data.access_token as string;
+}
+
+async function fetchReddit(
+  path: string,
+  env: { EMBED_USER_AGENT: string; REDDIT_CLIENT_ID?: string; REDDIT_CLIENT_SECRET?: string },
+) {
+  const token = await fetchAccessToken(env);
+  return fetch(`https://oauth.reddit.com${path}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "User-Agent": env.EMBED_USER_AGENT,
+    },
+  });
+}
+
 function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
   if (raw.domain === "i.redd.it") {
     return [
@@ -46,12 +90,17 @@ export const Reddit: Platform<"Reddit", Record<string, any>, {}> = {
   async match(url, env) {
     const match = url.match(MATCH_RE);
     if (!match) return null;
+
+    const directGroups = url.match(FOLLOWUP_RE)?.groups;
+    if (directGroups) {
+      const { subreddit, post_id } = directGroups;
+      return `${subreddit}/${post_id}`;
+    }
+
     const req = await fetch(url, {
       method: "GET",
       redirect: "follow",
-      headers: {
-        "User-Agent": env?.EMBED_USER_AGENT ?? "curl/8.7.1",
-      },
+      headers: env ? { "User-Agent": env.EMBED_USER_AGENT } : undefined,
     });
 
     const groups = req.url.match(FOLLOWUP_RE)?.groups;
@@ -60,14 +109,18 @@ export const Reddit: Platform<"Reddit", Record<string, any>, {}> = {
     return `${subreddit}/${post_id}`;
   },
   async fetch(id, env) {
+    if (!env) {
+      throw {
+        code: 500,
+        message: "Reddit environment is not configured",
+      };
+    }
+
     const [subreddit, reddit_id] = id.split("/");
-    const url = `https://www.reddit.com/r/${subreddit}/comments/${reddit_id}.json?raw_json=1`;
-    const postResp = await fetch(url, {
-      method: "GET",
-      headers: {
-        "User-Agent": env?.EMBED_USER_AGENT ?? "curl/8.7.1",
-      },
-    });
+    const postResp = await fetchReddit(
+      `/r/${subreddit}/comments/${reddit_id}.json?raw_json=1`,
+      env,
+    );
 
     if (!postResp.ok) {
       throw { code: postResp.status, message: postResp.statusText };
@@ -88,15 +141,7 @@ export const Reddit: Platform<"Reddit", Record<string, any>, {}> = {
         message: "Reddit post missing author information",
       };
     }
-    const profileResp = await fetch(
-      `https://www.reddit.com/user/${authorName}/about.json?raw_json=1`,
-      {
-        method: "GET",
-        headers: {
-          "User-Agent": env?.EMBED_USER_AGENT ?? "",
-        },
-      },
-    );
+    const profileResp = await fetchReddit(`/user/${authorName}/about.json?raw_json=1`, env);
     if (!profileResp.ok) {
       throw {
         code: profileResp.status,

@@ -9,6 +9,8 @@ declare namespace Cloudflare {
     CACHE: KVNamespace;
     AUTH_SECRET: string;
     EMBED_USER_AGENT: string;
+    REDDIT_CLIENT_ID: string;
+    REDDIT_CLIENT_SECRET: string;
   }
 }
 interface CloudflareBindings extends Cloudflare.Env {}
@@ -17,7 +19,10 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 };
 declare namespace NodeJS {
   interface ProcessEnv extends StringifyValues<
-    Pick<Cloudflare.Env, "AUTH_SECRET" | "EMBED_USER_AGENT">
+    Pick<
+      Cloudflare.Env,
+      "AUTH_SECRET" | "EMBED_USER_AGENT" | "REDDIT_CLIENT_ID" | "REDDIT_CLIENT_SECRET"
+    >
   > {}
 }
 
