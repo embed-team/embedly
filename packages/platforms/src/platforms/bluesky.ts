@@ -54,10 +54,6 @@ async function parseMedia(post: BlueskyPost, record: AppBskyFeedPost.Record) {
   for (let ind = 0; ind < embeds.length; ind++) {
     const embed = embeds[ind];
 
-    if (AppBskyEmbedRecord.isView(embed) && AppBskyEmbedRecord.isViewRecord(embed.record)) {
-      embeds.push(...(embed.record.embeds ?? []));
-    }
-
     if (AppBskyEmbedImages.isView(embed)) {
       media.push(
         ...embed.images.map((image) => ({
