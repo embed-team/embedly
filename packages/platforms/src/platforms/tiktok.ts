@@ -9,12 +9,19 @@ const FOLLOWUP_RE =
 
 async function parseMedia(raw: Record<string, any>): Promise<NormalizedPost["media"]> {
   if (raw.video) {
-    const videoURL = raw.video.PlayAddrStruct.UrlList[2];
-    const video = await fetch(videoURL, {
-      method: "GET",
-      redirect: "follow",
-    });
-    return [{ url: video.url, type: "video" }];
+    const urls = raw.video.PlayAddrStruct?.UrlList ?? [];
+    for (const url of urls) {
+      const video = await fetch(url, {
+        method: "GET",
+        redirect: "follow",
+        headers: {
+          Range: "bytes=0-0",
+        },
+      });
+      await video.body?.cancel();
+      if (!video.ok || !video.headers.get("Content-Type")?.startsWith("video/")) continue;
+      return [{ url, type: "video" }];
+    }
   }
   return [];
 }
