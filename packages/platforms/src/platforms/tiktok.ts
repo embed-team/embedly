@@ -10,18 +10,8 @@ const FOLLOWUP_RE =
 async function parseMedia(raw: Record<string, any>): Promise<NormalizedPost["media"]> {
   if (raw.video) {
     const urls = raw.video.PlayAddrStruct?.UrlList ?? [];
-    for (const url of urls) {
-      const video = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        headers: {
-          Range: "bytes=0-0",
-        },
-      });
-      await video.body?.cancel();
-      if (!video.ok || !video.headers.get("Content-Type")?.startsWith("video/")) continue;
-      return [{ url, type: "video" }];
-    }
+    const videoURL = urls.find((url: string) => url.includes("/aweme/v1/play/")) ?? urls[0];
+    if (videoURL) return [{ url: videoURL, type: "video" }];
   }
   return [];
 }
