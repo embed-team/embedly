@@ -71,8 +71,8 @@ function Privacy() {
             <h2 className="text-xl font-semibold">Third-party services</h2>
             <p className="text-fd-muted-foreground leading-relaxed">
               To fetch post data, Embedly makes requests to third-party platform APIs including
-              Twitter/X (via fxTwitter), Instagram, Reddit, Threads, and TikTok. These requests are
-              made server-side and contain no personal information about the user who triggered the
+              Twitter/X (via fxTwitter), Instagram, Threads, and TikTok. These requests are made
+              server-side and contain no personal information about the user who triggered the
               embed. Each platform's own privacy policy governs data processed on their end.
             </p>
           </section>

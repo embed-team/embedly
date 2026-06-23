@@ -99,7 +99,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
         let raw: unknown;
         try {
-          raw = await p.fetch(id, { EMBED_USER_AGENT: c.env.EMBED_USER_AGENT });
+          raw = await p.fetch(id, {
+            EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
+            REDDIT_CLIENT_ID: c.env.REDDIT_CLIENT_ID,
+            REDDIT_CLIENT_SECRET: c.env.REDDIT_CLIENT_SECRET,
+          });
         } catch (cause) {
           const problem = createProblem(EmbedlyErrors.PlatformFetchFailed, {
             request_id: requestId,
