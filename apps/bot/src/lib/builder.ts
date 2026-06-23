@@ -34,6 +34,29 @@ export interface EmbedFlags {
 
 type PostData = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
 
+async function resolveMedia(media: NormalizedPost["media"]) {
+  const resolved = [];
+  for (const item of media) {
+    if (item.type !== "video" || !item.url.includes("tiktok")) {
+      resolved.push(item);
+      continue;
+    }
+
+    const response = await fetch(item.url, {
+      method: "GET",
+      redirect: "follow",
+      headers: {
+        Range: "bytes=0-0",
+        "User-Agent": "Discordbot/2.0",
+      },
+    });
+    await response.body?.cancel();
+    if (!response.ok || !response.headers.get("Content-Type")?.startsWith("video/")) continue;
+    resolved.push({ ...item, url: response.url });
+  }
+  return resolved;
+}
+
 function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["Spoiler"]) {
   if (media.length === 0) return null;
 
@@ -45,7 +68,7 @@ function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["S
   return gallery.toJSON();
 }
 
-function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefix?: string) {
+async function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefix?: string) {
   const translation =
     post.platform === "Twitter" &&
     post.translation &&
@@ -93,8 +116,9 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
       );
     }
   }
-  if (post.media.length > 0) {
-    embed.addMediaGalleryComponents(buildMediaEmbed(post.media)!);
+  const media = await resolveMedia(post.media);
+  if (media.length > 0) {
+    embed.addMediaGalleryComponents(buildMediaEmbed(media)!);
   }
   embed
     .addSeparatorComponents((sep) => sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small))
@@ -114,9 +138,9 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
     );
 }
 
-export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
+export async function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
   if (flags?.MediaOnly) {
-    return buildMediaEmbed(post.media, flags?.Spoiler);
+    return buildMediaEmbed(await resolveMedia(post.media), flags?.Spoiler);
   }
 
   const embed = new ContainerBuilder();
@@ -126,18 +150,18 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
   }
 
   if (flags?.SourceOnly) {
-    addPostComponents(embed, post);
+    await addPostComponents(embed, post);
     return embed.toJSON();
   }
 
   if (post.reply_to) {
-    addPostComponents(embed, post.reply_to);
+    await addPostComponents(embed, post.reply_to);
     embed.addSeparatorComponents((sep) =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
     );
   }
 
-  addPostComponents(
+  await addPostComponents(
     embed,
     post,
     post.reply_to ? getEmojiByName("reply") : post.quote ? getEmojiByName("quote") : undefined,
@@ -147,7 +171,7 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
     embed.addSeparatorComponents((sep) =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
     );
-    addPostComponents(embed, post.quote);
+    await addPostComponents(embed, post.quote);
   }
 
   return embed.toJSON();

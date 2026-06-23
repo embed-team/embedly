@@ -9,9 +9,12 @@ const FOLLOWUP_RE =
 
 async function parseMedia(raw: Record<string, any>): Promise<NormalizedPost["media"]> {
   if (raw.video) {
-    const urls = raw.video.PlayAddrStruct?.UrlList ?? [];
-    const videoURL = urls.find((url: string) => url.includes("/aweme/v1/play/")) ?? urls[0];
-    if (videoURL) return [{ url: videoURL, type: "video" }];
+    const urls = [
+      raw.video.playAddr,
+      raw.video.downloadAddr,
+      ...(raw.video.PlayAddrStruct?.UrlList ?? []),
+    ].filter((url) => typeof url === "string" && url.length > 0);
+    return [...new Set(urls)].map((url) => ({ url, type: "video" }));
   }
   return [];
 }
