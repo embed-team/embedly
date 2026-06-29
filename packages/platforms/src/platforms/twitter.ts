@@ -10,32 +10,35 @@ const MAX_CONTEXT_DEPTH = 1;
 
 function enrichText(raw?: RawText) {
   if (!raw) return undefined;
-  let text = raw.text;
-  for (const facet of raw.facets) {
+  let text = "";
+  let ind = 0;
+
+  for (const facet of raw.facets.toSorted((a, b) => a.indices[0] - b.indices[0])) {
+    const [start, end] = facet.indices;
+    if (start < ind) continue;
+
+    text += raw.text.slice(ind, start);
+    ind = end;
+
     if (facet.type === "url") {
-      const source =
-        facet.original && text.includes(facet.original) ? facet.original : facet.display;
-      if (source && facet.replacement) {
-        text = text.replace(source, facet.replacement);
-      }
+      text += facet.replacement ?? raw.text.slice(start, end);
     }
     if (facet.type === "hashtag") {
-      text = text.replace(
-        `#${facet.original}`,
-        `[#${facet.original}](https://x.com/hashtag/${facet.original})`,
-      );
+      text += `[#${facet.original}](https://x.com/hashtag/${facet.original})`;
     }
     if (facet.type === "media") {
-      text = text.replace(facet.original!, "");
+      continue;
     }
     if (facet.type === "mention") {
-      text = text.replace(
-        new RegExp(`@${facet.original}`, "i"),
-        `[@${facet.original}](https://x.com/${facet.original})`,
-      );
+      text += `[@${facet.original}](https://x.com/${facet.original})`;
+    }
+
+    if (!["url", "hashtag", "media", "mention"].includes(facet.type)) {
+      text += raw.text.slice(start, end);
     }
   }
-  return he.decode(text);
+
+  return he.decode(text + raw.text.slice(ind));
 }
 
 function resolveMediaUrl(media: { type: string; url?: string }) {
