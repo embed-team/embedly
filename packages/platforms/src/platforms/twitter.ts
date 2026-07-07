@@ -8,37 +8,115 @@ const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*(?:twitter|x)\.com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
 const MAX_CONTEXT_DEPTH = 1;
 
+const RENDERED_FACET_TYPES = ["url", "hashtag", "media", "mention"];
+
 function enrichText(raw?: RawText) {
   if (!raw) return undefined;
-  let text = "";
-  let ind = 0;
+  const offsets = getTextOffsets(raw);
+  const displayStart = offsets.index(raw.display_text_range[0]);
+  const displayEnd = offsets.index(raw.display_text_range[1]);
+  let rendered = "";
+  let index = displayStart;
 
   for (const facet of raw.facets.toSorted((a, b) => a.indices[0] - b.indices[0])) {
-    const [start, end] = facet.indices;
-    if (start < ind) continue;
+    const start = offsets.index(facet.indices[0]);
+    const end = offsets.index(facet.indices[1]);
+    if (start < index || end <= start) continue;
+    if (start < displayStart || displayEnd < end) continue;
 
-    text += raw.text.slice(ind, start);
-    ind = end;
+    rendered += raw.text.slice(index, start);
+    index = end;
 
     if (facet.type === "url") {
-      text += facet.replacement ?? raw.text.slice(start, end);
+      rendered += renderUrlFacet(facet, raw.text.slice(start, end));
     }
     if (facet.type === "hashtag") {
-      text += `[#${facet.original}](https://x.com/hashtag/${facet.original})`;
+      rendered += renderHashtagFacet(facet, raw.text.slice(start, end));
     }
     if (facet.type === "media") {
       continue;
     }
     if (facet.type === "mention") {
-      text += `[@${facet.original}](https://x.com/${facet.original})`;
+      rendered += renderMentionFacet(facet, raw.text.slice(start, end));
     }
 
-    if (!["url", "hashtag", "media", "mention"].includes(facet.type)) {
-      text += raw.text.slice(start, end);
+    if (!RENDERED_FACET_TYPES.includes(facet.type)) {
+      rendered += raw.text.slice(start, end);
     }
   }
 
-  return he.decode(text + raw.text.slice(ind));
+  return he.decode(rendered + raw.text.slice(index, displayEnd));
+}
+
+function getTextOffsets(raw: RawText) {
+  const codePointMap = getCodePointMap(raw.text);
+  const directOffsets = {
+    index(offset: number) {
+      return clamp(offset, 0, raw.text.length);
+    },
+  };
+  const codePointOffsets = {
+    index(offset: number) {
+      return codePointMap[clamp(offset, 0, codePointMap.length - 1)] ?? raw.text.length;
+    },
+  };
+
+  if (scoreOffsets(raw, directOffsets) >= scoreOffsets(raw, codePointOffsets)) {
+    return directOffsets;
+  }
+
+  return codePointOffsets;
+}
+
+function getCodePointMap(text: string) {
+  const indices = [];
+  let index = 0;
+
+  for (const char of text) {
+    indices.push(index);
+    index += char.length;
+  }
+
+  indices.push(text.length);
+  return indices;
+}
+
+function scoreOffsets(raw: RawText, offsets: { index(offset: number): number }) {
+  let score = 0;
+
+  for (const facet of raw.facets) {
+    const start = offsets.index(facet.indices[0]);
+    const end = offsets.index(facet.indices[1]);
+    const text = raw.text.slice(start, end);
+
+    if (end <= start) score -= 1;
+    if (facet.type === "hashtag" && text === `#${facet.original}`) score += 3;
+    if (facet.type === "mention" && text === `@${facet.original}`) score += 3;
+    if (facet.type === "url" && /^https?:\/\//.test(text)) score += 2;
+    if (facet.type === "media" && /^https?:\/\//.test(text)) score += 2;
+  }
+
+  return score;
+}
+
+function renderUrlFacet(facet: RawText["facets"][number], text: string) {
+  if (facet.replacement) return facet.replacement;
+  if (!facet.display) return text;
+  return `[${facet.display}](${text})`;
+}
+
+function renderHashtagFacet(facet: RawText["facets"][number], text: string) {
+  const tag = facet.original ?? text.replace(/^#/, "");
+  return `[#${tag}](https://x.com/hashtag/${tag})`;
+}
+
+function renderMentionFacet(facet: RawText["facets"][number], text: string) {
+  const handle = facet.original ?? text.replace(/^@/, "");
+  return `[@${handle}](https://x.com/${handle})`;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function resolveMediaUrl(media: { type: string; url?: string }) {
