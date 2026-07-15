@@ -1,8 +1,8 @@
 import { Events, Listener } from "@sapphire/framework";
 import { MessageFlags, type Message } from "discord.js";
 
-import { EmbedCommand, type EmbedURLRequest } from "../commands/embed";
 import type { EmbedFlags } from "../lib/builder";
+import { handleUrls, type EmbedURLRequest } from "../lib/handleUrls";
 import { extractURLs, isSpoiler } from "../lib/utils";
 
 function parseMessageURLs(content: string) {
@@ -58,7 +58,7 @@ export class MessageCreateListener extends Listener<typeof Events.MessageCreate>
     if (msg.author.id === this.container.client.id) return;
 
     const { urls, suppressNativeEmbeds } = parseMessageURLs(msg.content);
-    const sentEmbed = await EmbedCommand.handleUrls(urls, msg);
+    const sentEmbed = await handleUrls(urls, msg);
     if (!sentEmbed) return;
     if (!suppressNativeEmbeds) return;
     if (msg.embeds.length === 0) return;

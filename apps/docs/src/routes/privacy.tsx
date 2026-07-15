@@ -13,7 +13,7 @@ function Privacy() {
       <div className="container mx-auto px-6 py-16 max-w-3xl">
         <div className="mb-10">
           <h1 className="text-4xl font-semibold tracking-tight mb-3">Privacy Policy</h1>
-          <p className="text-fd-muted-foreground text-sm">Last updated March 2026</p>
+          <p className="text-fd-muted-foreground text-sm">Last updated June 2026</p>
         </div>
 
         <div className="prose prose-fd max-w-none space-y-8 text-fd-foreground">
@@ -21,8 +21,7 @@ function Privacy() {
             <h2 className="text-xl font-semibold">Overview</h2>
             <p className="text-fd-muted-foreground leading-relaxed">
               Embedly is a Discord bot that fetches and displays rich embeds for social media links.
-              This policy describes what data we collect, why we collect it, and how it is used. We
-              collect as little as possible to operate the service.
+              This policy explains what data Embedly uses and where it goes.
             </p>
           </section>
 
@@ -30,29 +29,37 @@ function Privacy() {
             <h2 className="text-xl font-semibold">Data we collect</h2>
             <ul className="space-y-3 text-fd-muted-foreground">
               <li className="flex flex-col gap-1">
-                <span className="font-medium text-fd-foreground">Discord user and message IDs</span>
+                <span className="font-medium text-fd-foreground">
+                  Discord IDs and message cache data
+                </span>
                 <span className="leading-relaxed">
-                  When you trigger an embed, your user ID and the resulting bot message ID are held
-                  in memory for the duration of the bot session. This is used to let you delete
-                  embeds you created. This data is never written to disk and is lost when the bot
-                  restarts.
+                  When you trigger an embed or delete one, we process Discord user, guild, channel,
+                  message, interaction, and bot message IDs. Message-cache mappings are stored in
+                  self-hosted DragonflyDB so embeds created from your messages can be deleted later.
+                  These mappings expire after about 24 hours by default.
                 </span>
               </li>
               <li className="flex flex-col gap-1">
-                <span className="font-medium text-fd-foreground">Interaction and error logs</span>
+                <span className="font-medium text-fd-foreground">Request and error metadata</span>
                 <span className="leading-relaxed">
-                  We log interaction metadata (user ID, platform, source) for debugging and
-                  monitoring. Logs are retained for a limited period and are not shared with third
-                  parties.
+                  We log metadata such as request ID, source, platform, post ID, cache status,
+                  status code, outcome, duration, trace IDs, and error details. These logs are used
+                  for debugging and abuse checks. They also show service health.
                 </span>
               </li>
               <li className="flex flex-col gap-1">
                 <span className="font-medium text-fd-foreground">Cached post data</span>
                 <span className="leading-relaxed">
                   Fetched social media post data is cached for up to 24 hours in Cloudflare KV to
-                  reduce redundant requests. This contains only the public post content returned by
-                  the platform's API — no personal information beyond what is publicly visible on
-                  the platform.
+                  avoid repeated fetches. This cache contains the public post content returned by
+                  the platform API.
+                </span>
+              </li>
+              <li className="flex flex-col gap-1">
+                <span className="font-medium text-fd-foreground">Observability data</span>
+                <span className="leading-relaxed">
+                  Bot logs, metrics, and traces are sent to a self-hosted Grafana LGTM stack. API
+                  logs and traces are processed through Cloudflare Workers observability.
                 </span>
               </li>
             </ul>
@@ -61,35 +68,37 @@ function Privacy() {
           <section className="space-y-3">
             <h2 className="text-xl font-semibold">Data we do not collect</h2>
             <p className="text-fd-muted-foreground leading-relaxed">
-              We do not read, store, or process message content beyond extracting URLs to embed. We
-              do not collect names, email addresses, or any other personal information. We do not
-              sell or share data with third parties for advertising purposes.
+              We do not store full Discord message content. Message content is processed only to
+              find supported URLs and Embedly flags. We do not collect names or email addresses. We
+              do not sell data or share it for advertising.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold">Third-party services</h2>
             <p className="text-fd-muted-foreground leading-relaxed">
-              To fetch post data, Embedly makes requests to third-party platform APIs including
-              Twitter/X (via fxTwitter), Instagram, Threads, and TikTok. These requests are made
-              server-side and contain no personal information about the user who triggered the
-              embed. Each platform's own privacy policy governs data processed on their end.
+              Embedly uses Discord for commands and messages, Cloudflare Workers for the API,
+              Cloudflare KV for public post cache, self-hosted DragonflyDB for message-cache
+              mappings, self-hosted Grafana LGTM for bot observability, Cloudflare Workers
+              observability for API logs and traces, and platform APIs for public posts. Supported
+              platforms are Twitter/X, Bluesky, Instagram, TikTok and Threads.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold">Data removal</h2>
             <p className="text-fd-muted-foreground leading-relaxed">
-              Since we do not persistently store personal data, there is nothing to delete. If you
-              have concerns about specific log data, you can contact us via our Discord server.
+              Cached public post data expires within 24 hours. Message-cache mappings expire after
+              about 24 hours by default. If you have concerns about specific log data, contact us in
+              Discord.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold">Changes to this policy</h2>
             <p className="text-fd-muted-foreground leading-relaxed">
-              We may update this policy as the service changes. Continued use of the bot after
-              changes constitutes acceptance of the updated policy.
+              We may update this policy as Embedly changes. Continued use of Embedly means you
+              accept the updated policy.
             </p>
           </section>
         </div>
