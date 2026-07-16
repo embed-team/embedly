@@ -81,7 +81,7 @@ function Privacy() {
               Cloudflare KV for public post cache, self-hosted DragonflyDB for message-cache
               mappings, self-hosted Grafana LGTM for bot observability, Cloudflare Workers
               observability for API logs and traces, and platform APIs for public posts. Supported
-              platforms are Twitter/X, Bluesky, Instagram, Reddit, TikTok and Threads.
+              platforms are Twitter/X, Bluesky, Instagram, TikTok and Threads.
             </p>
           </section>
 

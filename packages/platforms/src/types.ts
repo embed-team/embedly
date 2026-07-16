@@ -29,6 +29,8 @@ interface TransformOptions {
 
 interface FetchEnv {
   EMBED_USER_AGENT: string;
+  REDDIT_CLIENT_ID?: string;
+  REDDIT_CLIENT_SECRET?: string;
 }
 
 export interface Platform<PlatformName extends string, PlatformData, PlatformMeta> {
