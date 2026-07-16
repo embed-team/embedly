@@ -6,6 +6,7 @@ const CACHE_URL = process.env.CACHE_URL ?? "redis://localhost:6379";
 
 interface SourceMessageCache {
   botMessageIds: string[];
+  botMessageIndexes?: Record<string, number>;
 }
 
 export class MessageCache {
@@ -24,20 +25,29 @@ export class MessageCache {
     return new MessageCache(client as RedisClientType);
   }
 
-  public async save(sourceMessageId: string, botMessageId: string, authorId: string) {
+  public async save(
+    sourceMessageId: string,
+    botMessageId: string,
+    authorId: string,
+    requestIndex: number,
+  ) {
     const messageKey = this.getSourceMessageKey(sourceMessageId);
     const authorKey = this.getBotMessageAuthorKey(botMessageId);
     const sourceKey = this.getBotMessageSourceKey(botMessageId);
     const existing = await this.getSourceMessage(sourceMessageId);
     const botMessageIds = existing?.botMessageIds ?? [];
+    const botMessageIndexes = existing?.botMessageIndexes ?? {};
 
     if (!botMessageIds.includes(botMessageId)) {
       botMessageIds.push(botMessageId);
     }
+    botMessageIndexes[botMessageId] = requestIndex;
 
     await this.client
       .multi()
-      .set(messageKey, JSON.stringify({ botMessageIds }), { EX: MESSAGE_CACHE_TTL_SECONDS })
+      .set(messageKey, JSON.stringify({ botMessageIds, botMessageIndexes }), {
+        EX: MESSAGE_CACHE_TTL_SECONDS,
+      })
       .set(authorKey, authorId, { EX: MESSAGE_CACHE_TTL_SECONDS })
       .set(sourceKey, sourceMessageId, { EX: MESSAGE_CACHE_TTL_SECONDS })
       .exec();
@@ -61,6 +71,8 @@ export class MessageCache {
 
     const sourceMessage = await this.getSourceMessage(sourceMessageId);
     const botMessageIds = sourceMessage?.botMessageIds.filter((id) => id !== botMessageId) ?? [];
+    const botMessageIndexes = sourceMessage?.botMessageIndexes ?? {};
+    delete botMessageIndexes[botMessageId];
     const transaction = this.client.multi().del(keys);
 
     if (botMessageIds.length === 0) {
@@ -68,7 +80,7 @@ export class MessageCache {
     } else {
       transaction.set(
         this.getSourceMessageKey(sourceMessageId),
-        JSON.stringify({ botMessageIds }),
+        JSON.stringify({ botMessageIds, botMessageIndexes }),
         {
           EX: MESSAGE_CACHE_TTL_SECONDS,
         },
@@ -81,6 +93,16 @@ export class MessageCache {
   public async getBotMessageIds(sourceMessageId: string) {
     const sourceMessage = await this.getSourceMessage(sourceMessageId);
     return sourceMessage?.botMessageIds ?? [];
+  }
+
+  public async getBotMessages(sourceMessageId: string) {
+    const sourceMessage = await this.getSourceMessage(sourceMessageId);
+    if (!sourceMessage) return [];
+
+    return sourceMessage.botMessageIds.map((id) => ({
+      id,
+      requestIndex: sourceMessage.botMessageIndexes?.[id],
+    }));
   }
 
   public async deleteSourceMessage(sourceMessageId: string) {
