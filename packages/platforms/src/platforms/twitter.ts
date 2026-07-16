@@ -23,25 +23,27 @@ function enrichText(raw?: RawText) {
     const end = offsets.index(facet.indices[1]);
     if (start < index || end <= start) continue;
     if (start < displayStart || displayEnd < end) continue;
+    const facetText = raw.text.slice(start, end);
+    if (!facetMatchesText(facet, facetText)) continue;
 
     rendered += raw.text.slice(index, start);
     index = end;
 
     if (facet.type === "url") {
-      rendered += renderUrlFacet(facet, raw.text.slice(start, end));
+      rendered += renderUrlFacet(facet, facetText);
     }
     if (facet.type === "hashtag") {
-      rendered += renderHashtagFacet(facet, raw.text.slice(start, end));
+      rendered += renderHashtagFacet(facet, facetText);
     }
     if (facet.type === "media") {
       continue;
     }
     if (facet.type === "mention") {
-      rendered += renderMentionFacet(facet, raw.text.slice(start, end));
+      rendered += renderMentionFacet(facet, facetText);
     }
 
     if (!RENDERED_FACET_TYPES.includes(facet.type)) {
-      rendered += raw.text.slice(start, end);
+      rendered += facetText;
     }
   }
 
@@ -90,13 +92,25 @@ function scoreOffsets(raw: RawText, offsets: { index(offset: number): number }) 
     const text = raw.text.slice(start, end);
 
     if (end <= start) score -= 1;
-    if (facet.type === "hashtag" && text === `#${facet.original}`) score += 3;
-    if (facet.type === "mention" && text === `@${facet.original}`) score += 3;
-    if (facet.type === "url" && /^https?:\/\//.test(text)) score += 2;
-    if (facet.type === "media" && /^https?:\/\//.test(text)) score += 2;
+    if (!facetMatchesText(facet, text)) continue;
+    if (facet.type === "hashtag" || facet.type === "mention") score += 3;
+    if (facet.type === "url" || facet.type === "media") score += 2;
   }
 
   return score;
+}
+
+function facetMatchesText(facet: RawText["facets"][number], text: string) {
+  if (facet.type === "url" || facet.type === "media") {
+    return facet.original ? text === facet.original : /^https?:\/\//.test(text);
+  }
+  if (facet.type === "hashtag") {
+    return facet.original ? text === `#${facet.original}` : text.startsWith("#");
+  }
+  if (facet.type === "mention") {
+    return facet.original ? text === `@${facet.original}` : text.startsWith("@");
+  }
+  return true;
 }
 
 function renderUrlFacet(facet: RawText["facets"][number], text: string) {
