@@ -10,10 +10,11 @@ export interface URLMatch {
 export function extractURLs(content: string): URLMatch[] {
   return [...content.matchAll(URL_RE)].map((match) => {
     const index = match.index ?? 0;
+    const url = match[0].endsWith("||") ? match[0].slice(0, -2) : match[0];
     return {
-      url: match[0],
+      url,
       index,
-      endIndex: index + match[0].length,
+      endIndex: index + url.length,
     };
   });
 }

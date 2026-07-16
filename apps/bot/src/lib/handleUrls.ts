@@ -25,6 +25,7 @@ import {
   recordError,
   span,
 } from "./observability";
+import { extractURLs } from "./utils";
 
 type EmbedSource = "message" | "command" | "context_menu";
 type EmbedInteraction = Command.ChatInputCommandInteraction | Command.ContextMenuCommandInteraction;
@@ -56,6 +57,51 @@ export interface EmbedURLRequest {
   force?: boolean;
 }
 
+interface HandleUrlsOptions {
+  source?: EmbedSource;
+  updateTargets?: ReadonlyMap<number, string>;
+}
+
+export function parseMessageURLs(content: string) {
+  const urls: EmbedURLRequest[] = [];
+  let suppressNativeEmbeds = true;
+
+  for (const match of extractURLs(content)) {
+    const before = content.slice(0, match.index);
+    const after = content.slice(match.endIndex);
+
+    if (before.endsWith("<") && after.startsWith(">")) continue;
+
+    if (before.endsWith("~")) {
+      suppressNativeEmbeds = false;
+      continue;
+    }
+
+    const flags: Partial<EmbedFlags> = {
+      Spoiler: before.split("||").length % 2 === 0,
+    };
+    let force = false;
+
+    if (before.endsWith("?@")) {
+      flags.SourceOnly = true;
+      force = true;
+    } else if (before.endsWith("?!")) {
+      flags.MediaOnly = true;
+      force = true;
+    } else if (before.endsWith("@")) {
+      flags.SourceOnly = true;
+    } else if (before.endsWith("!")) {
+      flags.MediaOnly = true;
+    } else if (before.endsWith("?")) {
+      force = true;
+    }
+
+    urls.push({ url: match.url, flags, force });
+  }
+
+  return { urls, suppressNativeEmbeds };
+}
+
 function canReactToMessage(msg: Message) {
   if (!msg.channel) return false;
   if (!msg.inGuild()) return true;
@@ -69,7 +115,7 @@ function canReactToMessage(msg: Message) {
 export async function handleUrls(
   urls: EmbedURLRequest[],
   interactionOrMessage: EmbedInteraction | Message,
-  source?: EmbedSource,
+  options: HandleUrlsOptions = {},
 ) {
   let msg: Message | null = null;
   let interaction: EmbedInteraction | null = null;
@@ -80,7 +126,7 @@ export async function handleUrls(
     interaction = interactionOrMessage;
   }
 
-  const embedSource = source ?? (msg ? "message" : "command");
+  const embedSource = options.source ?? (msg ? "message" : "command");
   let sentEmbed = false;
   let sentFailureReaction = false;
   const reactToFailure = async () => {
@@ -142,15 +188,15 @@ export async function handleUrls(
       };
   const matches = (
     await Promise.all(
-      urls.map(async (request, index) => {
+      urls.map(async (request, requestIndex) => {
         try {
           const match = await matchURL(request.url);
-          return match ? { ...request, ...match } : null;
+          return match ? { ...request, ...match, requestIndex } : null;
         } catch (error) {
           matchFailures++;
           const requestId = msg
-            ? `message:${msg.id}:match:${index}`
-            : `${embedSource}:${interaction!.id}:match:${index}`;
+            ? `message:${msg.id}:match:${requestIndex}`
+            : `${embedSource}:${interaction!.id}:match:${requestIndex}`;
           container.logger.warn(
             formatLog("warn", EmbedlyErrors.ApiUnexpectedResponse, {
               request_id: requestId,
@@ -164,7 +210,14 @@ export async function handleUrls(
         }
       }),
     )
-  ).filter((m) => m !== null);
+  ).filter(
+    (match) =>
+      match !== null && (!options.updateTargets || options.updateTargets.has(match.requestIndex)),
+  );
+
+  if (msg && options.updateTargets && matches.length !== options.updateTargets.size) {
+    await reactToFailure();
+  }
 
   if (interaction && matches.length === 0) {
     const requestId = `${embedSource}:${interaction.id}`;
@@ -186,15 +239,19 @@ export async function handleUrls(
     return sentEmbed;
   }
 
-  for (const [i, { platform, id, flags, force }] of matches.entries()) {
+  for (const [i, { platform, id, flags, force, requestIndex }] of matches.entries()) {
     const startedAt = Date.now();
-    const requestId = msg ? `message:${msg.id}:${i}` : `${embedSource}:${interaction!.id}:${i}`;
+    const requestId = msg
+      ? `message:${msg.id}:${requestIndex}`
+      : `${embedSource}:${interaction!.id}:${requestIndex}`;
+    const targetBotMessageId = options.updateTargets?.get(requestIndex);
     const logContext: EmbedLogContext = {
       request_id: requestId,
       source: embedSource,
       platform,
       post_id: id,
       force: force ?? false,
+      operation: targetBotMessageId ? "update" : "create",
       outcome: "success",
       status_code: 200,
       ...(msg
@@ -353,20 +410,28 @@ export async function handleUrls(
           let botMessage: Message;
           try {
             botMessage = await span(
-              "discord.send",
+              targetBotMessageId ? "discord.edit" : "discord.send",
               {
                 ...spanAttributes,
                 "discord.guild_id": String(logContext.guild_id),
                 "discord.channel_id": String(logContext.channel_id),
               },
               async (sendSpan) => {
-                const message = msg
-                  ? i > 0 && msg.channel.isSendable()
-                    ? await msg.channel.send(response)
-                    : await msg.reply(response)
-                  : i === 0
-                    ? await interaction!.editReply(response)
-                    : await interaction!.followUp(response);
+                let message: Message;
+                if (msg && targetBotMessageId) {
+                  message = await msg.channel.messages.fetch(targetBotMessageId);
+                  await message.edit(response);
+                } else if (msg) {
+                  message =
+                    i > 0 && msg.channel.isSendable()
+                      ? await msg.channel.send(response)
+                      : await msg.reply(response);
+                } else {
+                  message =
+                    i === 0
+                      ? await interaction!.editReply(response)
+                      : await interaction!.followUp(response);
+                }
                 sendSpan.setAttribute("discord.bot_message_id", message.id);
                 return message;
               },
@@ -392,10 +457,10 @@ export async function handleUrls(
           }
 
           logContext.bot_message_id = botMessage.id;
-          botEmbedsCreated.add(1, metricContext);
+          if (!targetBotMessageId) botEmbedsCreated.add(1, metricContext);
           sentEmbed = true;
 
-          if (msg) {
+          if (msg && !targetBotMessageId) {
             try {
               await span(
                 "message_cache.save",
@@ -405,7 +470,12 @@ export async function handleUrls(
                   "discord.bot_message_id": botMessage.id,
                 },
                 async () => {
-                  await container.messageCache.save(msg.id, botMessage.id, msg.author.id);
+                  await container.messageCache.save(
+                    msg.id,
+                    botMessage.id,
+                    msg.author.id,
+                    requestIndex,
+                  );
                 },
               );
             } catch (error) {
