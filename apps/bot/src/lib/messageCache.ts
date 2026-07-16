@@ -6,6 +6,7 @@ const CACHE_URL = process.env.CACHE_URL ?? "redis://localhost:6379";
 
 interface SourceMessageCache {
   botMessageIds: string[];
+  botMessageIndexes?: Record<string, number | undefined>;
 }
 
 export class MessageCache {
@@ -24,20 +25,29 @@ export class MessageCache {
     return new MessageCache(client);
   }
 
-  public async save(sourceMessageId: string, botMessageId: string, authorId: string) {
+  public async save(
+    sourceMessageId: string,
+    botMessageId: string,
+    authorId: string,
+    requestIndex: number,
+  ) {
     const messageKey = this.getSourceMessageKey(sourceMessageId);
     const authorKey = this.getBotMessageAuthorKey(botMessageId);
     const sourceKey = this.getBotMessageSourceKey(botMessageId);
     const existing = await this.getSourceMessage(sourceMessageId);
     const botMessageIds = existing?.botMessageIds ?? [];
+    const botMessageIndexes = existing?.botMessageIndexes ?? {};
 
     if (!botMessageIds.includes(botMessageId)) {
       botMessageIds.push(botMessageId);
     }
+    botMessageIndexes[botMessageId] = requestIndex;
 
     await this.client
       .multi()
-      .set(messageKey, JSON.stringify({ botMessageIds }), { EX: MESSAGE_CACHE_TTL_SECONDS })
+      .set(messageKey, JSON.stringify({ botMessageIds, botMessageIndexes }), {
+        EX: MESSAGE_CACHE_TTL_SECONDS,
+      })
       .set(authorKey, authorId, { EX: MESSAGE_CACHE_TTL_SECONDS })
       .set(sourceKey, sourceMessageId, { EX: MESSAGE_CACHE_TTL_SECONDS })
       .exec();
@@ -61,6 +71,8 @@ export class MessageCache {
 
     const sourceMessage = await this.getSourceMessage(sourceMessageId);
     const botMessageIds = sourceMessage?.botMessageIds.filter((id) => id !== botMessageId) ?? [];
+    const botMessageIndexes = sourceMessage?.botMessageIndexes ?? {};
+    delete botMessageIndexes[botMessageId];
     const transaction = this.client.multi().del(keys);
 
     if (botMessageIds.length === 0) {
@@ -68,7 +80,7 @@ export class MessageCache {
     } else {
       transaction.set(
         this.getSourceMessageKey(sourceMessageId),
-        JSON.stringify({ botMessageIds }),
+        JSON.stringify({ botMessageIds, botMessageIndexes }),
         {
           EX: MESSAGE_CACHE_TTL_SECONDS,
         },
@@ -81,6 +93,16 @@ export class MessageCache {
   public async getBotMessageIds(sourceMessageId: string) {
     const sourceMessage = await this.getSourceMessage(sourceMessageId);
     return sourceMessage?.botMessageIds ?? [];
+  }
+
+  public async getBotMessages(sourceMessageId: string) {
+    const sourceMessage = await this.getSourceMessage(sourceMessageId);
+    if (!sourceMessage) return [];
+
+    return sourceMessage.botMessageIds.map((id) => ({
+      id,
+      requestIndex: sourceMessage.botMessageIndexes?.[id],
+    }));
   }
 
   public async close() {
@@ -101,8 +123,24 @@ export class MessageCache {
     ) {
       throw new Error("Invalid source message cache entry");
     }
+    const botMessageIndexes: SourceMessageCache["botMessageIndexes"] = {};
+    if ("botMessageIndexes" in parsed && parsed.botMessageIndexes !== undefined) {
+      if (
+        !parsed.botMessageIndexes ||
+        typeof parsed.botMessageIndexes !== "object" ||
+        Array.isArray(parsed.botMessageIndexes)
+      ) {
+        throw new Error("Invalid bot message indexes");
+      }
+      for (const [id, index] of Object.entries(parsed.botMessageIndexes)) {
+        if (typeof index !== "number" || !Number.isSafeInteger(index) || index < 0) {
+          throw new Error("Invalid bot message index");
+        }
+        botMessageIndexes[id] = index;
+      }
+    }
     /* oxlint-enable anti-slop/no-runtime-typeof */
-    return { botMessageIds: parsed.botMessageIds };
+    return { botMessageIds: parsed.botMessageIds, botMessageIndexes };
   }
 
   private getSourceMessageKey(messageId: string) {
