@@ -46,5 +46,4 @@ FROM base AS start
 COPY --from=build /root/.proto /root/.proto
 COPY --from=build /app /app
 
-CMD moon run bot:start
-
+CMD ["node", "apps/bot/dist/main.mjs"]

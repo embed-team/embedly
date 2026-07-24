@@ -1,4 +1,12 @@
 
+# repository metadata
+.git
+.github
+.vscode
+.claude
+.remember
+.fallow
+
 # moon
 .moon/cache
 .moon/docker
