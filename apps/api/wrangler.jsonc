@@ -4,19 +4,24 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-04-30",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": {
-    "logs": {
-      "enabled": true,
-      "invocation_logs": true,
-      "head_sampling_rate": 1,
-      "persist": true,
-      "destinations": ["embedly-logs"],
-    },
-    "traces": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "persist": true,
-      "destinations": ["embedly-traces"],
+  "unsafe": {
+    "metadata": {
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "destinations": ["embedly-logs"],
+        },
+        "traces": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "destinations": ["embedly-traces"],
+          "propagation_policy": "accept",
+        },
+      },
     },
   },
   "kv_namespaces": [
