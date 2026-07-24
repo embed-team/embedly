@@ -13,8 +13,10 @@ const RENDERED_FACET_TYPES = ["url", "hashtag", "media", "mention"];
 function enrichText(raw?: RawText) {
   if (!raw) return undefined;
   const offsets = getTextOffsets(raw);
-  const displayStart = offsets.index(raw.display_text_range[0]);
-  const displayEnd = offsets.index(raw.display_text_range[1]);
+  const displayStart = raw.display_text_range ? offsets.index(raw.display_text_range[0]) : 0;
+  const displayEnd = raw.display_text_range
+    ? offsets.index(raw.display_text_range[1])
+    : raw.text.length;
   let rendered = "";
   let index = displayStart;
 

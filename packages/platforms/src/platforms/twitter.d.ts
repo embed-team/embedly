@@ -203,7 +203,7 @@ export interface Broadcast {
 
 export interface RawText {
   text: string;
-  display_text_range: [number, number];
+  display_text_range?: [number, number];
   facets: Facet[];
 }
 
