@@ -22,10 +22,14 @@ import { version } from "../package.json";
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
 type Bindings = CloudflareBindings & { OTEL_ENDPOINT: string };
 
-const config: ResolveConfigFn<Bindings> = (env) => ({
-  exporter: { url: env.OTEL_ENDPOINT },
-  service: { name: "embedly-api", version },
-});
+const config: ResolveConfigFn<Bindings> = (env) => {
+  if (!env.OTEL_ENDPOINT) throw new Error("OTEL_ENDPOINT is required.");
+
+  return {
+    exporter: { url: env.OTEL_ENDPOINT },
+    service: { name: "embedly-api", version },
+  };
+};
 
 const app = new Hono<{ Bindings: Bindings }>()
   .use("*", httpInstrumentationMiddleware())
