@@ -13,10 +13,7 @@
       "destinations": ["embedly-logs"],
     },
     "traces": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "persist": true,
-      "destinations": ["embedly-traces"],
+      "enabled": false,
     },
   },
   "kv_namespaces": [
