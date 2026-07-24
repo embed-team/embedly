@@ -20,9 +20,8 @@ import z from "zod";
 import { version } from "../package.json";
 
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
-type Bindings = CloudflareBindings & { OTEL_ENDPOINT: string };
 
-const config: ResolveConfigFn<Bindings> = (env) => {
+const config: ResolveConfigFn<CloudflareBindings> = (env) => {
   if (!env.OTEL_ENDPOINT) throw new Error("OTEL_ENDPOINT is required.");
 
   return {
@@ -31,7 +30,7 @@ const config: ResolveConfigFn<Bindings> = (env) => {
   };
 };
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: CloudflareBindings }>()
   .use("*", httpInstrumentationMiddleware())
   .use(cors())
   .use(prettyJSON())
@@ -110,8 +109,6 @@ const app = new Hono<{ Bindings: Bindings }>()
         try {
           raw = await p.fetch(id, {
             EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
-            REDDIT_CLIENT_ID: c.env.REDDIT_CLIENT_ID,
-            REDDIT_CLIENT_SECRET: c.env.REDDIT_CLIENT_SECRET,
           });
         } catch (cause) {
           const problem = createProblem(EmbedlyErrors.PlatformFetchFailed, {
