@@ -7,7 +7,10 @@ import {
   getRequestId,
 } from "@embedly/logging";
 import { Platforms } from "@embedly/platforms";
+import { httpInstrumentationMiddleware } from "@hono/otel";
 import { zValidator } from "@hono/zod-validator";
+import { instrument, type ResolveConfigFn } from "@microlabs/otel-cf-workers";
+import { trace } from "@opentelemetry/api";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cors } from "hono/cors";
@@ -17,15 +20,15 @@ import z from "zod";
 import { version } from "../package.json";
 
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
+type Bindings = CloudflareBindings & { OTEL_ENDPOINT: string };
 
-function getTraceId(request: Request) {
-  const traceparent = request.headers.get("traceparent");
-  const traceId = traceparent?.split("-")[1];
-  if (!traceId || !/^[a-f0-9]{32}$/.test(traceId)) return undefined;
-  return traceId;
-}
+const config: ResolveConfigFn<Bindings> = (env) => ({
+  exporter: { url: env.OTEL_ENDPOINT },
+  service: { name: "embedly-api", version },
+});
 
-const app = new Hono<{ Bindings: CloudflareBindings }>()
+const app = new Hono<{ Bindings: Bindings }>()
+  .use("*", httpInstrumentationMiddleware())
   .use(cors())
   .use(prettyJSON())
   .get("/health", (c) => {
@@ -45,9 +48,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       const startedAt = Date.now();
       const { id, platform, force } = c.req.valid("json");
       const requestId = getRequestId(c.req.raw);
+      const spanContext = trace.getActiveSpan()?.spanContext();
       const logContext: Record<string, unknown> = {
         request_id: requestId,
-        trace_id: getTraceId(c.req.raw),
+        trace_id: spanContext?.traceId,
+        span_id: spanContext?.spanId,
         source: c.req.header("X-Embedly-Source") ?? "api",
         platform,
         post_id: id,
@@ -171,5 +176,5 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
     },
   );
 
-export default app;
+export default instrument(app, config);
 export type AppType = typeof app;
