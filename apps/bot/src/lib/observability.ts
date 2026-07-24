@@ -10,6 +10,7 @@ import {
 } from "@opentelemetry/api";
 import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import { container } from "@sapphire/framework";
+import type { ClientApplication } from "discord.js";
 
 export const tracer = trace.getTracer("embedly-bot");
 
@@ -30,6 +31,19 @@ export const botErrors = meter.createCounter("embedly_bot_errors_total");
 export const botRequestDuration = meter.createHistogram("embedly_bot_request_duration_ms", {
   unit: "ms",
 });
+const discordGuildInstalls = meter.createObservableGauge("embedly_discord_guild_installs");
+const discordUserInstalls = meter.createObservableGauge("embedly_discord_user_installs");
+
+export function observeDiscordInstallCounts(application: ClientApplication) {
+  discordGuildInstalls.addCallback((result) => {
+    if (application.approximateGuildCount === null) return;
+    result.observe(application.approximateGuildCount);
+  });
+  discordUserInstalls.addCallback((result) => {
+    if (application.approximateUserInstallCount === null) return;
+    result.observe(application.approximateUserInstallCount);
+  });
+}
 
 export async function span<T>(
   name: string,
