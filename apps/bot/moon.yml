@@ -17,6 +17,11 @@ tasks:
       envFile: true
     deps:
       - api:dev
+  docker:
+    command: docker compose
+    options:
+      envFile: true
+      cache: false
   docker/stop:
     command: docker compose down
     options:
