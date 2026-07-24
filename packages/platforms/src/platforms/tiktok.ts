@@ -1,5 +1,3 @@
-import * as cheerio from "cheerio";
-
 import { NormalizedPost, Platform } from "../types";
 
 const MATCH_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*tiktok\.com(?:\/|$)/;
@@ -7,13 +5,17 @@ const MATCH_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*tiktok\.com(?:\/|$)/;
 const FOLLOWUP_RE =
   /^https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@(?:[\w.-]+)?)\/(?<tiktok_type>video|photo)\/(?<tiktok_id>\d+)/;
 
-async function parseMedia(raw: Record<string, any>): Promise<NormalizedPost["media"]> {
-  if (raw.video) {
-    const urls = raw.video.PlayAddrStruct?.UrlList ?? [];
-    const videoURL = urls.find((url: string) => url.includes("/aweme/v1/play/")) ?? urls[0];
-    if (videoURL) return [{ url: videoURL, type: "video" }];
+function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
+  if (raw.image_post_info) {
+    return raw.image_post_info.images
+      .map((image: any) => image.display_image?.url_list?.[0])
+      .filter((url: unknown): url is string => typeof url === "string")
+      .map((url: string) => ({ url, type: "image" }));
   }
-  return [];
+
+  const urls = raw.video_info?.url_list ?? [];
+  const videoURL = urls.find((url: string) => url.includes("/aweme/v1/play/")) ?? urls[0];
+  return videoURL ? [{ url: videoURL, type: "video" }] : [];
 }
 
 export const TikTok: Platform<"TikTok", Record<string, any>, {}> = {
@@ -35,69 +37,54 @@ export const TikTok: Platform<"TikTok", Record<string, any>, {}> = {
     return `${tiktok_user}/${tiktok_type}/${tiktok_id}`;
   },
   async fetch(id, env) {
-    const [tiktok_user, tiktok_type, tiktok_id] = id.split("/");
-    const resp = await fetch(`https://www.tiktok.com/${tiktok_user}/${tiktok_type}/${tiktok_id}`, {
+    const tiktok_id = id.split("/")[2];
+    const url = new URL("https://www.tiktok.com/player/api/v1/items");
+    url.searchParams.set("item_ids", tiktok_id);
+    url.searchParams.set("language", "en-US");
+    url.searchParams.set("aid", "1459");
+    url.searchParams.set("data_source", "pack");
+
+    const resp = await fetch(url, {
       method: "GET",
       headers: {
-        "User-Agent": env?.EMBED_USER_AGENT ?? "",
+        "User-Agent": env?.EMBED_USER_AGENT ?? "curl/8.7.1",
       },
     });
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
     }
-    const html = await resp.text();
-    const $ = cheerio.load(html);
-    let script: string;
-    try {
-      script = $("script#__UNIVERSAL_DATA_FOR_REHYDRATION__").text();
-    } catch {
+
+    const data: any = await resp.json();
+    const item = data?.items?.find((item: any) => item.id_str === tiktok_id);
+    if (!item) {
+      const result = data?.results?.find((result: any) => result.id_str === tiktok_id);
       throw {
         code: 500,
-        message: "TikTok page structure changed: missing data script",
+        message: result?.code ?? "TikTok player API returned no item data",
       };
     }
-
-    let data: any;
-    try {
-      data = JSON.parse(script);
-    } catch {
-      throw { code: 500, message: "Failed to parse TikTok data" };
-    }
-
-    if (data?.__DEFAULT_SCOPE__?.["webapp.browserRedirect-context"]) {
-      return this.fetch(
-        data?.__DEFAULT_SCOPE__?.["webapp.browserRedirect-context"].browserRedirectUrl,
-        env,
-      );
-    }
-
-    let itemStruct = data?.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo?.itemStruct;
-    if (!itemStruct) {
-      throw {
-        code: 500,
-        message: "TikTok page structure changed: missing video data",
-      };
-    }
-    return itemStruct;
+    return item;
   },
   async transform(raw) {
+    const id = raw.id_str;
+    const handle = raw.author_info.unique_id;
+    const type = raw.image_post_info ? "photo" : "video";
     return {
       platform: this.type,
       author: {
-        name: raw.author.nickname,
-        avatar: raw.author.avatarMedium,
-        handle: raw.author.uniqueId,
-        url: `https://tiktok.com/@${raw.author.uniqueId}`,
+        name: raw.author_info.nickname,
+        avatar: raw.author_info.avatar_url_list[0],
+        handle,
+        url: `https://tiktok.com/@${handle}`,
       },
-      timestamp: +raw.createTime,
-      url: `https://tiktok.com/@${raw.author.uniqueId}/video/${raw.video.id}`,
+      timestamp: raw.create_time ?? Number(BigInt(id) >> 32n),
+      url: `https://tiktok.com/@${handle}/${type}/${id}`,
       text: raw.desc,
-      media: await parseMedia(raw),
+      media: parseMedia(raw),
       stats: {
-        comments: raw.statsV2.commentCount,
-        reposts: raw.statsV2.shareCount,
-        likes: raw.statsV2.diggCount,
-        views: raw.statsV2.playCount,
+        comments: raw.statistics_info.comment_count,
+        reposts: raw.statistics_info.share_count,
+        likes: raw.statistics_info.digg_count,
       },
     };
   },
