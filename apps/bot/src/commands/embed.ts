@@ -71,7 +71,7 @@ export class EmbedCommand extends Command {
     await handleUrls(
       extractURLs(msg.content).map(({ url }) => ({ url })),
       interaction,
-      "context_menu",
+      { source: "context_menu" },
     );
   }
 
@@ -88,7 +88,7 @@ export class EmbedCommand extends Command {
         force: interaction.options.getBoolean("force") ?? false,
       })),
       interaction,
-      "command",
+      { source: "command" },
     );
   }
 }
