@@ -18,14 +18,6 @@ export function extractURLs(content: string): URLMatch[] {
   });
 }
 
-export function isSpoiler(url: string, content: string): boolean {
-  return content.split("||").some((part, ind) => ind % 2 === 1 && part.includes(url));
-}
-
-export function isEscaped(url: string, content: string): boolean {
-  return content.includes(`<${url}>`);
-}
-
 export function truncate(text: string, maxLength: number) {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 }
