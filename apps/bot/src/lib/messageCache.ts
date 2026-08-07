@@ -83,18 +83,6 @@ export class MessageCache {
     return sourceMessage?.botMessageIds ?? [];
   }
 
-  public async deleteSourceMessage(sourceMessageId: string) {
-    const botMessageIds = await this.getBotMessageIds(sourceMessageId);
-    const keys = [
-      this.getSourceMessageKey(sourceMessageId),
-      ...botMessageIds.map((id) => this.getBotMessageAuthorKey(id)),
-      ...botMessageIds.map((id) => this.getBotMessageSourceKey(id)),
-    ];
-
-    await this.client.del(keys);
-    return botMessageIds;
-  }
-
   public async close() {
     await this.client.close();
   }

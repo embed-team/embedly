@@ -196,7 +196,6 @@ export class DeleteCommand extends Command {
 
           try {
             await msg.delete();
-            await this.container.messageCache.removeBotMessage(msg.id);
           } catch (error) {
             const problem = createProblem(EmbedlyErrors.DeleteFailed, {
               request_id: requestId,
@@ -214,6 +213,20 @@ export class DeleteCommand extends Command {
             botErrors.add(1, { ...metricContext, error_type: problem.type });
             await interaction.editReply(formatDiscordError(problem));
             return;
+          }
+
+          try {
+            await this.container.messageCache.removeBotMessage(msg.id);
+          } catch (error) {
+            botErrors.add(1, {
+              ...metricContext,
+              error_type: EmbedlyErrors.MessageCacheFailed.type,
+            });
+            log("warn", EmbedlyErrors.MessageCacheFailed, {
+              ...logContext,
+              error_type: EmbedlyErrors.MessageCacheFailed.type,
+              ...getErrorContext(error),
+            });
           }
 
           await interaction.editReply(
