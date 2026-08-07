@@ -23,8 +23,10 @@ const NumberFormatter = new Intl.NumberFormat("en", {
   notation: "compact",
   maximumFractionDigits: 2,
 });
+const VoteNumberFormatter = new Intl.NumberFormat("en");
 
 const MAX_GALLERY_ITEMS = 10;
+const POLL_BAR_SIZE = 20;
 
 export interface EmbedFlags {
   MediaOnly: boolean;
@@ -33,6 +35,24 @@ export interface EmbedFlags {
 }
 
 type PostData = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
+type TwitterPoll = NonNullable<Extract<PostData, { platform: "Twitter" }>["poll"]>;
+
+function renderPoll(poll: TwitterPoll) {
+  const choices = poll.choices
+    .map((choice) => {
+      const percentage = Math.min(Math.max(choice.percentage, 0), 100);
+      const filledSize = Math.round((percentage / 100) * POLL_BAR_SIZE);
+      const bar = "█".repeat(filledSize) + "░".repeat(POLL_BAR_SIZE - filledSize);
+
+      return `${escapeMarkdown(choice.label)}  **${Math.round(percentage)}%**\n${bar}`;
+    })
+    .join("\n");
+  const voteLabel = poll.total_votes === 1 ? "vote" : "votes";
+  const status =
+    Date.parse(poll.ends_at) > Date.now() ? `${poll.time_left_en} left` : "Final results";
+
+  return `${choices}\n${subtext(`${VoteNumberFormatter.format(poll.total_votes)} ${voteLabel} • ${status}`)}`;
+}
 
 function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["Spoiler"]) {
   if (media.length === 0) return null;
@@ -46,6 +66,7 @@ function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["S
 }
 
 function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefix?: string) {
+  const poll = post.platform === "Twitter" ? post.poll : undefined;
   const translation =
     post.platform === "Twitter" &&
     post.translation &&
@@ -81,6 +102,9 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
     }
     return section;
   });
+  if (poll?.choices.length) {
+    embed.addTextDisplayComponents((display) => display.setContent(renderPoll(poll)));
+  }
   if (post.platform === "Twitter" || post.platform === "Threads") {
     if (post.community_note) {
       embed.addSeparatorComponents((sep) =>
