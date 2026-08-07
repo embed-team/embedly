@@ -328,8 +328,9 @@ export async function handleUrls(
             },
           } as const;
 
+          let botMessage: Message;
           try {
-            const botMessage = await span(
+            botMessage = await span(
               "discord.send",
               {
                 ...spanAttributes,
@@ -348,22 +349,6 @@ export async function handleUrls(
                 return message;
               },
             );
-            logContext.bot_message_id = botMessage.id;
-            if (msg) {
-              await span(
-                "message_cache.save",
-                {
-                  ...spanAttributes,
-                  "discord.source_message_id": msg.id,
-                  "discord.bot_message_id": botMessage.id,
-                },
-                async () => {
-                  await container.messageCache.save(msg.id, botMessage.id, msg.author.id);
-                },
-              );
-            }
-            botEmbedsCreated.add(1, metricContext);
-            sentEmbed = true;
           } catch (error) {
             recordError(requestSpan, error);
             const problem = createProblem(EmbedlyErrors.DiscordSendFailed, {
@@ -381,6 +366,37 @@ export async function handleUrls(
               return;
             }
             await interaction!.editReply(formatDiscordError(problem));
+            return;
+          }
+
+          logContext.bot_message_id = botMessage.id;
+          botEmbedsCreated.add(1, metricContext);
+          sentEmbed = true;
+
+          if (msg) {
+            try {
+              await span(
+                "message_cache.save",
+                {
+                  ...spanAttributes,
+                  "discord.source_message_id": msg.id,
+                  "discord.bot_message_id": botMessage.id,
+                },
+                async () => {
+                  await container.messageCache.save(msg.id, botMessage.id, msg.author.id);
+                },
+              );
+            } catch (error) {
+              botErrors.add(1, {
+                ...metricContext,
+                error_type: EmbedlyErrors.MessageCacheFailed.type,
+              });
+              log("warn", EmbedlyErrors.MessageCacheFailed, {
+                ...logContext,
+                error_type: EmbedlyErrors.MessageCacheFailed.type,
+                ...getErrorContext(error),
+              });
+            }
           }
         } finally {
           Object.assign(logContext, getActiveTraceContext(), {
