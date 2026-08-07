@@ -30,7 +30,6 @@ export class MessageDeleteListener extends Listener<typeof Events.MessageDelete>
             ...getErrorContext(error),
           }),
         );
-        continue;
       }
 
       try {
