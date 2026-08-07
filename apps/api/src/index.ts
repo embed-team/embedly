@@ -76,16 +76,13 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
               return c.json(cachedItem as ScrapeResponse, 200);
             }
           } catch (cause) {
-            const problem = createProblem(EmbedlyErrors.CacheReadFailed, {
-              request_id: requestId,
-              context: { ...logContext, ...getErrorContext(cause) },
-            });
-            Object.assign(logContext, getErrorContext(cause), {
-              outcome: "error",
-              status_code: problem.status,
-              error_type: problem.type,
-            });
-            return c.json(problem, problem.status);
+            logContext.cache_status = "read_error";
+            console.warn(
+              formatLog("warn", EmbedlyErrors.CacheReadFailed, {
+                ...logContext,
+                ...getErrorContext(cause),
+              }),
+            );
           }
         }
 
@@ -145,16 +142,13 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           });
           logContext.cache_status = "stored";
         } catch (cause) {
-          const problem = createProblem(EmbedlyErrors.CacheWriteFailed, {
-            request_id: requestId,
-            context: { ...logContext, ...getErrorContext(cause) },
-          });
-          Object.assign(logContext, getErrorContext(cause), {
-            outcome: "error",
-            status_code: problem.status,
-            error_type: problem.type,
-          });
-          return c.json(problem, problem.status);
+          logContext.cache_status = "write_error";
+          console.warn(
+            formatLog("warn", EmbedlyErrors.CacheWriteFailed, {
+              ...logContext,
+              ...getErrorContext(cause),
+            }),
+          );
         }
 
         return c.json(data, 200);
