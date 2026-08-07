@@ -9,11 +9,7 @@ const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
 
 function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
   if (raw.carousel_media) {
-    return raw.carousel_media.map((media: any) => ({
-      url: media.image_versions2.candidates[0].url,
-      type: "photo",
-      description: media.accessibility_caption,
-    }));
+    return raw.carousel_media.flatMap(parseMedia);
   }
   if (raw.video_versions) {
     return [
