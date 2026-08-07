@@ -105,18 +105,51 @@ export async function handleUrls(
 
   if (interaction) await interaction.deferReply();
 
+  let matchFailures = 0;
+  const matchContext = msg
+    ? {
+        message_id: msg.id,
+        channel_id: msg.channelId,
+        guild_id: msg.guildId ?? "dm",
+        user_id: msg.author.id,
+      }
+    : {
+        interaction_id: interaction!.id,
+        channel_id: interaction!.channelId,
+        guild_id: interaction!.guildId ?? "dm",
+        user_id: interaction!.user.id,
+      };
   const matches = (
     await Promise.all(
-      urls.map(async (request) => {
-        const match = await matchURL(request.url);
-        return match ? { ...request, ...match } : null;
+      urls.map(async (request, index) => {
+        try {
+          const match = await matchURL(request.url);
+          return match ? { ...request, ...match } : null;
+        } catch (error) {
+          matchFailures++;
+          const requestId = msg
+            ? `message:${msg.id}:match:${index}`
+            : `${embedSource}:${interaction!.id}:match:${index}`;
+          container.logger.warn(
+            formatLog("warn", EmbedlyErrors.ApiUnexpectedResponse, {
+              request_id: requestId,
+              source: embedSource,
+              ...matchContext,
+              ...getErrorContext(error),
+            }),
+          );
+          if (msg) await reactToFailure();
+          return null;
+        }
       }),
     )
   ).filter((m) => m !== null);
 
   if (interaction && matches.length === 0) {
     const requestId = `${embedSource}:${interaction.id}`;
-    const problem = createProblem(EmbedlyErrors.NoMatchesFound, {
+    const error =
+      matchFailures > 0 ? EmbedlyErrors.ApiUnexpectedResponse : EmbedlyErrors.NoMatchesFound;
+    const problem = createProblem(error, {
       request_id: requestId,
       context: {
         request_id: requestId,
@@ -125,7 +158,7 @@ export async function handleUrls(
         user_id: interaction.user.id,
       },
     });
-    container.logger.warn(formatLog("warn", EmbedlyErrors.NoMatchesFound, problem.context));
+    container.logger.warn(formatLog("warn", error, problem.context));
     await interaction.editReply({
       content: formatDiscordError(problem),
     });
