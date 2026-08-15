@@ -1,39 +1,12 @@
 import * as cheerio from "cheerio";
 
 import { NormalizedPost, Platform } from "../types";
+import type { InstagramMedia } from "./instagram.d";
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(?<ig_type>p|share|reels|reel)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
 
 const PRELOADER_PREFIX = "adp_PolarisLoggedOutDesktopWWWPostRootContentQueryRelayPreloader_";
-
-interface InstagramImageCandidate {
-  url: string;
-}
-
-interface InstagramMedia {
-  __typename?: string;
-  code: string;
-  taken_at: number;
-  caption?: { text?: string } | null;
-  user: {
-    username: string;
-    full_name?: string;
-    profile_pic_url: string;
-  };
-  like_count?: number;
-  comment_count?: number;
-  product_type?: string;
-  play_count?: number;
-  video_play_count?: number;
-  view_count?: number;
-  accessibility_caption?: string;
-  image_versions2?: {
-    candidates?: InstagramImageCandidate[];
-  };
-  video_versions?: Array<{ url: string }>;
-  carousel_media?: InstagramMedia[];
-}
 
 function normalizeType(type: string) {
   if (type === "reels") return "reel";
@@ -75,6 +48,7 @@ function parseRelayMedia(script: string) {
       item[0] === "RelayPrefetchedStreamCache" && item[3]?.[0]?.startsWith(PRELOADER_PREFIX),
   );
 
+  // SAFETY: Instagram relay media is checked against live image, reel, and carousel samples.
   return relayRequire?.[3]?.[1]?.__bbox?.result?.data?.xig_polaris_media
     ?.if_not_gated_logged_out as InstagramMedia | undefined;
 }
