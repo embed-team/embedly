@@ -6,6 +6,7 @@ import {
   formatLog,
   getErrorContext,
   isEmbedlyProblem,
+  type LogContext,
 } from "@embedly/logging";
 import { matchURL, Platforms } from "@embedly/platforms";
 import { Command, container } from "@sapphire/framework";
@@ -28,6 +29,26 @@ import {
 type EmbedSource = "message" | "command" | "context_menu";
 type EmbedInteraction = Command.ChatInputCommandInteraction | Command.ContextMenuCommandInteraction;
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
+
+interface EmbedLogContext extends LogContext {
+  request_id: string;
+  trace_id?: string;
+  span_id?: string;
+  source: EmbedSource;
+  platform: string;
+  post_id: string;
+  force: boolean;
+  message_id?: string;
+  interaction_id?: string;
+  channel_id: string | null;
+  guild_id: string;
+  user_id: string;
+  bot_message_id?: string;
+  outcome: "success" | "skipped" | "error";
+  status_code: number;
+  error_type?: string;
+  duration_ms?: number;
+}
 
 export interface EmbedURLRequest {
   url: string;
@@ -168,7 +189,7 @@ export async function handleUrls(
   for (const [i, { platform, id, flags, force }] of matches.entries()) {
     const startedAt = Date.now();
     const requestId = msg ? `message:${msg.id}:${i}` : `${embedSource}:${interaction!.id}:${i}`;
-    const logContext: Record<string, unknown> = {
+    const logContext: EmbedLogContext = {
       request_id: requestId,
       source: embedSource,
       platform,
@@ -266,6 +287,7 @@ export async function handleUrls(
               return;
             }
 
+            // SAFETY: a successful response uses the API route's typed success body.
             post = body as ScrapeResponse;
           } catch (error) {
             recordError(requestSpan, error);

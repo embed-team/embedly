@@ -1,5 +1,5 @@
 import { EmbedlyErrors, formatLog, getErrorContext } from "@embedly/logging";
-import { createClient, type RedisClientType } from "redis";
+import { createClient } from "redis";
 
 const MESSAGE_CACHE_TTL_SECONDS = Number(process.env.MESSAGE_CACHE_TTL_SECONDS ?? 60 * 60 * 24);
 const CACHE_URL = process.env.CACHE_URL ?? "redis://localhost:6379";
@@ -9,7 +9,7 @@ interface SourceMessageCache {
 }
 
 export class MessageCache {
-  private constructor(private readonly client: RedisClientType) {}
+  private constructor(private readonly client: ReturnType<typeof createClient>) {}
 
   public static async connect() {
     const client = createClient({ url: CACHE_URL });
@@ -21,7 +21,7 @@ export class MessageCache {
       );
     });
     await client.connect();
-    return new MessageCache(client as RedisClientType);
+    return new MessageCache(client);
   }
 
   public async save(sourceMessageId: string, botMessageId: string, authorId: string) {
@@ -90,7 +90,19 @@ export class MessageCache {
   private async getSourceMessage(sourceMessageId: string): Promise<SourceMessageCache | null> {
     const raw = await this.client.get(this.getSourceMessageKey(sourceMessageId));
     if (!raw) return null;
-    return JSON.parse(raw) as SourceMessageCache;
+    const parsed: unknown = JSON.parse(raw);
+    /* oxlint-disable anti-slop/no-runtime-typeof -- External cache data needs runtime validation. */
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !("botMessageIds" in parsed) ||
+      !Array.isArray(parsed.botMessageIds) ||
+      !parsed.botMessageIds.every((id) => typeof id === "string")
+    ) {
+      throw new Error("Invalid source message cache entry");
+    }
+    /* oxlint-enable anti-slop/no-runtime-typeof */
+    return { botMessageIds: parsed.botMessageIds };
   }
 
   private getSourceMessageKey(messageId: string) {
