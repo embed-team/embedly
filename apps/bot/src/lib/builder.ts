@@ -71,6 +71,7 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
     post.platform === "Twitter" &&
     post.translation &&
     post.translation.text.trim().length > 0 &&
+    post.translation.text !== post.text &&
     post.translation.source_lang !== "en"
       ? post.translation
       : undefined;
