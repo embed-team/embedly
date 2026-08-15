@@ -1,56 +1,16 @@
 import { NormalizedPost, Platform } from "../types";
+import type {
+  RedditAccessTokenResponse,
+  RedditListing,
+  RedditPost,
+  RedditPostData,
+  RedditProfileResponse,
+} from "./reddit.d";
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:www\.|old\.)?(?:reddit\.com\/r\/[A-Za-z0-9_]+\/(?:comments\/[A-Za-z0-9]+(?:\/[^/\s]+)?|s\/[A-Za-z0-9]+)|redd\.it\/[A-Za-z0-9]+)\/?/;
 const FOLLOWUP_RE =
   /^(?:https?:\/\/)?(?:www\.|old\.|m\.)?reddit\.com\/r\/(?<subreddit>\w+)\/comments\/(?<post_id>[a-z0-9]+)/;
-
-interface RedditAccessTokenResponse {
-  access_token?: string;
-}
-
-interface RedditMediaMetadata {
-  s: { u: string };
-}
-
-interface RedditPostData {
-  author: string;
-  subreddit_name_prefixed: string;
-  created_utc: number;
-  permalink: string;
-  title: string;
-  selftext: string;
-  num_comments: number;
-  ups: number;
-  domain?: string;
-  url_overridden_by_dest?: string;
-  media_metadata?: Record<string, RedditMediaMetadata>;
-  preview?: {
-    enabled: boolean;
-    images: Array<{ source: { url: string } }>;
-  };
-  media?: {
-    reddit_video?: { fallback_url: string };
-  };
-}
-
-interface RedditProfile {
-  icon_img: string;
-}
-
-interface RedditPost extends RedditPostData {
-  profile: RedditProfile;
-}
-
-interface RedditListing {
-  data?: {
-    children?: Array<{ data?: RedditPostData }>;
-  };
-}
-
-interface RedditProfileResponse {
-  data?: RedditProfile;
-}
 
 async function fetchAccessToken(env: {
   EMBED_USER_AGENT: string;

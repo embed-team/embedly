@@ -1,45 +1,10 @@
 import { NormalizedPost, Platform } from "../types";
+import type { TikTokItem, TikTokPlayerResponse } from "./tiktok.d";
 
 const MATCH_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*tiktok\.com(?:\/|$)/;
 
 const FOLLOWUP_RE =
   /^https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@(?:[\w.-]+)?)\/(?<tiktok_type>video|photo)\/(?<tiktok_id>\d+)/;
-
-interface TikTokImage {
-  display_image?: {
-    url_list?: string[];
-  };
-}
-
-interface TikTokItem {
-  id_str: string;
-  author_info: {
-    unique_id: string;
-    nickname: string;
-    avatar_url_list: string[];
-  };
-  image_post_info?: {
-    images: TikTokImage[];
-  };
-  video_info?: {
-    url_list?: string[];
-  };
-  create_time?: number | null;
-  desc: string;
-  statistics_info: {
-    comment_count: number;
-    share_count: number;
-    digg_count: number;
-  };
-}
-
-interface TikTokPlayerResponse {
-  items?: TikTokItem[] | null;
-  results?: Array<{
-    id_str: string;
-    code?: string | number;
-  }>;
-}
 
 function parseMedia(raw: TikTokItem): NormalizedPost["media"] {
   if (raw.image_post_info) {
