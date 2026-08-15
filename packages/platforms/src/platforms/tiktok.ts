@@ -5,12 +5,48 @@ const MATCH_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*tiktok\.com(?:\/|$)/;
 const FOLLOWUP_RE =
   /^https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@(?:[\w.-]+)?)\/(?<tiktok_type>video|photo)\/(?<tiktok_id>\d+)/;
 
-function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
+interface TikTokImage {
+  display_image?: {
+    url_list?: string[];
+  };
+}
+
+interface TikTokItem {
+  id_str: string;
+  author_info: {
+    unique_id: string;
+    nickname: string;
+    avatar_url_list: string[];
+  };
+  image_post_info?: {
+    images: TikTokImage[];
+  };
+  video_info?: {
+    url_list?: string[];
+  };
+  create_time?: number | null;
+  desc: string;
+  statistics_info: {
+    comment_count: number;
+    share_count: number;
+    digg_count: number;
+  };
+}
+
+interface TikTokPlayerResponse {
+  items?: TikTokItem[] | null;
+  results?: Array<{
+    id_str: string;
+    code?: string | number;
+  }>;
+}
+
+function parseMedia(raw: TikTokItem): NormalizedPost["media"] {
   if (raw.image_post_info) {
-    return raw.image_post_info.images
-      .map((image: any) => image.display_image?.url_list?.[0])
-      .filter((url: unknown): url is string => typeof url === "string")
-      .map((url: string) => ({ url, type: "image" }));
+    return raw.image_post_info.images.flatMap((image) => {
+      const url = image.display_image?.url_list?.[0];
+      return url ? [{ url, type: "image" }] : [];
+    });
   }
 
   const urls = raw.video_info?.url_list ?? [];
@@ -18,7 +54,7 @@ function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
   return videoURL ? [{ url: videoURL, type: "video" }] : [];
 }
 
-export const TikTok: Platform<"TikTok", Record<string, any>, {}> = {
+export const TikTok: Platform<"TikTok", TikTokItem, {}> = {
   type: "TikTok",
   async match(url, env) {
     const match = url.match(MATCH_RE);
@@ -54,10 +90,11 @@ export const TikTok: Platform<"TikTok", Record<string, any>, {}> = {
       throw { code: resp.status, message: resp.statusText };
     }
 
-    const data: any = await resp.json();
-    const item = data?.items?.find((item: any) => item.id_str === tiktok_id);
+    // SAFETY: TikTok player payload is checked against live video, photo, and error responses.
+    const data = (await resp.json()) as TikTokPlayerResponse;
+    const item = data.items?.find((item) => item.id_str === tiktok_id);
     if (!item) {
-      const result = data?.results?.find((result: any) => result.id_str === tiktok_id);
+      const result = data.results?.find((result) => result.id_str === tiktok_id);
       throw {
         code: 500,
         message: result?.code ?? "TikTok player API returned no item data",
