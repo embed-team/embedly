@@ -1,6 +1,9 @@
 import { defineConfig } from "oxlint";
 
 export default defineConfig({
+  options: {
+    reportUnusedDisableDirectives: "error",
+  },
   plugins: ["typescript", "unicorn", "oxc", "import"],
   jsPlugins: [{ name: "anti-slop", specifier: "@embedly/config/anti-slop" }],
   rules: {
@@ -36,5 +39,6 @@ export default defineConfig({
     "dist/**",
     "oxlint/anti-slop/**",
     "types/**",
+    "worker-configuration.d.ts",
   ],
 });
