@@ -65,7 +65,7 @@ function getTextOffsets(raw: RawText) {
     },
   };
 
-  if (scoreOffsets(raw, directOffsets) >= scoreOffsets(raw, codePointOffsets)) {
+  if (scoreOffsets(raw, directOffsets) > scoreOffsets(raw, codePointOffsets)) {
     return directOffsets;
   }
 
