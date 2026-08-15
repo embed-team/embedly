@@ -6,9 +6,11 @@
   "exports": {
     "./tsconfig.json": "./tsconfig.json",
     "./oxlint.config.ts": "./oxlint.config.ts",
-    "./oxfmt.config.ts": "./oxfmt.config.ts"
+    "./oxfmt.config.ts": "./oxfmt.config.ts",
+    "./anti-slop": "./oxlint/anti-slop/index.ts"
   },
   "devDependencies": {
+    "@oxlint/plugins": "1.78.0",
     "oxfmt": "catalog:",
     "oxlint": "catalog:"
   }
