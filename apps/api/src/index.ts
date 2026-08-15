@@ -5,6 +5,7 @@ import {
   formatLog,
   getErrorContext,
   getRequestId,
+  type LogContext,
 } from "@embedly/logging";
 import { Platforms } from "@embedly/platforms";
 import { httpInstrumentationMiddleware } from "@hono/otel";
@@ -20,6 +21,21 @@ import z from "zod";
 import { version } from "../package.json";
 
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
+
+interface ApiLogContext extends LogContext {
+  request_id: string;
+  trace_id?: string;
+  span_id?: string;
+  source: string;
+  platform: string;
+  post_id: string;
+  force: boolean;
+  cache_status: "skipped" | "miss" | "hit" | "read_error" | "stored" | "write_error";
+  outcome: "success" | "error";
+  status_code: number;
+  error_type?: string;
+  duration_ms?: number;
+}
 
 const config: ResolveConfigFn<CloudflareBindings> = (env) => {
   if (!env.OTEL_ENDPOINT) throw new Error("OTEL_ENDPOINT is required.");
@@ -52,7 +68,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       const { id, platform, force } = c.req.valid("json");
       const requestId = getRequestId(c.req.raw);
       const spanContext = trace.getActiveSpan()?.spanContext();
-      const logContext: Record<string, unknown> = {
+      const logContext: ApiLogContext = {
         request_id: requestId,
         trace_id: spanContext?.traceId,
         span_id: spanContext?.spanId,
@@ -73,7 +89,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             const cachedItem = await cache.get<ScrapeResponse>(cacheKey, "json");
             if (cachedItem) {
               logContext.cache_status = "hit";
-              return c.json(cachedItem as ScrapeResponse, 200);
+              return c.json(cachedItem, 200);
             }
           } catch (cause) {
             logContext.cache_status = "read_error";
@@ -86,9 +102,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           }
         }
 
-        // oxlint-disable-next-line import/namespace
-        const p = Platforms[platform as keyof typeof Platforms];
-        if (!p) {
+        if (!Object.hasOwn(Platforms, platform)) {
           const problem = createProblem(EmbedlyErrors.NoMatchesFound, {
             request_id: requestId,
             context: logContext,
@@ -101,6 +115,9 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           });
           return c.json(problem, problem.status);
         }
+        // SAFETY: Object.hasOwn verified this registry key.
+        // oxlint-disable-next-line import/namespace
+        const p = Platforms[platform as keyof typeof Platforms];
 
         let raw: unknown;
         try {
@@ -122,6 +139,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
         let data: ScrapeResponse;
         try {
+          // SAFETY: raw came from this platform's fetch implementation.
           data = await p.transform(raw as any);
         } catch (cause) {
           const problem = createProblem(EmbedlyErrors.PlatformTransformFailed, {
