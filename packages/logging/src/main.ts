@@ -187,8 +187,7 @@ export function createProblem(
   return problem;
 }
 
-// External response validation requires runtime checks.
-/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof */
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- External response validation requires runtime checks. */
 export function isEmbedlyProblem(value: unknown): value is EmbedlyProblem {
   if (!value || typeof value !== "object") return false;
   return (
@@ -237,8 +236,7 @@ export function formatProblemLog(level: LogLevel, problem: EmbedlyProblem) {
   );
 }
 
-// Thrown values have no contract.
-/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof */
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- Thrown values have no contract. */
 export function getErrorContext(error: unknown): ErrorContext {
   if (error instanceof Error) {
     return {
@@ -278,15 +276,13 @@ function getSafeContext(context?: LogContext) {
 }
 
 function formatValue(value: string | number | boolean) {
-  // Non-string log values need serialization.
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Non-string log values need serialization.
   if (typeof value !== "string") return String(value);
   if (/^[A-Za-z0-9._:@/-]+$/.test(value)) return value;
   return JSON.stringify(value);
 }
 
-// External error properties need runtime normalization.
-/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof */
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- External error properties need runtime normalization. */
 function toLogValue(value: unknown): LogValue {
   if (value === undefined || value === null) return value;
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {

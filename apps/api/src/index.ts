@@ -115,8 +115,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           });
           return c.json(problem, problem.status);
         }
-        // SAFETY: Object.hasOwn verified this registry key.
-        // oxlint-disable-next-line import/namespace
+        // oxlint-disable-next-line import/namespace -- SAFETY: Object.hasOwn verified this registry key.
         const p = Platforms[platform as keyof typeof Platforms];
 
         let raw: unknown;
