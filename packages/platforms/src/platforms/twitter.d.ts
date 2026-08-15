@@ -149,6 +149,7 @@ export interface Video {
   filesize?: number;
   formats: VideoFormat[];
   publisher?: Profile;
+  altText?: string;
 }
 
 export interface MosaicPhoto {
@@ -162,12 +163,13 @@ export interface MosaicPhoto {
     webp: string;
     jpeg: string;
   };
+  altText?: string;
 }
 
 export interface UnknownMedia {
   type: string;
   url?: string;
-  [key: string]: unknown;
+  altText?: string;
 }
 
 export interface BroadcastThumbnail {
@@ -255,7 +257,7 @@ export interface Article {
   content: {
     blocks: Array<{
       key: string;
-      data: Record<string, unknown>;
+      data: object;
     }>;
     entityMap: unknown[];
   };

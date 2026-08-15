@@ -124,6 +124,7 @@ async function parseMedia(post: BlueskyPost, record: AppBskyFeedPost.Record) {
 
     const resolved: unknown = await didResp.json();
     let pds: string | undefined;
+    /* oxlint-disable anti-slop/no-runtime-typeof -- External DID documents need runtime validation. */
     if (
       typeof resolved === "object" &&
       resolved !== null &&
@@ -143,6 +144,7 @@ async function parseMedia(post: BlueskyPost, record: AppBskyFeedPost.Record) {
         }
       }
     }
+    /* oxlint-enable anti-slop/no-runtime-typeof */
 
     if (!pds) {
       throw {

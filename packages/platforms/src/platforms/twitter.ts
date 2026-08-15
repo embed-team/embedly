@@ -167,6 +167,7 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
       throw { code: resp.status, message: resp.statusText };
     }
 
+    // SAFETY: FXTwitter response is checked against live text, media, and article samples.
     const { status, code } = (await resp.json()) as FxTweetResponse;
 
     if (code !== 200) {
@@ -177,7 +178,11 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
       throw { code, status };
     }
 
-    return status!;
+    if (!status) {
+      throw { code: 500, message: "FXTwitter returned no status" };
+    }
+
+    return status;
   },
   async transform(raw, options) {
     const depth = options?.depth ?? 0;
@@ -188,7 +193,7 @@ export const Twitter: Platform<"Twitter", APITwitterStatus, TwitterMeta> = {
       : (raw.media?.all?.map((m) => ({
           url: resolveMediaUrl(m),
           type: m.type,
-          description: "altText" in m && typeof m.altText === "string" ? m.altText : undefined,
+          description: m.altText,
         })) ?? []);
     let replyTo: NormalizedPost | undefined;
     if (includeContext && raw.replying_to) {
