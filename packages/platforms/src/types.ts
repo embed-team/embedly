@@ -40,5 +40,5 @@ export interface Platform<PlatformName extends string, PlatformData, PlatformMet
   transform(
     raw: PlatformData,
     options?: TransformOptions,
-  ): Promise<NormalizedPost & PlatformMeta & { platform: PlatformName }>;
+  ): Promise<Omit<NormalizedPost, "platform"> & PlatformMeta & { platform: PlatformName }>;
 }
