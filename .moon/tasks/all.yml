@@ -9,6 +9,13 @@ tasks:
     args: "--check"
   lint:
     command: "oxlint --no-error-on-unmatched-pattern"
+    inputs:
+      - "**/*"
+      - "/packages/config/oxlint.config.ts"
+      - "/packages/config/oxlint/anti-slop/**/*"
+      - "/packages/config/package.json"
+      - "/pnpm-workspace.yaml"
+      - "/pnpm-lock.yaml"
   lint/fix:
     extends: "lint"
     args: "--fix"

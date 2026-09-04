@@ -1,32 +1,31 @@
 import * as cheerio from "cheerio";
 
 import { NormalizedPost, Platform } from "../types";
+import type { ThreadsPost, ThreadsResponse } from "./threads.d";
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.com\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
 
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
+function parseMedia(raw: ThreadsPost): NormalizedPost["media"] {
   if (raw.carousel_media) {
-    return raw.carousel_media.map((media: any) => ({
-      url: media.image_versions2.candidates[0].url,
-      type: "photo",
-      description: media.accessibility_caption,
-    }));
+    return raw.carousel_media.flatMap(parseMedia);
   }
-  if (raw.video_versions) {
+  const video = raw.video_versions?.[0];
+  if (video) {
     return [
       {
-        url: raw.video_versions[0].url,
+        url: video.url,
         type: "video",
       },
     ];
   }
-  if (raw.image_versions2?.candidates?.length > 0) {
+  const image = raw.image_versions2?.candidates?.[0];
+  if (image) {
     return [
       {
-        url: raw.image_versions2.candidates[0].url,
+        url: image.url,
         type: "photo",
         description: raw.accessibility_caption,
       },
@@ -37,7 +36,7 @@ function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
 
 export const Threads: Platform<
   "Threads",
-  Record<string, any>[],
+  ThreadsPost[],
   {
     community_note?: string;
   }
@@ -154,13 +153,16 @@ export const Threads: Platform<
       throw { code: resp.status, message: resp.statusText };
     }
 
-    const { data, status } = (await resp.json()) as { data?: any; status?: string };
+    // SAFETY: Threads payload is checked against live image, video, and carousel samples.
+    const { data, status } = (await resp.json()) as ThreadsResponse;
 
     if (status !== "ok") {
       throw { code: 500, message: "Threads API errored" };
     }
 
-    const posts = data?.data?.edges?.[0].node?.thread_items?.map((item: any) => item?.post);
+    const posts = data?.data?.edges?.[0]?.node?.thread_items
+      ?.map((item) => item.post)
+      .filter((post) => post !== undefined);
 
     if (!posts) {
       throw {
@@ -173,7 +175,9 @@ export const Threads: Platform<
   },
   async transform(raws, options) {
     const depth = options?.depth ?? 0;
-    const raw = raws.at(-1)!;
+    const raw = raws.at(-1);
+    if (!raw) throw new Error("Threads transform requires at least one post");
+    const parent = raws.at(-2);
     return {
       platform: this.type,
       author: {
@@ -187,12 +191,10 @@ export const Threads: Platform<
       stats: {
         comments: raw.text_post_app_info.direct_reply_count,
         likes: raw.like_count,
-        reposts: raw.text_post_app_info.reshare_count,
+        reposts: raw.text_post_app_info.reshare_count ?? undefined,
       },
       reply_to:
-        depth < 1 && raws.length > 1
-          ? await this.transform([raws.at(-2)!], { depth: depth + 1 })
-          : undefined,
+        depth < 1 && parent ? await this.transform([parent], { depth: depth + 1 }) : undefined,
       url: `https://threads.net/@${raw.user.username}/post/${raw.code}`,
       timestamp: raw.taken_at,
       community_note: raw.media_overlay_info?.buttons?.[0].text,

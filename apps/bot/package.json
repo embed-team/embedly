@@ -30,7 +30,6 @@
   "devDependencies": {
     "@embedly/config": "workspace:*",
     "@types/node": "catalog:",
-    "dotenv": "^17.4.2",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "tsdown": "^0.22.0",

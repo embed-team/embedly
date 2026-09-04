@@ -62,6 +62,7 @@ export async function span<T>(
   });
 }
 
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- Thrown values have no contract. */
 export function recordError(activeSpan: Span, error: unknown) {
   if (error instanceof Error) {
     activeSpan.recordException(error);
@@ -79,6 +80,7 @@ export function recordError(activeSpan: Span, error: unknown) {
     message: String(error),
   });
 }
+/* oxlint-enable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof */
 
 export function markError(activeSpan: Span, message: string, attributes?: Attributes) {
   if (attributes) activeSpan.setAttributes(attributes);
@@ -125,6 +127,7 @@ function getLogAttributes(logContext?: LogContext) {
   if (!logContext) return attributes;
 
   for (const [key, value] of Object.entries(logContext)) {
+    /* oxlint-disable-next-line anti-slop/no-runtime-typeof -- Log values need conversion at the telemetry boundary. */
     if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
       attributes[key] = value;
     }

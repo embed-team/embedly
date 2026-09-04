@@ -1,6 +1,14 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
-export type LogContext = Record<string, unknown>;
+export type LogValue = string | number | boolean | null | undefined;
+export type LogContext = Record<string, LogValue>;
+
+export interface ErrorContext {
+  error_name?: string;
+  error_message?: string;
+  upstream_status?: LogValue;
+  upstream_message?: LogValue;
+}
 
 export interface EmbedlyEvent {
   type: string;
@@ -168,16 +176,18 @@ export function createProblem(
   },
 ): EmbedlyProblem {
   const safeContext = getSafeContext(context);
-  return {
+  const problem: EmbedlyProblem = {
     type: event.type,
     title: event.title,
     detail: detail ?? event.detail,
     status: status ?? event.status,
     request_id,
-    ...(Object.keys(safeContext).length > 0 ? { context: safeContext } : {}),
   };
+  if (Object.keys(safeContext).length > 0) problem.context = safeContext;
+  return problem;
 }
 
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- External response validation requires runtime checks. */
 export function isEmbedlyProblem(value: unknown): value is EmbedlyProblem {
   if (!value || typeof value !== "object") return false;
   return (
@@ -193,6 +203,7 @@ export function isEmbedlyProblem(value: unknown): value is EmbedlyProblem {
     typeof value.request_id === "string"
   );
 }
+/* oxlint-enable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof */
 
 export function formatDiscordError(problem: EmbedlyProblem) {
   return `**__${problem.title}__**\n${problem.detail}\n\n-# ${problem.type} - ${problem.request_id}`;
@@ -225,7 +236,8 @@ export function formatProblemLog(level: LogLevel, problem: EmbedlyProblem) {
   );
 }
 
-export function getErrorContext(error: unknown): LogContext {
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- Thrown values have no contract. */
+export function getErrorContext(error: unknown): ErrorContext {
   if (error instanceof Error) {
     return {
       error_name: error.name,
@@ -234,10 +246,10 @@ export function getErrorContext(error: unknown): LogContext {
   }
 
   if (error && typeof error === "object") {
-    const context: LogContext = {};
-    if ("code" in error) context.upstream_status = error.code;
-    if ("status" in error) context.upstream_status = error.status;
-    if ("message" in error) context.upstream_message = error.message;
+    const context: ErrorContext = {};
+    if ("code" in error) context.upstream_status = toLogValue(error.code);
+    if ("status" in error) context.upstream_status = toLogValue(error.status);
+    if ("message" in error) context.upstream_message = toLogValue(error.message);
     return context;
   }
 
@@ -245,6 +257,7 @@ export function getErrorContext(error: unknown): LogContext {
     error_message: String(error),
   };
 }
+/* oxlint-enable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof */
 
 export function getRequestId(request: Request) {
   return request.headers.get("X-Embedly-Request-Id") ?? `request:${crypto.randomUUID()}`;
@@ -256,16 +269,25 @@ function getSafeContext(context?: LogContext) {
 
   for (const [key, value] of Object.entries(context)) {
     if (value === undefined || value === null) continue;
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      safeContext[key] = value;
-    }
+    safeContext[key] = value;
   }
 
   return safeContext;
 }
 
 function formatValue(value: string | number | boolean) {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Non-string log values need serialization.
   if (typeof value !== "string") return String(value);
   if (/^[A-Za-z0-9._:@/-]+$/.test(value)) return value;
   return JSON.stringify(value);
 }
+
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- External error properties need runtime normalization. */
+function toLogValue(value: unknown): LogValue {
+  if (value === undefined || value === null) return value;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+  return String(value);
+}
+/* oxlint-enable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof */

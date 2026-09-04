@@ -3,7 +3,7 @@ import { MessageFlags, type Message } from "discord.js";
 
 import type { EmbedFlags } from "../lib/builder";
 import { handleUrls, type EmbedURLRequest } from "../lib/handleUrls";
-import { extractURLs, isSpoiler } from "../lib/utils";
+import { extractURLs } from "../lib/utils";
 
 function parseMessageURLs(content: string) {
   const urls: EmbedURLRequest[] = [];
@@ -21,7 +21,7 @@ function parseMessageURLs(content: string) {
     }
 
     const flags: Partial<EmbedFlags> = {
-      Spoiler: isSpoiler(match.url, content),
+      Spoiler: content.slice(0, match.index).split("||").length % 2 === 0,
     };
     let force = false;
 

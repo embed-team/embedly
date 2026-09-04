@@ -4,6 +4,7 @@ import {
   EmbedlyLogs,
   formatDiscordError,
   getErrorContext,
+  type LogContext,
 } from "@embedly/logging";
 import { Command } from "@sapphire/framework";
 import {
@@ -31,6 +32,25 @@ const DELETE_SUCCESS_MESSAGES = [
   "poof~ your embed has vanished! ✨",
   "🧹 all tidy! embed removed as requested~",
 ];
+
+interface DeleteLogContext extends LogContext {
+  request_id: string;
+  trace_id?: string;
+  span_id?: string;
+  source: "context_menu";
+  interaction_id: string;
+  channel_id: string | null;
+  guild_id: string;
+  user_id: string;
+  message_id?: string;
+  original_author_id?: string;
+  has_manage_permission?: boolean;
+  outcome: "success" | "error";
+  status_code: number;
+  error_type?: string;
+  reason?: string;
+  duration_ms?: number;
+}
 
 export class DeleteCommand extends Command {
   public constructor(context: Command.LoaderContext, options: Command.Options) {
@@ -62,7 +82,7 @@ export class DeleteCommand extends Command {
 
     const startedAt = Date.now();
     const requestId = `context_menu:${interaction.id}`;
-    const logContext: Record<string, unknown> = {
+    const logContext: DeleteLogContext = {
       request_id: requestId,
       source: "context_menu",
       interaction_id: interaction.id,
@@ -196,7 +216,6 @@ export class DeleteCommand extends Command {
 
           try {
             await msg.delete();
-            await this.container.messageCache.removeBotMessage(msg.id);
           } catch (error) {
             const problem = createProblem(EmbedlyErrors.DeleteFailed, {
               request_id: requestId,
@@ -214,6 +233,20 @@ export class DeleteCommand extends Command {
             botErrors.add(1, { ...metricContext, error_type: problem.type });
             await interaction.editReply(formatDiscordError(problem));
             return;
+          }
+
+          try {
+            await this.container.messageCache.removeBotMessage(msg.id);
+          } catch (error) {
+            botErrors.add(1, {
+              ...metricContext,
+              error_type: EmbedlyErrors.MessageCacheFailed.type,
+            });
+            log("warn", EmbedlyErrors.MessageCacheFailed, {
+              ...logContext,
+              error_type: EmbedlyErrors.MessageCacheFailed.type,
+              ...getErrorContext(error),
+            });
           }
 
           await interaction.editReply(

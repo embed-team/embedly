@@ -6,6 +6,7 @@ import {
   formatLog,
   getErrorContext,
   isEmbedlyProblem,
+  type LogContext,
 } from "@embedly/logging";
 import { matchURL, Platforms } from "@embedly/platforms";
 import { Command, container } from "@sapphire/framework";
@@ -28,6 +29,26 @@ import {
 type EmbedSource = "message" | "command" | "context_menu";
 type EmbedInteraction = Command.ChatInputCommandInteraction | Command.ContextMenuCommandInteraction;
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
+
+interface EmbedLogContext extends LogContext {
+  request_id: string;
+  trace_id?: string;
+  span_id?: string;
+  source: EmbedSource;
+  platform: string;
+  post_id: string;
+  force: boolean;
+  message_id?: string;
+  interaction_id?: string;
+  channel_id: string | null;
+  guild_id: string;
+  user_id: string;
+  bot_message_id?: string;
+  outcome: "success" | "skipped" | "error";
+  status_code: number;
+  error_type?: string;
+  duration_ms?: number;
+}
 
 export interface EmbedURLRequest {
   url: string;
@@ -105,18 +126,51 @@ export async function handleUrls(
 
   if (interaction) await interaction.deferReply();
 
+  let matchFailures = 0;
+  const matchContext = msg
+    ? {
+        message_id: msg.id,
+        channel_id: msg.channelId,
+        guild_id: msg.guildId ?? "dm",
+        user_id: msg.author.id,
+      }
+    : {
+        interaction_id: interaction!.id,
+        channel_id: interaction!.channelId,
+        guild_id: interaction!.guildId ?? "dm",
+        user_id: interaction!.user.id,
+      };
   const matches = (
     await Promise.all(
-      urls.map(async (request) => {
-        const match = await matchURL(request.url);
-        return match ? { ...request, ...match } : null;
+      urls.map(async (request, index) => {
+        try {
+          const match = await matchURL(request.url);
+          return match ? { ...request, ...match } : null;
+        } catch (error) {
+          matchFailures++;
+          const requestId = msg
+            ? `message:${msg.id}:match:${index}`
+            : `${embedSource}:${interaction!.id}:match:${index}`;
+          container.logger.warn(
+            formatLog("warn", EmbedlyErrors.ApiUnexpectedResponse, {
+              request_id: requestId,
+              source: embedSource,
+              ...matchContext,
+              ...getErrorContext(error),
+            }),
+          );
+          if (msg) await reactToFailure();
+          return null;
+        }
       }),
     )
   ).filter((m) => m !== null);
 
   if (interaction && matches.length === 0) {
     const requestId = `${embedSource}:${interaction.id}`;
-    const problem = createProblem(EmbedlyErrors.NoMatchesFound, {
+    const error =
+      matchFailures > 0 ? EmbedlyErrors.ApiUnexpectedResponse : EmbedlyErrors.NoMatchesFound;
+    const problem = createProblem(error, {
       request_id: requestId,
       context: {
         request_id: requestId,
@@ -125,7 +179,7 @@ export async function handleUrls(
         user_id: interaction.user.id,
       },
     });
-    container.logger.warn(formatLog("warn", EmbedlyErrors.NoMatchesFound, problem.context));
+    container.logger.warn(formatLog("warn", error, problem.context));
     await interaction.editReply({
       content: formatDiscordError(problem),
     });
@@ -135,7 +189,7 @@ export async function handleUrls(
   for (const [i, { platform, id, flags, force }] of matches.entries()) {
     const startedAt = Date.now();
     const requestId = msg ? `message:${msg.id}:${i}` : `${embedSource}:${interaction!.id}:${i}`;
-    const logContext: Record<string, unknown> = {
+    const logContext: EmbedLogContext = {
       request_id: requestId,
       source: embedSource,
       platform,
@@ -233,6 +287,7 @@ export async function handleUrls(
               return;
             }
 
+            // SAFETY: a successful response uses the API route's typed success body.
             post = body as ScrapeResponse;
           } catch (error) {
             recordError(requestSpan, error);
@@ -295,8 +350,9 @@ export async function handleUrls(
             },
           } as const;
 
+          let botMessage: Message;
           try {
-            const botMessage = await span(
+            botMessage = await span(
               "discord.send",
               {
                 ...spanAttributes,
@@ -315,22 +371,6 @@ export async function handleUrls(
                 return message;
               },
             );
-            logContext.bot_message_id = botMessage.id;
-            if (msg) {
-              await span(
-                "message_cache.save",
-                {
-                  ...spanAttributes,
-                  "discord.source_message_id": msg.id,
-                  "discord.bot_message_id": botMessage.id,
-                },
-                async () => {
-                  await container.messageCache.save(msg.id, botMessage.id, msg.author.id);
-                },
-              );
-            }
-            botEmbedsCreated.add(1, metricContext);
-            sentEmbed = true;
           } catch (error) {
             recordError(requestSpan, error);
             const problem = createProblem(EmbedlyErrors.DiscordSendFailed, {
@@ -348,6 +388,37 @@ export async function handleUrls(
               return;
             }
             await interaction!.editReply(formatDiscordError(problem));
+            return;
+          }
+
+          logContext.bot_message_id = botMessage.id;
+          botEmbedsCreated.add(1, metricContext);
+          sentEmbed = true;
+
+          if (msg) {
+            try {
+              await span(
+                "message_cache.save",
+                {
+                  ...spanAttributes,
+                  "discord.source_message_id": msg.id,
+                  "discord.bot_message_id": botMessage.id,
+                },
+                async () => {
+                  await container.messageCache.save(msg.id, botMessage.id, msg.author.id);
+                },
+              );
+            } catch (error) {
+              botErrors.add(1, {
+                ...metricContext,
+                error_type: EmbedlyErrors.MessageCacheFailed.type,
+              });
+              log("warn", EmbedlyErrors.MessageCacheFailed, {
+                ...logContext,
+                error_type: EmbedlyErrors.MessageCacheFailed.type,
+                ...getErrorContext(error),
+              });
+            }
           }
         } finally {
           Object.assign(logContext, getActiveTraceContext(), {

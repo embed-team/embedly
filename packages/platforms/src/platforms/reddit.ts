@@ -1,4 +1,11 @@
 import { NormalizedPost, Platform } from "../types";
+import type {
+  RedditAccessTokenResponse,
+  RedditListing,
+  RedditPost,
+  RedditPostData,
+  RedditProfileResponse,
+} from "./reddit.d";
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:www\.|old\.)?(?:reddit\.com\/r\/[A-Za-z0-9_]+\/(?:comments\/[A-Za-z0-9]+(?:\/[^/\s]+)?|s\/[A-Za-z0-9]+)|redd\.it\/[A-Za-z0-9]+)\/?/;
@@ -31,8 +38,12 @@ async function fetchAccessToken(env: {
     throw { code: resp.status, message: resp.statusText };
   }
 
-  const data = (await resp.json()) as Record<string, any>;
-  return data.access_token as string;
+  // SAFETY: response uses Reddit's OAuth token contract.
+  const data = (await resp.json()) as RedditAccessTokenResponse;
+  if (!data.access_token) {
+    throw { code: 500, message: "Reddit OAuth response missing access token" };
+  }
+  return data.access_token;
 }
 
 async function fetchReddit(
@@ -49,8 +60,8 @@ async function fetchReddit(
   });
 }
 
-function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
-  if (raw.domain === "i.redd.it") {
+function parseMedia(raw: RedditPostData): NormalizedPost["media"] {
+  if (raw.domain === "i.redd.it" && raw.url_overridden_by_dest) {
     return [
       {
         url: raw.url_overridden_by_dest,
@@ -60,14 +71,14 @@ function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
   }
 
   if (raw.media_metadata) {
-    return Object.values(raw.media_metadata).map((media: any) => ({
+    return Object.values(raw.media_metadata).map((media) => ({
       url: media.s.u,
       type: "unknown",
     }));
   }
 
   if (raw.preview?.enabled) {
-    return raw.preview.images.map((media: any) => ({
+    return raw.preview.images.map((media) => ({
       url: media.source.url,
       type: "unknown",
     }));
@@ -85,7 +96,7 @@ function parseMedia(raw: Record<string, any>): NormalizedPost["media"] {
   return [];
 }
 
-export const Reddit: Platform<"Reddit", Record<string, any>, {}> = {
+export const Reddit: Platform<"Reddit", RedditPost, {}> = {
   type: "Reddit",
   async match(url, env) {
     const match = url.match(MATCH_RE);
@@ -126,7 +137,8 @@ export const Reddit: Platform<"Reddit", Record<string, any>, {}> = {
       throw { code: postResp.status, message: postResp.statusText };
     }
 
-    const postData = (await postResp.json()) as Record<string, any>;
+    // SAFETY: response uses Reddit's listing contract.
+    const postData = (await postResp.json()) as RedditListing[];
     const postDataItem = postData?.[0]?.data?.children?.[0]?.data;
     if (!postDataItem) {
       throw {
@@ -148,7 +160,8 @@ export const Reddit: Platform<"Reddit", Record<string, any>, {}> = {
         message: profileResp.statusText,
       };
     }
-    const { data: profileData } = (await profileResp.json()) as Record<string, any>;
+    // SAFETY: response uses Reddit's profile contract.
+    const { data: profileData } = (await profileResp.json()) as RedditProfileResponse;
     if (!profileData) {
       throw {
         code: 500,
