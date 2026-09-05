@@ -8,6 +8,7 @@ export interface ErrorContext {
   error_message?: string;
   upstream_status?: LogValue;
   upstream_message?: LogValue;
+  upstream_reason?: LogValue;
 }
 
 export interface EmbedlyEvent {
@@ -60,6 +61,25 @@ export const EmbedlyErrors = {
     type: "platform.fetch_failed",
     title: "Failed to fetch post.",
     detail: "Embedly could not fetch that post from the platform.",
+    status: 502,
+  }),
+  InstagramAgeRestricted: defineError({
+    type: "instagram.age_restricted",
+    title: "Age-restricted content.",
+    detail: "Instagram requires login to view this post. Embedly can only access public posts.",
+    status: 403,
+  }),
+  InstagramPostUnavailable: defineError({
+    type: "instagram.post_unavailable",
+    title: "Post unavailable.",
+    detail: "Instagram isn't making this post available without login.",
+    status: 404,
+  }),
+  InstagramMediaUnavailable: defineError({
+    type: "platform.fetch_failed",
+    title: "Couldn't load this post.",
+    detail:
+      "Instagram didn't provide public media for this post. It may require login or be unavailable.",
     status: 502,
   }),
   PlatformTransformFailed: defineError({
@@ -250,6 +270,7 @@ export function getErrorContext(error: unknown): ErrorContext {
     if ("code" in error) context.upstream_status = toLogValue(error.code);
     if ("status" in error) context.upstream_status = toLogValue(error.status);
     if ("message" in error) context.upstream_message = toLogValue(error.message);
+    if ("reason" in error) context.upstream_reason = toLogValue(error.reason);
     return context;
   }
 

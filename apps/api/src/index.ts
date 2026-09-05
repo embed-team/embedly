@@ -124,11 +124,22 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
           });
         } catch (cause) {
-          const problem = createProblem(EmbedlyErrors.PlatformFetchFailed, {
+          const errorContext = getErrorContext(cause);
+          let event = EmbedlyErrors.PlatformFetchFailed;
+          if (platform === "Instagram") {
+            if (errorContext.upstream_reason === "instagram.age_restricted") {
+              event = EmbedlyErrors.InstagramAgeRestricted;
+            } else if (errorContext.upstream_reason === "instagram.post_unavailable") {
+              event = EmbedlyErrors.InstagramPostUnavailable;
+            } else if (errorContext.upstream_reason === "instagram.media_unavailable") {
+              event = EmbedlyErrors.InstagramMediaUnavailable;
+            }
+          }
+          const problem = createProblem(event, {
             request_id: requestId,
-            context: { ...logContext, ...getErrorContext(cause) },
+            context: { ...logContext, ...errorContext },
           });
-          Object.assign(logContext, getErrorContext(cause), {
+          Object.assign(logContext, errorContext, {
             outcome: "error",
             status_code: problem.status,
             error_type: problem.type,

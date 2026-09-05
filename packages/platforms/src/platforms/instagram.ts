@@ -101,24 +101,36 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
         (text) => text.includes("RelayPrefetchedStreamCache") && text.includes(PRELOADER_PREFIX),
       );
 
-    if (!script) {
-      throw {
-        code: 500,
-        message: "Instagram page structure changed: missing data script",
-      };
-    }
-
     let media: InstagramMedia | undefined | null;
-    try {
-      media = parseRelayMedia(script);
-    } catch {
-      throw { code: 500, message: "Failed to parse Instagram data" };
+    if (script) {
+      try {
+        media = parseRelayMedia(script);
+      } catch {
+        throw { code: 500, message: "Failed to parse Instagram data" };
+      }
     }
 
     if (!media) {
+      $("script, style").remove();
+      const text = $("body")
+        .text()
+        .replace(/\s+/g, " ")
+        .replace(/\u2019/g, "'");
+      let reason = "instagram.media_unavailable";
+      let code = 500;
+      if (text.includes("Age-restricted content")) {
+        reason = "instagram.age_restricted";
+        code = 403;
+      } else if (text.includes("Post isn't available")) {
+        reason = "instagram.post_unavailable";
+        code = 404;
+      }
       throw {
-        code: 500,
-        message: "Instagram page structure changed: missing media data",
+        code,
+        reason,
+        message: script
+          ? "Instagram page structure changed: missing media data"
+          : "Instagram page structure changed: missing data script",
       };
     }
 
