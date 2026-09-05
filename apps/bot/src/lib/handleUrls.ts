@@ -189,6 +189,7 @@ export async function handleUrls(
   const matches = (
     await Promise.all(
       urls.map(async (request, requestIndex) => {
+        if (options.updateTargets && !options.updateTargets.has(requestIndex)) return null;
         try {
           const match = await matchURL(request.url);
           return match ? { ...request, ...match, requestIndex } : null;
@@ -210,10 +211,7 @@ export async function handleUrls(
         }
       }),
     )
-  ).filter(
-    (match) =>
-      match !== null && (!options.updateTargets || options.updateTargets.has(match.requestIndex)),
-  );
+  ).filter((match) => match !== null);
 
   if (msg && options.updateTargets && matches.length !== options.updateTargets.size) {
     await reactToFailure();

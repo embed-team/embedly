@@ -28,14 +28,18 @@ export class MessageUpdateListener extends Listener<typeof Events.MessageUpdate>
     const botMessages = await this.container.messageCache.getBotMessages(message.id);
     if (botMessages.length === 0) return;
 
-    if (oldMessage.content !== null && oldMessage.content !== message.content) {
+    if (oldMessage.content === null) {
+      await this.container.messageCache.clearBotMessageIndexes(message.id);
+    } else if (oldMessage.content !== message.content) {
       const oldUrls = parseMessageURLs(oldMessage.content).urls;
       const newUrls = parseMessageURLs(message.content).urls;
       const sameUrls =
         oldUrls.length === newUrls.length &&
         oldUrls.every((request, index) => request.url === newUrls[index]?.url);
 
-      if (sameUrls) {
+      if (!sameUrls) {
+        await this.container.messageCache.clearBotMessageIndexes(message.id);
+      } else {
         const updateTargets = new Map<number, string>();
 
         for (const { id, requestIndex } of botMessages) {

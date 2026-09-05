@@ -105,6 +105,17 @@ export class MessageCache {
     }));
   }
 
+  public async clearBotMessageIndexes(sourceMessageId: string) {
+    const sourceMessage = await this.getSourceMessage(sourceMessageId);
+    if (!sourceMessage) return;
+
+    await this.client.set(
+      this.getSourceMessageKey(sourceMessageId),
+      JSON.stringify({ botMessageIds: sourceMessage.botMessageIds }),
+      { KEEPTTL: true, XX: true },
+    );
+  }
+
   public async close() {
     await this.client.close();
   }
