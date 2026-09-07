@@ -29,6 +29,7 @@ export const FacebookMarketplace: Platform<
     const response = await fetch(`https://www.facebook.com/marketplace/item/${id}/`, {
       headers: {
         "User-Agent": env?.EMBED_USER_AGENT ?? "",
+        Cookie: env?.FACEBOOK_MARKETPLACE_COOKIE ?? "",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Sec-Fetch-Dest": "document",

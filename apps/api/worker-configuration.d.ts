@@ -5,6 +5,7 @@ interface __BaseEnv_CloudflareBindings {
   CACHE: KVNamespace;
   AUTH_SECRET: string;
   EMBED_USER_AGENT: string;
+  FACEBOOK_MARKETPLACE_COOKIE?: string;
   OTEL_ENDPOINT: string;
 }
 declare namespace Cloudflare {
