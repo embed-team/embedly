@@ -104,6 +104,10 @@ export const FacebookMarketplace: Platform<
       url.searchParams.set("zoom", "11");
       url.searchParams.set("language", "en_US");
       url.searchParams.set("center", `${listing.location.latitude},${listing.location.longitude}`);
+      url.searchParams.set(
+        "circle",
+        `weight:2|color:0x4D6AA47f|fillcolor:0x4D6AA41c|${listing.location.latitude},${listing.location.longitude}|2k`,
+      );
       map = url.href;
     }
     return {
