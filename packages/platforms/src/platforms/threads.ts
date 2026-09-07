@@ -61,7 +61,6 @@ export const Threads: Platform<
 
     const { thread_shortcode } = match.groups!;
     const thread_id = thread_shortcode
-      .trim()
       .split("")
       .reduce(
         (prev, curr) => prev * BigInt(alphabet.length) + BigInt(alphabet.indexOf(curr)),
@@ -82,17 +81,12 @@ export const Threads: Platform<
       throw { code: sessionResp.status, message: sessionResp.statusText };
     }
 
-    const cookieValues: Record<string, string | undefined> = sessionResp.headers
+    const csrfCookie = sessionResp.headers
       .getSetCookie()
-      .map((line) =>
-        line.split("; ").reduce((acc, curr) => {
-          const [name, ...val] = curr.split("=");
-          return Object.assign({}, acc, { [name]: decodeURIComponent(val.join("=")) });
-        }, {}),
-      )
-      .reduce((acc, curr) => Object.assign({}, acc, curr), {});
-
-    const csrfToken = cookieValues.csrftoken;
+      .find((line) => line.startsWith("csrftoken="));
+    const csrfToken = csrfCookie
+      ? decodeURIComponent(csrfCookie.split(";")[0].slice("csrftoken=".length))
+      : undefined;
 
     const sessionHTML = await sessionResp.text();
     const $SESSION = cheerio.load(sessionHTML);
