@@ -3,7 +3,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 export type LogValue = string | number | boolean | null | undefined;
 export type LogContext = Record<string, LogValue>;
 
-export interface ErrorContext {
+export interface ErrorContext extends LogContext {
   error_name?: string;
   error_message?: string;
   upstream_status?: LogValue;
@@ -277,6 +277,22 @@ export function getErrorContext(error: unknown): ErrorContext {
     if ("status" in error) context.upstream_status = toLogValue(error.status);
     if ("message" in error) context.upstream_message = toLogValue(error.message);
     if ("reason" in error) context.upstream_reason = toLogValue(error.reason);
+    if ("diagnostics" in error && error.diagnostics && typeof error.diagnostics === "object") {
+      const fields = [
+        "upstream_http_status",
+        "upstream_url",
+        "upstream_content_type",
+        "upstream_html_length",
+        "upstream_page_title",
+        "upstream_listing_preloader",
+        "upstream_photos_preloader",
+        "upstream_listing_found",
+        "upstream_photos_found",
+      ];
+      for (const [key, value] of Object.entries(error.diagnostics)) {
+        if (fields.includes(key)) context[key] = toLogValue(value);
+      }
+    }
     return context;
   }
 

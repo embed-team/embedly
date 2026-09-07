@@ -39,7 +39,8 @@ export const FacebookMarketplace: Platform<
     });
     if (!response.ok) throw { code: response.status, message: response.statusText };
 
-    const $ = cheerio.load(await response.text());
+    const html = await response.text();
+    const $ = cheerio.load(html);
     let listing: MarketplaceListing | undefined;
     let photos: MarketplacePhotos | undefined;
     let mapTemplate: string | undefined;
@@ -86,7 +87,22 @@ export const FacebookMarketplace: Platform<
       }
     }
     if (!listing || !photos) {
-      throw { code: 500, message: "Marketplace listing data is unavailable" };
+      throw {
+        code: 500,
+        message: "Marketplace listing data is unavailable",
+        reason: "marketplace.data_unavailable",
+        diagnostics: {
+          upstream_http_status: response.status,
+          upstream_url: response.url,
+          upstream_content_type: response.headers.get("content-type"),
+          upstream_html_length: html.length,
+          upstream_page_title: $("title").text().slice(0, 250),
+          upstream_listing_preloader: html.includes(LISTING_PREFIX),
+          upstream_photos_preloader: html.includes(PHOTOS_PREFIX),
+          upstream_listing_found: Boolean(listing),
+          upstream_photos_found: Boolean(photos),
+        },
+      };
     }
     return { listing, photos, mapTemplate };
   },
