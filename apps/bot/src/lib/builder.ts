@@ -96,7 +96,8 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
         author.setContent(heading(authorHeading, HeadingLevel.Three)),
       );
     if (post.platform === "FacebookMarketplace" && post.price) {
-      section.addTextDisplayComponents((price) => price.setContent(escapeMarkdown(post.price)));
+      const price = post.price;
+      section.addTextDisplayComponents((display) => display.setContent(escapeMarkdown(price)));
     }
     if (post.text && post.text.length > 0) {
       section.addTextDisplayComponents((text) =>
@@ -133,17 +134,18 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
     embed.addMediaGalleryComponents(buildMediaEmbed(post.media)!);
   }
   if (post.platform === "FacebookMarketplace") {
-    if (post.location) {
-      embed.addTextDisplayComponents((location) =>
-        location.setContent(`${escapeMarkdown(post.location)} · Location is approximate`),
+    const { location, map } = post;
+    if (location) {
+      embed.addTextDisplayComponents((display) =>
+        display.setContent(`${escapeMarkdown(location)} · Location is approximate`),
       );
     }
-    if (post.map) {
+    if (map) {
       embed.addMediaGalleryComponents((gallery) =>
         gallery.addItems({
-          media: { url: post.map },
-          description: (post.location
-            ? `Map showing approximate listing location in ${post.location}.`
+          media: { url: map },
+          description: (location
+            ? `Map showing approximate listing location in ${location}.`
             : "Map showing approximate listing location."
           ).slice(0, 1024),
         }),
