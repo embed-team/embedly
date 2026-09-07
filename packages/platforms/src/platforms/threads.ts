@@ -6,6 +6,8 @@ import type { ThreadsPost, ThreadsResponse } from "./threads.d";
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.com\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
 
+const SHARE_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.com\/share\/[^/?#]+/;
+
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 function parseMedia(raw: ThreadsPost): NormalizedPost["media"] {
@@ -42,7 +44,18 @@ export const Threads: Platform<
   }
 > = {
   type: "Threads",
-  async match(url) {
+  async match(url, env) {
+    if (SHARE_RE.test(url)) {
+      const resp = await fetch(url.startsWith("http") ? url : `https://${url}`, {
+        method: "HEAD",
+        redirect: "follow",
+        headers: {
+          "User-Agent": env?.EMBED_USER_AGENT ?? "curl/8.7.1",
+        },
+      });
+      url = resp.url;
+    }
+
     const match = url.match(MATCH_RE);
     if (!match) return null;
 
