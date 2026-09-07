@@ -2,7 +2,6 @@ import {
   createProblem,
   EmbedlyErrors,
   EmbedlyLogs,
-  formatLog,
   getErrorContext,
   getRequestId,
   type LogContext,
@@ -19,6 +18,7 @@ import { prettyJSON } from "hono/pretty-json";
 import z from "zod";
 
 import { version } from "../package.json";
+import { log } from "./logging";
 
 type ScrapeResponse = Awaited<ReturnType<(typeof Platforms)[keyof typeof Platforms]["transform"]>>;
 
@@ -93,8 +93,8 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             }
           } catch (cause) {
             logContext.cache_status = "read_error";
-            console.warn(
-              formatLog("warn", EmbedlyErrors.CacheReadFailed, {
+            c.executionCtx.waitUntil(
+              log(c.env.OTEL_ENDPOINT, "warn", EmbedlyErrors.CacheReadFailed, {
                 ...logContext,
                 ...getErrorContext(cause),
               }),
@@ -171,8 +171,8 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           logContext.cache_status = "stored";
         } catch (cause) {
           logContext.cache_status = "write_error";
-          console.warn(
-            formatLog("warn", EmbedlyErrors.CacheWriteFailed, {
+          c.executionCtx.waitUntil(
+            log(c.env.OTEL_ENDPOINT, "warn", EmbedlyErrors.CacheWriteFailed, {
               ...logContext,
               ...getErrorContext(cause),
             }),
@@ -194,7 +194,9 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       } finally {
         logContext.duration_ms = Date.now() - startedAt;
         const level = logContext.outcome === "success" ? "info" : "error";
-        console[level](formatLog(level, EmbedlyLogs.ApiScrape, logContext));
+        c.executionCtx.waitUntil(
+          log(c.env.OTEL_ENDPOINT, level, EmbedlyLogs.ApiScrape, logContext),
+        );
       }
     },
   );
