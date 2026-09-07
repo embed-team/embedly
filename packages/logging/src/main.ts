@@ -39,6 +39,12 @@ export function defineError(event: EmbedlyErrorEvent) {
 }
 
 export const EmbedlyErrors = {
+  FeatureFlagFailed: defineError({
+    type: "feature_flag.failed",
+    title: "Access check failed.",
+    detail: "Could not check Marketplace access.",
+    status: 502,
+  }),
   NoUrlsFound: defineError({
     type: "embed.no_urls_found",
     title: "No URLs Found.",

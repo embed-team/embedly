@@ -186,7 +186,7 @@ export async function handleUrls(
         guild_id: interaction!.guildId ?? "dm",
         user_id: interaction!.user.id,
       };
-  const matches = (
+  let matches = (
     await Promise.all(
       urls.map(async (request, requestIndex) => {
         if (options.updateTargets && !options.updateTargets.has(requestIndex)) return null;
@@ -215,6 +215,28 @@ export async function handleUrls(
 
   if (msg && options.updateTargets && matches.length !== options.updateTargets.size) {
     await reactToFailure();
+  }
+
+  if (matches.some((match) => match.platform === "FacebookMarketplace")) {
+    let hasAccess = false;
+    if (container.posthog) {
+      try {
+        const flags = await container.posthog.evaluateFlags(matchContext.user_id, {
+          flagKeys: ["facebook-marketplace"],
+        });
+        hasAccess = flags.getFlag("facebook-marketplace") === true;
+      } catch (error) {
+        container.logger.warn(
+          formatLog("warn", EmbedlyErrors.FeatureFlagFailed, {
+            ...matchContext,
+            ...getErrorContext(error),
+          }),
+        );
+      }
+    }
+    if (!hasAccess) {
+      matches = matches.filter((match) => match.platform !== "FacebookMarketplace");
+    }
   }
 
   if (interaction && matches.length === 0) {
