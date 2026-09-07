@@ -4,6 +4,7 @@ import type { AppType } from "@embedly/api";
 import { container, SapphireClient } from "@sapphire/framework";
 import { ActivityType, GatewayIntentBits, Partials, PresenceUpdateStatus } from "discord.js";
 import { hc } from "hono/client";
+import { PostHog } from "posthog-node";
 
 import { MessageCache } from "./messageCache";
 export class EmbedlyClient extends SapphireClient {
@@ -33,11 +34,17 @@ export class EmbedlyClient extends SapphireClient {
   public override async login(token?: string) {
     container.api = hc<AppType>(process.env.EMBEDLY_API_DOMAIN ?? "http://localhost:8787");
     container.messageCache = await MessageCache.connect();
+    if (process.env.POSTHOG_API_KEY) {
+      container.posthog = new PostHog(process.env.POSTHOG_API_KEY, {
+        host: process.env.POSTHOG_HOST,
+      });
+    }
     return super.login(token);
   }
 
   public override async destroy() {
     await container.messageCache?.close();
+    await container.posthog?.shutdown();
     return super.destroy();
   }
 }
@@ -46,5 +53,6 @@ declare module "@sapphire/framework" {
   interface Container {
     api: ReturnType<typeof hc<AppType>>;
     messageCache: MessageCache;
+    posthog?: PostHog;
   }
 }
