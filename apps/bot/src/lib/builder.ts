@@ -59,7 +59,11 @@ function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["S
 
   const gallery = new MediaGalleryBuilder();
   gallery.addItems(
-    media.slice(0, MAX_GALLERY_ITEMS).map((m) => ({ media: { url: m.url }, spoiler })),
+    media.slice(0, MAX_GALLERY_ITEMS).map((m) => ({
+      media: { url: m.url },
+      description: m.description?.slice(0, 1024) || undefined,
+      spoiler,
+    })),
   );
 
   return gallery.toJSON();
@@ -79,7 +83,11 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
     post.author.handle && post.author.url
       ? `(${hyperlink(`@${post.author.handle}`, post.author.url)})`
       : "";
-  const authorHeading = [headingPrefix, post.author.name, authorHandle].filter(Boolean).join(" ");
+  const authorName =
+    post.platform === "FacebookMarketplace"
+      ? truncate(escapeMarkdown(post.author.name), 250)
+      : post.author.name;
+  const authorHeading = [headingPrefix, authorName, authorHandle].filter(Boolean).join(" ");
 
   embed.addSectionComponents((section) => {
     section
@@ -87,6 +95,9 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
       .addTextDisplayComponents((author) =>
         author.setContent(heading(authorHeading, HeadingLevel.Three)),
       );
+    if (post.platform === "FacebookMarketplace" && post.price) {
+      section.addTextDisplayComponents((price) => price.setContent(escapeMarkdown(post.price)));
+    }
     if (post.text && post.text.length > 0) {
       section.addTextDisplayComponents((text) =>
         text.setContent(
@@ -121,6 +132,30 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
   if (post.media.length > 0) {
     embed.addMediaGalleryComponents(buildMediaEmbed(post.media)!);
   }
+  if (post.platform === "FacebookMarketplace") {
+    if (post.location) {
+      embed.addTextDisplayComponents((location) =>
+        location.setContent(`${escapeMarkdown(post.location)} · Location is approximate`),
+      );
+    }
+    if (post.map) {
+      embed.addMediaGalleryComponents((gallery) =>
+        gallery.addItems({
+          media: { url: post.map },
+          description: (post.location
+            ? `Map showing approximate listing location in ${post.location}.`
+            : "Map showing approximate listing location."
+          ).slice(0, 1024),
+        }),
+      );
+    }
+    embed.addTextDisplayComponents((footer) =>
+      footer.setContent(
+        `${time(post.timestamp, TimestampStyles.RelativeTime)} • ${hyperlink("View on Facebook Marketplace", post.url)}`,
+      ),
+    );
+    return;
+  }
   embed
     .addSeparatorComponents((sep) => sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small))
     .addTextDisplayComponents(
@@ -140,6 +175,7 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
 }
 
 export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
+  if (post.platform === "FacebookMarketplace" && post.media.length === 0) return null;
   if (flags?.MediaOnly) {
     return buildMediaEmbed(post.media, flags?.Spoiler);
   }
