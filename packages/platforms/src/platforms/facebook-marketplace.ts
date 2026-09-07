@@ -23,7 +23,9 @@ export const FacebookMarketplace: Platform<
     return url.match(MATCH_RE)?.[1] ?? null;
   },
   async fetch(id, env) {
-    if (!/^\d+$/.test(id)) throw new Error("Invalid Marketplace listing ID");
+    if (!/^\d+$/.test(id)) {
+      throw { code: 400, message: "Invalid Marketplace listing ID" };
+    }
     const response = await fetch(`https://www.facebook.com/marketplace/item/${id}/`, {
       headers: {
         "User-Agent": env?.EMBED_USER_AGENT ?? "",
@@ -50,7 +52,12 @@ export const FacebookMarketplace: Platform<
         !text.includes('"TilesMapConfig"')
       )
         continue;
-      const data = JSON.parse(text);
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw { code: 500, message: "Failed to parse Marketplace data" };
+      }
       for (const requireItem of data.require ?? []) {
         if (requireItem[0] !== "ScheduledServerJS") continue;
         for (const payload of requireItem[3] ?? []) {
@@ -78,7 +85,9 @@ export const FacebookMarketplace: Platform<
         }
       }
     }
-    if (!listing || !photos) throw new Error("Marketplace listing data is unavailable");
+    if (!listing || !photos) {
+      throw { code: 500, message: "Marketplace listing data is unavailable" };
+    }
     return { listing, photos, mapTemplate };
   },
   async transform({ listing, photos, mapTemplate }) {
