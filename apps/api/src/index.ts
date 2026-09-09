@@ -123,6 +123,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           raw = await p.fetch(id, {
             EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
             FACEBOOK_MARKETPLACE_COOKIE: c.env.FACEBOOK_MARKETPLACE_COOKIE,
+            TRUTH_SOCIAL_ACCESS_TOKEN: c.env.TRUTH_SOCIAL_ACCESS_TOKEN,
           });
         } catch (cause) {
           const errorContext = getErrorContext(cause);

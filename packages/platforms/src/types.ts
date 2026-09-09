@@ -30,6 +30,7 @@ interface TransformOptions {
 interface FetchEnv {
   EMBED_USER_AGENT: string;
   FACEBOOK_MARKETPLACE_COOKIE?: string;
+  TRUTH_SOCIAL_ACCESS_TOKEN?: string;
   REDDIT_CLIENT_ID?: string;
   REDDIT_CLIENT_SECRET?: string;
 }
