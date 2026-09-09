@@ -6,6 +6,7 @@ interface __BaseEnv_CloudflareBindings {
   AUTH_SECRET: string;
   EMBED_USER_AGENT: string;
   FACEBOOK_MARKETPLACE_COOKIE?: string;
+  TRUTH_SOCIAL_ACCESS_TOKEN?: string;
   OTEL_ENDPOINT: string;
 }
 declare namespace Cloudflare {
