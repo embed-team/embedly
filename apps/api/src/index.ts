@@ -81,12 +81,15 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
     }
 
     const response = await fetch(sourceURL, {
-      headers: { "User-Agent": c.env.EMBED_USER_AGENT },
+      cf: { image: { fit: "scale-down", width: 12_000 } },
     });
+    const contentType = response.headers.get("Content-Type");
+    if (!response.ok || !contentType?.startsWith("image/")) return c.body(null, 502);
+
     return new Response(response.body, {
       status: response.status,
       headers: {
-        "Content-Type": response.headers.get("Content-Type") ?? "application/octet-stream",
+        "Content-Type": contentType,
         "Cache-Control": "public, max-age=3600",
       },
     });
