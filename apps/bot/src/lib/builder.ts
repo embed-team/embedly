@@ -70,6 +70,7 @@ function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["S
 }
 
 function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefix?: string) {
+  const platformName = post.platform === "TruthSocial" ? "Truth Social" : post.platform;
   const poll = post.platform === "Twitter" ? post.poll : undefined;
   const translation =
     post.platform === "Twitter" &&
@@ -171,7 +172,7 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
         ),
       (footer) =>
         footer.setContent(
-          `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${post.platform}`, post.url)}`,
+          `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${platformName}`, post.url)}`,
         ),
     );
 }
