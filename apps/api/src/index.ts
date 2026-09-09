@@ -46,12 +46,50 @@ const config: ResolveConfigFn<CloudflareBindings> = (env) => {
   };
 };
 
+async function verifyProxyURL(url: string, signature: string, secret: string) {
+  if (!/^[a-f\d]{64}$/i.test(signature)) return false;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"],
+  );
+  const signatureBytes = Uint8Array.from(signature.match(/../g)!, (byte) =>
+    Number.parseInt(byte, 16),
+  );
+  return crypto.subtle.verify("HMAC", key, signatureBytes, new TextEncoder().encode(url));
+}
+
 const app = new Hono<{ Bindings: CloudflareBindings }>()
   .use("*", httpInstrumentationMiddleware())
   .use(cors())
   .use(prettyJSON())
   .get("/health", (c) => {
     return c.json({ version }, 200);
+  })
+  .get("/api/_image", async (c) => {
+    const url = c.req.query("url");
+    const signature = c.req.query("sig");
+    if (!url || !signature) return c.body(null, 400);
+    if (!(await verifyProxyURL(url, signature, c.env.AUTH_SECRET))) return c.body(null, 403);
+
+    const sourceURL = new URL(url);
+    if (sourceURL.protocol !== "http:" && sourceURL.protocol !== "https:") {
+      return c.body(null, 400);
+    }
+
+    const response = await fetch(sourceURL, {
+      headers: { "User-Agent": c.env.EMBED_USER_AGENT },
+    });
+    return new Response(response.body, {
+      status: response.status,
+      headers: {
+        "Content-Type": response.headers.get("Content-Type") ?? "application/octet-stream",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
   })
   .use("/platforms/scrape", (c, next) => {
     const bearer = bearerAuth({ token: c.env.AUTH_SECRET });

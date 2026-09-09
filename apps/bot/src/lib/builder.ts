@@ -15,6 +15,7 @@ import {
 } from "discord.js";
 
 import { getEmojiByName } from "./emojis";
+import { signProxyURL } from "./proxy";
 import { truncate } from "./utils";
 
 const NumberFormatter = new Intl.NumberFormat("en", {
@@ -54,13 +55,15 @@ function renderPoll(poll: TwitterPoll) {
   return `${choices}\n${subtext(`${VoteNumberFormatter.format(poll.total_votes)} ${voteLabel} • ${status}`)}`;
 }
 
-function buildMediaEmbed(media: NormalizedPost["media"], spoiler?: EmbedFlags["Spoiler"]) {
-  if (media.length === 0) return null;
+function buildMediaEmbed(post: NormalizedPost, spoiler?: EmbedFlags["Spoiler"]) {
+  if (post.media.length === 0) return null;
 
   const gallery = new MediaGalleryBuilder();
   gallery.addItems(
-    media.slice(0, MAX_GALLERY_ITEMS).map((m) => ({
-      media: { url: m.url },
+    post.media.slice(0, MAX_GALLERY_ITEMS).map((m) => ({
+      media: {
+        url: post.platform === "TruthSocial" && m.type === "image" ? signProxyURL(m.url) : m.url,
+      },
       description: m.description?.slice(0, 1024) || undefined,
       spoiler,
     })),
@@ -92,7 +95,11 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
 
   embed.addSectionComponents((section) => {
     section
-      .setThumbnailAccessory((thumbnail) => thumbnail.setURL(post.author.avatar))
+      .setThumbnailAccessory((thumbnail) =>
+        thumbnail.setURL(
+          post.platform === "TruthSocial" ? signProxyURL(post.author.avatar) : post.author.avatar,
+        ),
+      )
       .addTextDisplayComponents((author) =>
         author.setContent(heading(authorHeading, HeadingLevel.Three)),
       );
@@ -132,7 +139,7 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
     }
   }
   if (post.media.length > 0) {
-    embed.addMediaGalleryComponents(buildMediaEmbed(post.media)!);
+    embed.addMediaGalleryComponents(buildMediaEmbed(post)!);
   }
   if (post.platform === "FacebookMarketplace") {
     const { location, map } = post;
@@ -180,7 +187,7 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
 export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
   if (post.platform === "FacebookMarketplace" && post.media.length === 0) return null;
   if (flags?.MediaOnly) {
-    return buildMediaEmbed(post.media, flags?.Spoiler);
+    return buildMediaEmbed(post, flags?.Spoiler);
   }
 
   const embed = new ContainerBuilder();
