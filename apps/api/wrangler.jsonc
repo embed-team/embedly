@@ -22,4 +22,18 @@
       "preview_id": "7d4cb873b305429680da11d90d5298f3",
     },
   ],
+  "services": [
+    {
+      "binding": "INSTAGRAM_FETCH_US_WEST",
+      "service": "instagram-fetcher-us-west",
+    },
+    {
+      "binding": "INSTAGRAM_FETCH_US_EAST",
+      "service": "instagram-fetcher-us-east",
+    },
+    {
+      "binding": "INSTAGRAM_FETCH_EU_WEST",
+      "service": "instagram-fetcher-eu-west",
+    },
+  ],
 }
