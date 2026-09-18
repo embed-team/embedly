@@ -335,7 +335,9 @@ export async function handleUrls(
                 return response;
               },
             );
-            const body = await req.json();
+            const body = req.headers.get("Content-Type")?.includes("application/json")
+              ? await req.json()
+              : null;
 
             if (!req.ok) {
               const problem = isEmbedlyProblem(body)
@@ -363,6 +365,8 @@ export async function handleUrls(
               });
               return;
             }
+
+            if (!body) throw new Error("API returned a non-JSON response");
 
             // SAFETY: a successful response uses the API route's typed success body.
             post = body as ScrapeResponse;
