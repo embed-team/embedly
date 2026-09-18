@@ -1,17 +1,31 @@
 ---
 title: Reddit
 icon: simple-icons:reddit
-description: Reddit support is temporarily disabled.
+description: Posts with text, images, galleries, video, and stats.
 ---
 
-Reddit support is temporarily disabled while Reddit API access is pending.
+Reddit share links and short links are automatically resolved before fetching. Comment URLs embed the parent post.
 
-Reddit now requires explicit approval before apps can access Reddit data through the API. Embedly will restore Reddit embeds after API access is approved and configured.
-
-## Previous URL formats
+## Supported URLs
 
 ```
 https://reddit.com/r/<subreddit>/comments/<id>/<slug>
 https://old.reddit.com/r/<subreddit>/comments/<id>
+https://m.reddit.com/r/<subreddit>/comments/<id>
 https://redd.it/<id>
+https://reddit.com/r/<subreddit>/s/<share_id>
 ```
+
+## Supported features
+
+### Text
+
+The post title, body, and external link.
+
+### Media
+
+Images, galleries, animated images, and videos.
+
+### Stats
+
+Comments and upvotes.
