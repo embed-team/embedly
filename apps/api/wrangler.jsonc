@@ -1,9 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "api",
+  "name": "embedly-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-04-30",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "embedly.embed.team",
+      "custom_domain": true,
+      "enabled": true,
+      "previews_enabled": false,
+    },
+  ],
   "observability": {
     "logs": {
       "enabled": true,
