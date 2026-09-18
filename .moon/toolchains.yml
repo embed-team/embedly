@@ -9,4 +9,4 @@ node:
   version: "24.0.0"
 
 pnpm:
-  version: "10.33.0"
+  version: "11.10.0"
