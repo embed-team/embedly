@@ -34,10 +34,9 @@ interface ApiLogContext extends LogContext {
   outcome: "success" | "error";
   status_code: number;
   error_type?: string;
-  instagram_direct_status?: number;
   instagram_fetch_colo?: string;
   instagram_fetch_region?: string;
-  instagram_fallback_status?: number;
+  instagram_fetch_status?: number;
   duration_ms?: number;
 }
 
@@ -47,28 +46,17 @@ async function fetchInstagram(
   env: CloudflareBindings,
   logContext: ApiLogContext,
 ) {
-  const request = new Request(input, init);
-  let response: Response;
-  try {
-    response = await fetch(request.clone());
-    logContext.instagram_direct_status = response.status;
-    if (response.status !== 429 && response.status < 500) return response;
-    await response.body?.cancel();
-  } catch {
-    // Try one regional fetch when the direct network request fails.
-  }
-
   const fetchers = [
     ["us-west", env.INSTAGRAM_FETCH_US_WEST],
     ["us-east", env.INSTAGRAM_FETCH_US_EAST],
     ["eu-west", env.INSTAGRAM_FETCH_EU_WEST],
   ] as const;
   const [region, fetcher] = fetchers[Math.floor(Math.random() * fetchers.length)];
-  const fallback = await fetcher.fetch(request);
   logContext.instagram_fetch_region = region;
-  logContext.instagram_fallback_status = fallback.status;
-  logContext.instagram_fetch_colo = fallback.headers.get("X-Embedly-Colo") ?? undefined;
-  return fallback;
+  const response = await fetcher.fetch(new Request(input, init));
+  logContext.instagram_fetch_status = response.status;
+  logContext.instagram_fetch_colo = response.headers.get("X-Embedly-Colo") ?? undefined;
+  return response;
 }
 
 const config: ResolveConfigFn<CloudflareBindings> = (env) => {
