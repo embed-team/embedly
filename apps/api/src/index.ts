@@ -10,7 +10,7 @@ import { Platforms } from "@embedly/platforms";
 import { httpInstrumentationMiddleware } from "@hono/otel";
 import { zValidator } from "@hono/zod-validator";
 import { instrument, type ResolveConfigFn } from "@microlabs/otel-cf-workers";
-import { trace } from "@opentelemetry/api";
+import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cors } from "hono/cors";
@@ -48,14 +48,26 @@ async function fetchInstagram(
   env: CloudflareBindings,
   logContext: ApiLogContext,
 ) {
-  try {
-    const response = await fetch(input, init);
-    logContext.instagram_direct_status = response.status;
-    if (response.status !== 429 && response.status < 500) return response;
-    await response.body?.cancel();
-  } catch (cause) {
-    logContext.instagram_direct_error = getErrorContext(cause).error_message;
-  }
+  const directResponse = await trace
+    .getTracer("instagram")
+    .startActiveSpan("instagram.direct", async (span) => {
+      try {
+        const response = await fetch(input, init);
+        logContext.instagram_direct_status = response.status;
+        if (response.status !== 429 && response.status < 500) return response;
+
+        span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${response.status}` });
+        await response.body?.cancel();
+      } catch (cause) {
+        const error = getErrorContext(cause).error_message;
+        logContext.instagram_direct_error = error;
+        span.recordException(error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: error });
+      } finally {
+        span.end();
+      }
+    });
+  if (directResponse) return directResponse;
 
   const fetchers = [
     ["us-west", env.INSTAGRAM_FETCH_US_WEST],
