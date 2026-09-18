@@ -5,7 +5,6 @@
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
-    "dev": "wrangler dev --env us-west",
     "deploy:us-west": "wrangler deploy --env us-west --minify",
     "deploy:us-east": "wrangler deploy --env us-east --minify",
     "deploy:eu-west": "wrangler deploy --env eu-west --minify",
@@ -16,6 +15,6 @@
     "@types/node": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
-    "wrangler": "^4.114.0"
+    "wrangler": "^4.135.0"
   }
 }
