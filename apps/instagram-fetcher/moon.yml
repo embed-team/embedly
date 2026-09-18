@@ -1,0 +1,6 @@
+layer: "library"
+language: "typescript"
+
+project:
+  title: "@embedly/instagram-fetcher"
+  description: "Regional Instagram fetch proxy for Embedly."

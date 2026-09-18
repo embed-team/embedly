@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "instagram-fetcher",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+    },
+  },
+  "env": {
+    "us-west": {
+      "name": "instagram-fetcher-us-west",
+      "placement": {
+        "mode": "targeted",
+        "region": "aws:us-west-2",
+      },
+    },
+    "us-east": {
+      "name": "instagram-fetcher-us-east",
+      "placement": {
+        "mode": "targeted",
+        "region": "aws:us-east-1",
+      },
+    },
+    "eu-west": {
+      "name": "instagram-fetcher-eu-west",
+      "placement": {
+        "mode": "targeted",
+        "region": "aws:eu-west-1",
+      },
+    },
+  },
+}

@@ -34,7 +34,41 @@ interface ApiLogContext extends LogContext {
   outcome: "success" | "error";
   status_code: number;
   error_type?: string;
+  instagram_direct_status?: number;
+  instagram_fetch_colo?: string;
+  instagram_fetch_region?: string;
+  instagram_fallback_status?: number;
   duration_ms?: number;
+}
+
+async function fetchInstagram(
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  env: CloudflareBindings,
+  logContext: ApiLogContext,
+) {
+  const request = new Request(input, init);
+  let response: Response;
+  try {
+    response = await fetch(request.clone());
+    logContext.instagram_direct_status = response.status;
+    if (response.status !== 429 && response.status < 500) return response;
+    await response.body?.cancel();
+  } catch {
+    // Try one regional fetch when the direct network request fails.
+  }
+
+  const fetchers = [
+    ["us-west", env.INSTAGRAM_FETCH_US_WEST],
+    ["us-east", env.INSTAGRAM_FETCH_US_EAST],
+    ["eu-west", env.INSTAGRAM_FETCH_EU_WEST],
+  ] as const;
+  const [region, fetcher] = fetchers[Math.floor(Math.random() * fetchers.length)];
+  const fallback = await fetcher.fetch(request);
+  logContext.instagram_fetch_region = region;
+  logContext.instagram_fallback_status = fallback.status;
+  logContext.instagram_fetch_colo = fallback.headers.get("X-Embedly-Colo") ?? undefined;
+  return fallback;
 }
 
 const config: ResolveConfigFn<CloudflareBindings> = (env) => {
@@ -163,6 +197,10 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         try {
           raw = await p.fetch(id, {
             EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
+            INSTAGRAM_FETCH:
+              platform === "Instagram"
+                ? (input, init) => fetchInstagram(input, init, c.env, logContext)
+                : undefined,
             FACEBOOK_MARKETPLACE_COOKIE: c.env.FACEBOOK_MARKETPLACE_COOKIE,
             TRUTH_SOCIAL_ACCESS_TOKEN: c.env.TRUTH_SOCIAL_ACCESS_TOKEN,
           });

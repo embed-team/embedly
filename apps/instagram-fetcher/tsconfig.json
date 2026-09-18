@@ -1,0 +1,22 @@
+{
+  "extends": "@embedly/config/tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["ESNext"],
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationDir": "./types",
+    "types": ["./worker-configuration.d.ts", "node"]
+  },
+  "include": ["src/**/*", "*.js", "*.ts"],
+  "exclude": ["node_modules"],
+  "references": [
+    {
+      "path": "../../packages/config"
+    }
+  ]
+}

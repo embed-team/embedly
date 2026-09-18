@@ -74,19 +74,22 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
   },
   async fetch(id, env) {
     const [type, shortcode] = id.includes("/") ? id.split("/") : ["p", id];
-    const resp = await fetch(`https://www.instagram.com/${normalizeType(type)}/${shortcode}/`, {
-      method: "GET",
-      headers: {
-        "User-Agent": env?.EMBED_USER_AGENT ?? "",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
+    const resp = await (env?.INSTAGRAM_FETCH ?? fetch)(
+      `https://www.instagram.com/${normalizeType(type)}/${shortcode}/`,
+      {
+        method: "GET",
+        headers: {
+          "User-Agent": env?.EMBED_USER_AGENT ?? "",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Upgrade-Insecure-Requests": "1",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Sec-Fetch-User": "?1",
+        },
       },
-    });
+    );
 
     if (!resp.ok) {
       throw { code: resp.status, message: resp.statusText };
