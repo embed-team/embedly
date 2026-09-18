@@ -8,6 +8,7 @@ interface __BaseEnv_CloudflareBindings {
   OTEL_ENDPOINT: string;
   FACEBOOK_MARKETPLACE_COOKIE: string;
   TRUTH_SOCIAL_ACCESS_TOKEN: string;
+  REDDIT_COOKIE: string;
   INSTAGRAM_FETCH_US_WEST: Fetcher /* instagram-fetcher-us-west */;
   INSTAGRAM_FETCH_US_EAST: Fetcher /* instagram-fetcher-us-east */;
   INSTAGRAM_FETCH_EU_WEST: Fetcher /* instagram-fetcher-eu-west */;
@@ -31,6 +32,7 @@ declare namespace NodeJS {
       | "OTEL_ENDPOINT"
       | "FACEBOOK_MARKETPLACE_COOKIE"
       | "TRUTH_SOCIAL_ACCESS_TOKEN"
+      | "REDDIT_COOKIE"
     >
   > {}
 }

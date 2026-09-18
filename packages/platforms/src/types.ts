@@ -32,8 +32,7 @@ interface FetchEnv {
   INSTAGRAM_FETCH?: typeof fetch;
   FACEBOOK_MARKETPLACE_COOKIE?: string;
   TRUTH_SOCIAL_ACCESS_TOKEN?: string;
-  REDDIT_CLIENT_ID?: string;
-  REDDIT_CLIENT_SECRET?: string;
+  REDDIT_COOKIE?: string;
 }
 
 export interface Platform<PlatformName extends string, PlatformData, PlatformMeta> {
