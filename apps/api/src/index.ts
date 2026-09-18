@@ -214,6 +214,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
                 : undefined,
             FACEBOOK_MARKETPLACE_COOKIE: c.env.FACEBOOK_MARKETPLACE_COOKIE,
             TRUTH_SOCIAL_ACCESS_TOKEN: c.env.TRUTH_SOCIAL_ACCESS_TOKEN,
+            REDDIT_COOKIE: c.env.REDDIT_COOKIE,
           });
         } catch (cause) {
           const errorContext = getErrorContext(cause);

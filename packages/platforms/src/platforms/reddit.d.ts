@@ -1,13 +1,14 @@
-export interface RedditAccessTokenResponse {
-  access_token?: string;
-}
-
 export interface RedditMediaMetadata {
-  s: { u: string };
+  status?: string;
+  e?: "Image" | "AnimatedImage" | string;
+  s: {
+    u?: string;
+    gif?: string;
+  };
 }
 
 export interface RedditPostData {
-  author: string;
+  author?: string | null;
   subreddit_name_prefixed: string;
   created_utc: number;
   permalink: string;
@@ -16,23 +17,31 @@ export interface RedditPostData {
   num_comments: number;
   ups: number;
   domain?: string;
+  post_hint?: string;
+  url?: string;
   url_overridden_by_dest?: string;
+  thumbnail?: string;
+  gallery_data?: {
+    items: Array<{ media_id: string }>;
+  };
   media_metadata?: Record<string, RedditMediaMetadata>;
   preview?: {
-    enabled: boolean;
+    enabled?: boolean;
     images: Array<{ source: { url: string } }>;
   };
   media?: {
-    reddit_video?: { fallback_url: string };
+    reddit_video?: {
+      fallback_url: string;
+      has_audio?: boolean;
+      is_gif?: boolean;
+      hls_url?: string;
+    };
   };
 }
 
-export interface RedditProfile {
-  icon_img: string;
-}
-
 export interface RedditPost extends RedditPostData {
-  profile: RedditProfile;
+  author: string;
+  profile: { icon_img: string };
 }
 
 export interface RedditListing {
@@ -42,5 +51,5 @@ export interface RedditListing {
 }
 
 export interface RedditProfileResponse {
-  data?: RedditProfile;
+  data?: { icon_img?: string };
 }
