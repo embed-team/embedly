@@ -34,6 +34,8 @@ interface ApiLogContext extends LogContext {
   outcome: "success" | "error";
   status_code: number;
   error_type?: string;
+  instagram_direct_error?: string;
+  instagram_direct_status?: number;
   instagram_fetch_colo?: string;
   instagram_fetch_region?: string;
   instagram_fetch_status?: number;
@@ -46,6 +48,15 @@ async function fetchInstagram(
   env: CloudflareBindings,
   logContext: ApiLogContext,
 ) {
+  try {
+    const response = await fetch(input, init);
+    logContext.instagram_direct_status = response.status;
+    if (response.status !== 429 && response.status < 500) return response;
+    await response.body?.cancel();
+  } catch (cause) {
+    logContext.instagram_direct_error = getErrorContext(cause).error_message;
+  }
+
   const fetchers = [
     ["us-west", env.INSTAGRAM_FETCH_US_WEST],
     ["us-east", env.INSTAGRAM_FETCH_US_EAST],
