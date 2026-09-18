@@ -23,12 +23,6 @@
     "@types/node": "catalog:",
     "typescript": "catalog:"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "11.10.0"
-    }
-  },
   "engines": {
     "node": ">=24"
   },
