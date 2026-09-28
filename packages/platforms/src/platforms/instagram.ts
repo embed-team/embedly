@@ -1,7 +1,22 @@
-import * as cheerio from "cheerio";
-
 import { NormalizedPost, Platform } from "../types";
 import type { InstagramMedia } from "./instagram.d";
+
+interface InstagramHTMLRewriter {
+  on(
+    selector: string,
+    handlers: {
+      element?(element: {
+        getAttribute(name: string): string | null;
+        hasAttribute(name: string): boolean;
+        onEndTag(handler: () => void): void;
+      }): void;
+      text?(chunk: { text: string }): void;
+    },
+  ): InstagramHTMLRewriter;
+  transform(response: Response): Response;
+}
+
+declare const HTMLRewriter: { new (): InstagramHTMLRewriter };
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(?<ig_type>p|share|reels|reel)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
@@ -95,14 +110,55 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
       throw { code: resp.status, message: resp.statusText };
     }
 
-    const html = await resp.text();
-    const $ = cheerio.load(html);
-    const script = $('script[type="application/json"][data-sjs]')
-      .toArray()
-      .map((el) => $(el).text())
-      .find(
-        (text) => text.includes("RelayPrefetchedStreamCache") && text.includes(PRELOADER_PREFIX),
-      );
+    let script: string | undefined;
+    let scriptChunks: string[] = [];
+    let captureScript = false;
+    let textTail = "";
+    let ageRestricted = false;
+    let postUnavailable = false;
+    let insideScriptOrStyle = false;
+    const rewritten = new HTMLRewriter()
+      .on("script", {
+        element(element) {
+          insideScriptOrStyle = true;
+          captureScript =
+            element.getAttribute("type") === "application/json" && element.hasAttribute("data-sjs");
+          scriptChunks = [];
+          element.onEndTag(() => {
+            insideScriptOrStyle = false;
+            if (!captureScript) return;
+            const candidate = scriptChunks.join("");
+            if (
+              candidate.includes("RelayPrefetchedStreamCache") &&
+              candidate.includes(PRELOADER_PREFIX)
+            ) {
+              script = candidate;
+            }
+          });
+        },
+        text(chunk) {
+          if (captureScript) scriptChunks.push(chunk.text);
+        },
+      })
+      .on("style", {
+        element(element) {
+          insideScriptOrStyle = true;
+          element.onEndTag(() => {
+            insideScriptOrStyle = false;
+          });
+        },
+      })
+      .on("body", {
+        text(chunk) {
+          if (insideScriptOrStyle) return;
+          const text = (textTail + chunk.text).replace(/\s+/g, " ").replace(/\u2019/g, "'");
+          ageRestricted ||= text.includes("Age-restricted content");
+          postUnavailable ||= text.includes("Post isn't available");
+          textTail = text.slice(-32);
+        },
+      })
+      .transform(resp);
+    await rewritten.body?.pipeTo(new WritableStream());
 
     let media: InstagramMedia | undefined | null;
     if (script) {
@@ -114,17 +170,12 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
     }
 
     if (!media) {
-      $("script, style").remove();
-      const text = $("body")
-        .text()
-        .replace(/\s+/g, " ")
-        .replace(/\u2019/g, "'");
       let reason = "instagram.media_unavailable";
       let code = 500;
-      if (text.includes("Age-restricted content")) {
+      if (ageRestricted) {
         reason = "instagram.age_restricted";
         code = 403;
-      } else if (text.includes("Post isn't available")) {
+      } else if (postUnavailable) {
         reason = "instagram.post_unavailable";
         code = 404;
       }
