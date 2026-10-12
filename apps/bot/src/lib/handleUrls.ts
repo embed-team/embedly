@@ -275,19 +275,7 @@ export async function handleUrls(
       operation: targetBotMessageId ? "update" : "create",
       outcome: "success",
       status_code: 200,
-      ...(msg
-        ? {
-            message_id: msg.id,
-            channel_id: msg.channelId,
-            guild_id: msg.guildId ?? "dm",
-            user_id: msg.author.id,
-          }
-        : {
-            interaction_id: interaction!.id,
-            channel_id: interaction!.channelId,
-            guild_id: interaction!.guildId ?? "dm",
-            user_id: interaction!.user.id,
-          }),
+      ...matchContext,
     };
 
     const spanAttributes = {
