@@ -35,13 +35,15 @@ function enrichText(raw?: RawText) {
       rendered += renderUrlFacet(facet, facetText);
     }
     if (facet.type === "hashtag") {
-      rendered += renderHashtagFacet(facet, facetText);
+      const tag = facet.original ?? facetText.replace(/^#/, "");
+      rendered += `[#${tag}](https://x.com/hashtag/${tag})`;
     }
     if (facet.type === "media") {
       continue;
     }
     if (facet.type === "mention") {
-      rendered += renderMentionFacet(facet, facetText);
+      const handle = facet.original ?? facetText.replace(/^@/, "");
+      rendered += `[@${handle}](https://x.com/${handle})`;
     }
 
     if (!RENDERED_FACET_TYPES.includes(facet.type)) {
@@ -119,16 +121,6 @@ function renderUrlFacet(facet: RawText["facets"][number], text: string) {
   if (facet.replacement) return facet.replacement;
   if (!facet.display) return text;
   return `[${facet.display}](${text})`;
-}
-
-function renderHashtagFacet(facet: RawText["facets"][number], text: string) {
-  const tag = facet.original ?? text.replace(/^#/, "");
-  return `[#${tag}](https://x.com/hashtag/${tag})`;
-}
-
-function renderMentionFacet(facet: RawText["facets"][number], text: string) {
-  const handle = facet.original ?? text.replace(/^@/, "");
-  return `[@${handle}](https://x.com/${handle})`;
 }
 
 function clamp(value: number, min: number, max: number) {
