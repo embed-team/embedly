@@ -28,11 +28,12 @@ export class MessageUpdateListener extends Listener<typeof Events.MessageUpdate>
     const botMessages = await this.container.messageCache.getBotMessages(message.id);
     if (botMessages.length === 0) return;
 
+    const { urls: newUrls, suppressNativeEmbeds } = parseMessageURLs(message.content);
+
     if (oldMessage.content === null) {
       await this.container.messageCache.clearBotMessageIndexes(message.id);
     } else if (oldMessage.content !== message.content) {
       const oldUrls = parseMessageURLs(oldMessage.content).urls;
-      const newUrls = parseMessageURLs(message.content).urls;
       const sameUrls =
         oldUrls.length === newUrls.length &&
         oldUrls.every((request, index) => request.url === newUrls[index]?.url);
@@ -57,6 +58,7 @@ export class MessageUpdateListener extends Listener<typeof Events.MessageUpdate>
       }
     }
 
+    if (!suppressNativeEmbeds) return;
     if (oldMessage.embeds.length > 0) return;
     if (message.embeds.length === 0) return;
     if (message.flags.has(MessageFlags.SuppressEmbeds)) return;
