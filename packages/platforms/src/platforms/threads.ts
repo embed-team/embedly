@@ -20,6 +20,7 @@ function parseMedia(raw: ThreadsPost): NormalizedPost["media"] {
       {
         url: video.url,
         type: "video",
+        description: raw.accessibility_caption,
       },
     ];
   }
