@@ -85,12 +85,12 @@ Made with 💕 by embed.team`,
               new ButtonBuilder()
                 .setLabel("Website")
                 .setStyle(ButtonStyle.Link)
-                .setURL("https://bot.embed.team")
+                .setURL("https://bot.embeds.media")
                 .setEmoji({ name: "🌐" }),
               new ButtonBuilder()
                 .setLabel("Invite")
                 .setStyle(ButtonStyle.Link)
-                .setURL("https://embedly.roselynn.gay")
+                .setURL("https://bot.embeds.media/invite")
                 .setEmoji({ name: "➕" }),
             ),
           )
