@@ -185,13 +185,9 @@ export class DeleteCommand extends Command {
 
           logContext.original_author_id = originalAuthorId;
           const isOriginalPoster = interaction.user.id === originalAuthorId;
-          let hasManagePermission = false;
-
-          if (interaction.inGuild()) {
-            const guild = await interaction.guild!.fetch();
-            const runner = await guild.members.fetch(interaction.member.user.id);
-            hasManagePermission = runner.permissions.has(PermissionFlagsBits.ManageMessages, true);
-          }
+          const hasManagePermission =
+            interaction.inGuild() &&
+            interaction.memberPermissions.has(PermissionFlagsBits.ManageMessages, true);
 
           logContext.has_manage_permission = hasManagePermission;
           if (!hasManagePermission && !isOriginalPoster) {
