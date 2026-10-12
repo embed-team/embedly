@@ -30,137 +30,129 @@ export interface EmbedlyProblem {
   context?: Record<string, string | number | boolean>;
 }
 
-export function defineLog(event: EmbedlyEvent) {
-  return event;
-}
-
-export function defineError(event: EmbedlyErrorEvent) {
-  return event;
-}
-
 export const EmbedlyErrors = {
-  FeatureFlagFailed: defineError({
+  FeatureFlagFailed: {
     type: "feature_flag.failed",
     title: "Access check failed.",
     detail: "Could not check Marketplace access.",
     status: 502,
-  }),
-  NoUrlsFound: defineError({
+  },
+  NoUrlsFound: {
     type: "embed.no_urls_found",
     title: "No URLs Found.",
     detail: "No links were found in the message.",
     status: 400,
-  }),
-  NoMatchesFound: defineError({
+  },
+  NoMatchesFound: {
     type: "embed.no_matches_found",
     title: "No Matches Found.",
     detail: "No supported Embedly links were found.",
     status: 400,
-  }),
-  NoMediaFound: defineError({
+  },
+  NoMediaFound: {
     type: "embed.no_media_found",
     title: "No Media Found.",
     detail: "That post did not have media to display.",
     status: 400,
-  }),
-  PlatformFetchFailed: defineError({
+  },
+  PlatformFetchFailed: {
     type: "platform.fetch_failed",
     title: "Failed to fetch post.",
     detail: "Embedly could not fetch that post from the platform.",
     status: 502,
-  }),
-  InstagramAgeRestricted: defineError({
+  },
+  InstagramAgeRestricted: {
     type: "instagram.age_restricted",
     title: "Age-restricted content.",
     detail: "Instagram requires login to view this post. Embedly can only access public posts.",
     status: 403,
-  }),
-  InstagramPostUnavailable: defineError({
+  },
+  InstagramPostUnavailable: {
     type: "instagram.post_unavailable",
     title: "Post unavailable.",
     detail: "Instagram isn't making this post available without login.",
     status: 404,
-  }),
-  InstagramMediaUnavailable: defineError({
+  },
+  InstagramMediaUnavailable: {
     type: "platform.fetch_failed",
     title: "Couldn't load this post.",
     detail:
       "Instagram didn't provide public media for this post. It may require login or be unavailable.",
     status: 502,
-  }),
-  PlatformTransformFailed: defineError({
+  },
+  PlatformTransformFailed: {
     type: "platform.transform_failed",
     title: "Failed to build post data.",
     detail: "Embedly could not prepare that post for Discord.",
     status: 500,
-  }),
-  CacheReadFailed: defineError({
+  },
+  CacheReadFailed: {
     type: "cache.read_failed",
     title: "Failed to read cache.",
     detail: "Embedly could not read cached post data.",
     status: 500,
-  }),
-  CacheWriteFailed: defineError({
+  },
+  CacheWriteFailed: {
     type: "cache.write_failed",
     title: "Failed to write cache.",
     detail: "Embedly fetched the post but could not cache it.",
     status: 500,
-  }),
-  ApiUnexpectedResponse: defineError({
+  },
+  ApiUnexpectedResponse: {
     type: "api.unexpected_response",
     title: "Unexpected API response.",
     detail: "Embedly received an unexpected response from its API.",
     status: 500,
-  }),
-  DiscordSendFailed: defineError({
+  },
+  DiscordSendFailed: {
     type: "discord.send_failed",
     title: "Failed to send message.",
     detail: "Embedly could not send a response to Discord.",
     status: 500,
-  }),
-  DeleteFailed: defineError({
+  },
+  DeleteFailed: {
     type: "discord.delete_failed",
     title: "Deletion Failed.",
     detail:
       "Failed to delete the message.\n-# (This only works if you are the original poster or have `Manage Messages` permission.)",
     status: 403,
-  }),
-  MessageCacheFailed: defineError({
+  },
+  MessageCacheFailed: {
     type: "message_cache.failed",
     title: "Message cache failed.",
     detail: "Embedly could not update the message cache.",
     status: 500,
-  }),
-  EmojiUploadFailed: defineError({
+  },
+  EmojiUploadFailed: {
     type: "emoji.upload_failed",
     title: "Emoji upload failed.",
     detail: "Embedly could not upload an application emoji.",
     status: 500,
-  }),
-} as const;
+  },
+} as const satisfies Record<string, EmbedlyErrorEvent>;
 
 export const EmbedlyLogs = {
-  ApiScrape: defineLog({
+  ApiScrape: {
     type: "api.scrape",
     title: "API scrape.",
     detail: "Handled API scrape request.",
-  }),
-  EmbedRequest: defineLog({
+  },
+  EmbedRequest: {
     type: "embed.request",
     title: "Embed request.",
     detail: "Handled embed request.",
-  }),
-  DeleteRequest: defineLog({
+  },
+  DeleteRequest: {
     type: "discord.delete_request",
     title: "Delete request.",
     detail: "Handled delete request.",
-  }),
-  AutoDeleteSucceeded: defineLog({
+  },
+  AutoDeleteSucceeded: {
     type: "discord.auto_delete_succeeded",
     title: "Embed auto-deleted.",
     detail: "Deleted Embedly responses for a deleted source message.",
-  }),
-} as const;
+  },
+} as const satisfies Record<string, EmbedlyEvent>;
 
 export function createProblem(
   event: EmbedlyErrorEvent,

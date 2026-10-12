@@ -4,6 +4,7 @@ import {
   EmbedlyLogs,
   getErrorContext,
   getRequestId,
+  type EmbedlyErrorEvent,
   type LogContext,
 } from "@embedly/logging";
 import { Platforms } from "@embedly/platforms";
@@ -218,7 +219,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           });
         } catch (cause) {
           const errorContext = getErrorContext(cause);
-          let event = EmbedlyErrors.PlatformFetchFailed;
+          let event: EmbedlyErrorEvent = EmbedlyErrors.PlatformFetchFailed;
           if (platform === "Instagram") {
             if (errorContext.upstream_reason === "instagram.age_restricted") {
               event = EmbedlyErrors.InstagramAgeRestricted;
