@@ -6,6 +6,7 @@ import {
   formatLog,
   getErrorContext,
   isEmbedlyProblem,
+  type EmbedlyProblem,
   type LogContext,
 } from "@embedly/logging";
 import { matchURL, Platforms } from "@embedly/platforms";
@@ -296,6 +297,10 @@ export async function handleUrls(
       "embedly.post_id": id,
     };
     const metricContext = { source: embedSource, platform };
+    const respondToError = (problem: EmbedlyProblem) => {
+      const response = { content: formatDiscordError(problem) };
+      return i === 0 ? interaction!.editReply(response) : interaction!.followUp(response);
+    };
     botInvocations.add(1, metricContext);
 
     await span(
@@ -360,9 +365,7 @@ export async function handleUrls(
                 await reactToFailure();
                 return;
               }
-              await interaction!.editReply({
-                content: formatDiscordError(problem),
-              });
+              await respondToError(problem);
               return;
             }
 
@@ -386,9 +389,7 @@ export async function handleUrls(
               await reactToFailure();
               return;
             }
-            await interaction!.editReply({
-              content: formatDiscordError(problem),
-            });
+            await respondToError(problem);
             return;
           }
 
@@ -413,12 +414,7 @@ export async function handleUrls(
               await reactToFailure();
               return;
             }
-            const response = { content: formatDiscordError(problem) };
-            if (i === 0) {
-              await interaction!.editReply(response);
-            } else {
-              await interaction!.followUp(response);
-            }
+            await respondToError(problem);
             return;
           }
 
@@ -476,7 +472,7 @@ export async function handleUrls(
               await reactToFailure();
               return;
             }
-            await interaction!.editReply(formatDiscordError(problem));
+            await respondToError(problem);
             return;
           }
 
