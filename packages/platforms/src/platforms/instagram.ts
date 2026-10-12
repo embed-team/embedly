@@ -21,6 +21,8 @@ declare const HTMLRewriter: { new (): InstagramHTMLRewriter };
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(?<ig_type>p|share|reels|reel)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
 
+const SHARE_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/share\/[^/?#]+/;
+
 const PRELOADER_PREFIX = "adp_PolarisLoggedOutDesktopWWWPostRootContentQueryRelayPreloader_";
 
 function normalizeType(type: string) {
@@ -71,7 +73,8 @@ function parseRelayMedia(script: string) {
 export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
   type: "Instagram",
   async match(url, env) {
-    if (url.includes("share")) {
+    if (SHARE_RE.test(url)) {
+      if (!url.startsWith("http://") && !url.startsWith("https://")) url = `https://${url}`;
       const req = await fetch(url.endsWith("/") ? url : `${url}/`, {
         redirect: "follow",
         headers: {
