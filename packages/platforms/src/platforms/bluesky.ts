@@ -53,10 +53,11 @@ async function parseMedia(post: BlueskyPost, record: AppBskyFeedPost.Record) {
 
   for (let ind = 0; ind < embeds.length; ind++) {
     const embed = embeds[ind];
+    const mediaEmbed = AppBskyEmbedRecordWithMedia.isView(embed) ? embed.media : embed;
 
-    if (AppBskyEmbedImages.isView(embed)) {
+    if (AppBskyEmbedImages.isView(mediaEmbed)) {
       media.push(
-        ...embed.images.map((image) => ({
+        ...mediaEmbed.images.map((image) => ({
           url: image.fullsize,
           type: "photo",
           description: image.alt || undefined,
@@ -64,32 +65,12 @@ async function parseMedia(post: BlueskyPost, record: AppBskyFeedPost.Record) {
       );
     }
 
-    if (AppBskyEmbedExternal.isView(embed) && embed.external.thumb) {
+    if (AppBskyEmbedExternal.isView(mediaEmbed) && mediaEmbed.external.thumb) {
       media.push({
-        url: embed.external.thumb,
+        url: mediaEmbed.external.thumb,
         type: "photo",
-        description: embed.external.description || embed.external.title,
+        description: mediaEmbed.external.description || mediaEmbed.external.title,
       });
-    }
-
-    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-      if (AppBskyEmbedImages.isView(embed.media)) {
-        media.push(
-          ...embed.media.images.map((image) => ({
-            url: image.fullsize,
-            type: "photo",
-            description: image.alt || undefined,
-          })),
-        );
-      }
-
-      if (AppBskyEmbedExternal.isView(embed.media) && embed.media.external.thumb) {
-        media.push({
-          url: embed.media.external.thumb,
-          type: "photo",
-          description: embed.media.external.description || embed.media.external.title,
-        });
-      }
     }
   }
 
