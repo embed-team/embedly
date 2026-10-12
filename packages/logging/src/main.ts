@@ -140,16 +140,6 @@ export const EmbedlyErrors = {
 } as const;
 
 export const EmbedlyLogs = {
-  ApiCacheHit: defineLog({
-    type: "api.cache_hit",
-    title: "Cache hit.",
-    detail: "Found cached post data.",
-  }),
-  ApiCacheStore: defineLog({
-    type: "api.cache_store",
-    title: "Cache store.",
-    detail: "Stored post data in cache.",
-  }),
   ApiScrape: defineLog({
     type: "api.scrape",
     title: "API scrape.",
@@ -160,25 +150,10 @@ export const EmbedlyLogs = {
     title: "Embed request.",
     detail: "Handled embed request.",
   }),
-  EmbedCreated: defineLog({
-    type: "embed.created",
-    title: "Embed created.",
-    detail: "Created an Embedly response.",
-  }),
   DeleteRequest: defineLog({
     type: "discord.delete_request",
     title: "Delete request.",
     detail: "Handled delete request.",
-  }),
-  EmbedSkipped: defineLog({
-    type: "embed.skipped",
-    title: "Embed skipped.",
-    detail: "Skipped an Embedly response.",
-  }),
-  DeleteSucceeded: defineLog({
-    type: "discord.delete_succeeded",
-    title: "Embed deleted.",
-    detail: "Deleted an Embedly response.",
   }),
   AutoDeleteSucceeded: defineLog({
     type: "discord.auto_delete_succeeded",
@@ -244,22 +219,6 @@ export function formatLog(_level: LogLevel, event: EmbedlyEvent, context?: LogCo
     ),
   ];
   return parts.join(" ");
-}
-
-export function formatProblemLog(level: LogLevel, problem: EmbedlyProblem) {
-  return formatLog(
-    level,
-    {
-      type: problem.type,
-      title: problem.title,
-      detail: problem.detail,
-    },
-    {
-      request_id: problem.request_id,
-      status: problem.status,
-      ...problem.context,
-    },
-  );
 }
 
 /* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof -- Thrown values have no contract. */
