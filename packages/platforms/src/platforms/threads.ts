@@ -4,9 +4,9 @@ import { NormalizedPost, Platform } from "../types";
 import type { ThreadsPost, ThreadsResponse } from "./threads.d";
 
 const MATCH_RE =
-  /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.com\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
+  /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.(?:com|net)\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
 
-const SHARE_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.com\/share\/[^/?#]+/;
+const SHARE_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.(?:com|net)\/share\/[^/?#]+/;
 
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
