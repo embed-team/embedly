@@ -1,4 +1,4 @@
-import { NormalizedPost, Platform } from "../types";
+import { Platform } from "../types";
 import type { InstagramMedia } from "./instagram.d";
 
 interface InstagramHTMLRewriter {
@@ -30,29 +30,14 @@ function normalizeType(type: string) {
   return type;
 }
 
-function firstImage(raw: InstagramMedia) {
-  return raw.image_versions2?.candidates?.[0]?.url;
-}
-
 function mediaURL(raw: InstagramMedia) {
   const video = raw.video_versions?.[0]?.url;
   if (video) return { url: video, type: "video", description: raw.accessibility_caption };
 
-  const image = firstImage(raw);
+  const image = raw.image_versions2?.candidates?.[0]?.url;
   if (image) return { url: image, type: "photo", description: raw.accessibility_caption };
 
   return null;
-}
-
-function parseMedia(raw: InstagramMedia): NormalizedPost["media"] {
-  if (raw.carousel_media) {
-    return raw.carousel_media.map(mediaURL).filter((media) => media !== null);
-  }
-
-  const media = mediaURL(raw);
-  if (!media) return [];
-
-  return [media];
 }
 
 function parseRelayMedia(script: string) {
@@ -213,7 +198,7 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
         comments: raw.comment_count,
         views: raw.play_count ?? raw.video_play_count ?? raw.view_count,
       },
-      media: parseMedia(raw),
+      media: (raw.carousel_media || [raw]).map(mediaURL).filter((media) => media !== null),
     };
   },
 } as const;
