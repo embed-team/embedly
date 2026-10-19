@@ -18,16 +18,20 @@ async function parseMedia(raw: TikTokItem): Promise<NormalizedPost["media"]> {
   if (urls.length === 0) return [];
 
   for (const url of urls) {
-    const video = await fetch(url, {
-      redirect: "follow",
-      headers: { Range: "bytes=0-0" },
-    });
-    await video.body?.cancel();
-    if (video.ok && video.headers.get("Content-Type")?.startsWith("video/")) {
-      return [{ url: video.url, type: "video" }];
+    try {
+      const video = await fetch(url, {
+        redirect: "follow",
+        headers: { Range: "bytes=0-0" },
+      });
+      await video.body?.cancel();
+      if (video.ok && video.headers.get("Content-Type")?.startsWith("video/")) {
+        return [{ url: video.url, type: "video" }];
+      }
+    } catch {
+      continue;
     }
   }
-  throw { code: 502, message: "TikTok media URLs did not return a video" };
+  return [{ url: urls[0], type: "video" }];
 }
 
 export const TikTok: Platform<"TikTok", TikTokItem, {}> = {

@@ -140,6 +140,51 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       },
     });
   })
+  .on(["GET", "HEAD"], "/api/_media", async (c) => {
+    const url = c.req.query("url");
+    const signature = c.req.query("sig");
+    if (!url || !signature) return c.body(null, 400);
+    if (!(await verifyProxyURL(url, signature, c.env.AUTH_SECRET))) return c.body(null, 403);
+    if (!URL.canParse(url)) return c.body(null, 400);
+
+    const sourceURL = new URL(url);
+    if (sourceURL.protocol !== "http:" && sourceURL.protocol !== "https:") {
+      return c.body(null, 400);
+    }
+
+    const requestHeaders = new Headers({ "Accept-Encoding": "identity" });
+    for (const name of ["Range", "If-Range"]) {
+      const value = c.req.header(name);
+      if (value) requestHeaders.set(name, value);
+    }
+    const response = await fetch(sourceURL, {
+      method: c.req.method,
+      headers: requestHeaders,
+    });
+    const contentType = response.headers.get("Content-Type");
+    if (
+      response.status !== 416 &&
+      (!response.ok || (!contentType?.startsWith("video/") && !contentType?.startsWith("image/")))
+    ) {
+      await response.body?.cancel();
+      return c.body(null, 502);
+    }
+
+    const headers = new Headers();
+    for (const name of [
+      "Content-Type",
+      "Content-Length",
+      "Content-Range",
+      "Accept-Ranges",
+      "Cache-Control",
+      "ETag",
+      "Last-Modified",
+    ]) {
+      const value = response.headers.get(name);
+      if (value) headers.set(name, value);
+    }
+    return new Response(response.body, { status: response.status, headers });
+  })
   .use("/platforms/scrape", (c, next) => {
     const bearer = bearerAuth({ token: c.env.AUTH_SECRET });
     return bearer(c, next);

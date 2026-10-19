@@ -62,7 +62,12 @@ function buildMediaEmbed(post: NormalizedPost, spoiler?: EmbedFlags["Spoiler"]) 
   gallery.addItems(
     post.media.slice(0, MAX_GALLERY_ITEMS).map((m) => ({
       media: {
-        url: post.platform === "TruthSocial" && m.type === "image" ? signProxyURL(m.url) : m.url,
+        url:
+          post.platform === "TikTok" && m.type === "video"
+            ? signProxyURL(m.url, "/api/_media")
+            : post.platform === "TruthSocial" && m.type === "image"
+              ? signProxyURL(m.url)
+              : m.url,
       },
       description: m.description?.slice(0, 1024) || undefined,
       spoiler,
