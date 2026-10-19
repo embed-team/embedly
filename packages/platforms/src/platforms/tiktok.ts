@@ -6,7 +6,7 @@ const MATCH_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*tiktok\.com(?:\/|$)/;
 const FOLLOWUP_RE =
   /^https:\/\/(?:m|www|vm)?\.?tiktok\.com\/(?<tiktok_user>@(?:[\w.-]+)?)\/(?<tiktok_type>video|photo)\/(?<tiktok_id>\d+)/;
 
-function parseMedia(raw: TikTokItem): NormalizedPost["media"] {
+async function parseMedia(raw: TikTokItem): Promise<NormalizedPost["media"]> {
   if (raw.image_post_info) {
     return raw.image_post_info.images.flatMap((image) => {
       const url = image.display_image?.url_list?.[0];
@@ -16,7 +16,20 @@ function parseMedia(raw: TikTokItem): NormalizedPost["media"] {
 
   const urls = raw.video_info?.url_list ?? [];
   const videoURL = urls.find((url: string) => url.includes("/aweme/v1/play/")) ?? urls[0];
-  return videoURL ? [{ url: videoURL, type: "video" }] : [];
+  if (!videoURL) return [];
+
+  const video = await fetch(videoURL, {
+    redirect: "follow",
+    headers: { Range: "bytes=0-0" },
+  });
+  await video.body?.cancel();
+  if (!video.ok) {
+    throw { code: video.status, message: video.statusText };
+  }
+  if (!video.headers.get("Content-Type")?.startsWith("video/")) {
+    throw { code: 502, message: "TikTok playback URL did not return a video" };
+  }
+  return [{ url: video.url, type: "video" }];
 }
 
 export const TikTok: Platform<"TikTok", TikTokItem, {}> = {
@@ -82,7 +95,7 @@ export const TikTok: Platform<"TikTok", TikTokItem, {}> = {
       timestamp: raw.create_time ?? Number(BigInt(id) >> 32n),
       url: `https://tiktok.com/@${handle}/${type}/${id}`,
       text: raw.desc,
-      media: parseMedia(raw),
+      media: await parseMedia(raw),
       stats: {
         comments: raw.statistics_info.comment_count,
         reposts: raw.statistics_info.share_count,
