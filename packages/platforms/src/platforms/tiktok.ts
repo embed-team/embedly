@@ -15,21 +15,19 @@ async function parseMedia(raw: TikTokItem): Promise<NormalizedPost["media"]> {
   }
 
   const urls = raw.video_info?.url_list ?? [];
-  const videoURL = urls.find((url: string) => url.includes("/aweme/v1/play/")) ?? urls[0];
-  if (!videoURL) return [];
+  if (urls.length === 0) return [];
 
-  const video = await fetch(videoURL, {
-    redirect: "follow",
-    headers: { Range: "bytes=0-0" },
-  });
-  await video.body?.cancel();
-  if (!video.ok) {
-    throw { code: video.status, message: video.statusText };
+  for (const url of urls) {
+    const video = await fetch(url, {
+      redirect: "follow",
+      headers: { Range: "bytes=0-0" },
+    });
+    await video.body?.cancel();
+    if (video.ok && video.headers.get("Content-Type")?.startsWith("video/")) {
+      return [{ url: video.url, type: "video" }];
+    }
   }
-  if (!video.headers.get("Content-Type")?.startsWith("video/")) {
-    throw { code: 502, message: "TikTok playback URL did not return a video" };
-  }
-  return [{ url: video.url, type: "video" }];
+  throw { code: 502, message: "TikTok media URLs did not return a video" };
 }
 
 export const TikTok: Platform<"TikTok", TikTokItem, {}> = {
