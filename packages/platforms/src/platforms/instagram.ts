@@ -22,6 +22,8 @@ const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(?<ig_type>p|share|reels|reel)\/(?<ig_shortcode>[A-Za-z0-9-_]+)/;
 
 const SHARE_RE = /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/share\/[^/?#]+/;
+const STORY_RE =
+  /^(?:https?:\/\/)?(?:[\w-]+\.)*instagram\.com\/stories\/(?<username>[A-Za-z0-9_.]+)\/(?<id>\d+)(?:[/?#]|$)/;
 
 const PRELOADER_PREFIX = "adp_PolarisLoggedOutDesktopWWWPostRootContentQueryRelayPreloader_";
 
@@ -58,6 +60,9 @@ function parseRelayMedia(script: string) {
 export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
   type: "Instagram",
   async match(url, env) {
+    const story = url.match(STORY_RE)?.groups;
+    if (story) return `stories/${story.username}/${story.id}`;
+
     if (SHARE_RE.test(url)) {
       if (!url.startsWith("http://") && !url.startsWith("https://")) url = `https://${url}`;
       const req = await fetch(url.endsWith("/") ? url : `${url}/`, {
@@ -76,7 +81,95 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
     return `${type}/${groups.ig_shortcode}`;
   },
   async fetch(id, env) {
-    const [type, shortcode] = id.includes("/") ? id.split("/") : ["p", id];
+    const [type, shortcode, storyId] = id.includes("/") ? id.split("/") : ["p", id];
+    const isStory = type === "stories";
+    if (isStory && (!storyId || !/^[A-Za-z0-9_.]+$/.test(shortcode) || !/^\d+$/.test(storyId))) {
+      throw { code: 400, message: "Invalid Instagram story ID" };
+    }
+    if (isStory) {
+      if (!env?.INSTAGRAM_COOKIE) {
+        throw {
+          code: 403,
+          reason: "instagram.story_auth_required",
+          message: "Instagram story access requires a configured account session",
+        };
+      }
+      const response = await (env.INSTAGRAM_FETCH ?? fetch)(
+        `https://www.instagram.com/api/v1/media/${storyId}/info/`,
+        {
+          redirect: "manual",
+          headers: {
+            "User-Agent": env.EMBED_USER_AGENT,
+            Cookie: env.INSTAGRAM_COOKIE,
+            "X-IG-App-ID": "936619743392459",
+          },
+        },
+      );
+      if (
+        response.status === 401 ||
+        response.status === 403 ||
+        (response.status >= 300 && response.status < 400)
+      ) {
+        await response.body?.cancel();
+        throw {
+          code: 403,
+          reason: "instagram.story_auth_required",
+          message: "Instagram rejected the account session",
+        };
+      }
+      if (!response.headers.get("Content-Type")?.includes("application/json")) {
+        await response.body?.cancel();
+        throw {
+          code: response.ok ? 502 : response.status,
+          message: "Instagram returned a non-JSON story response",
+        };
+      }
+      // SAFETY: The response envelope, exact media ID, author visibility, and audience are checked below.
+      const data = (await response.json()) as {
+        status?: string;
+        message?: string;
+        items?: InstagramMedia[];
+      };
+      if (data.message === "login_required") {
+        throw {
+          code: 403,
+          reason: "instagram.story_auth_required",
+          message: "Instagram requires a new account session",
+        };
+      }
+      if (response.status === 404 || data.message === "Media not found or unavailable") {
+        throw {
+          code: 404,
+          reason: "instagram.story_unavailable",
+          message: "Instagram story is unavailable",
+        };
+      }
+      if (!response.ok || data.status !== "ok") {
+        throw {
+          code: response.ok ? 502 : response.status,
+          message: "Instagram story request failed",
+        };
+      }
+      const media = Array.isArray(data.items)
+        ? data.items.find((item) => item.pk === storyId)
+        : undefined;
+      if (
+        !media ||
+        media.product_type !== "story" ||
+        media.user?.is_private !== false ||
+        media.audience != null ||
+        media.custom_list_info != null ||
+        !media.expiring_at ||
+        media.expiring_at <= Date.now() / 1000
+      ) {
+        throw {
+          code: 404,
+          reason: "instagram.story_unavailable",
+          message: "Instagram story is expired or not public",
+        };
+      }
+      return media;
+    }
     const resp = await (env?.INSTAGRAM_FETCH ?? fetch)(
       `https://www.instagram.com/${normalizeType(type)}/${shortcode}/`,
       {
@@ -180,7 +273,10 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
   },
   async transform(raw) {
     const authorName = raw.user.full_name || raw.user.username;
-    const path = raw.product_type === "clips" ? "reel" : "p";
+    const path =
+      raw.product_type === "story"
+        ? `stories/${raw.user.username}/${raw.pk}`
+        : `${raw.product_type === "clips" ? "reel" : "p"}/${raw.code}`;
 
     return {
       platform: this.type,
@@ -190,7 +286,7 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
         url: `https://www.instagram.com/${raw.user.username}/`,
         avatar: raw.user.profile_pic_url,
       },
-      url: `https://www.instagram.com/${path}/${raw.code}/`,
+      url: `https://www.instagram.com/${path}/`,
       text: raw.caption?.text,
       timestamp: raw.taken_at,
       stats: {

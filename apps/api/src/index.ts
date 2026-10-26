@@ -198,6 +198,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
     async (c) => {
       const startedAt = Date.now();
       const { id, platform, force } = c.req.valid("json");
+      const isStory = platform === "Instagram" && id.startsWith("stories/");
       const requestId = getRequestId(c.req.raw);
       const spanContext = trace.getActiveSpan()?.spanContext();
       const logContext: ApiLogContext = {
@@ -208,7 +209,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         platform,
         post_id: id,
         force: force ?? false,
-        cache_status: force ? "skipped" : "miss",
+        cache_status: force || isStory ? "skipped" : "miss",
         outcome: "success",
         status_code: 200,
       };
@@ -216,7 +217,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       try {
         const cache = c.env.CACHE;
         const cacheKey = `${platform}:${id}`;
-        if (!force) {
+        if (!force && !isStory) {
           try {
             const cachedItem = await cache.get<ScrapeResponse>(cacheKey, "json");
             if (cachedItem) {
@@ -254,6 +255,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         try {
           raw = await p.fetch(id, {
             EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
+            INSTAGRAM_COOKIE: c.env.INSTAGRAM_COOKIE,
             INSTAGRAM_FETCH:
               platform === "Instagram"
                 ? (input, init) => fetchInstagram(input, init, c.env, logContext)
@@ -266,7 +268,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           const errorContext = getErrorContext(cause);
           let event: EmbedlyErrorEvent = EmbedlyErrors.PlatformFetchFailed;
           if (platform === "Instagram") {
-            if (errorContext.upstream_reason === "instagram.age_restricted") {
+            if (errorContext.upstream_reason === "instagram.story_auth_required") {
+              event = EmbedlyErrors.InstagramStoryAuthRequired;
+            } else if (errorContext.upstream_reason === "instagram.story_unavailable") {
+              event = EmbedlyErrors.InstagramStoryUnavailable;
+            } else if (errorContext.upstream_reason === "instagram.age_restricted") {
               event = EmbedlyErrors.InstagramAgeRestricted;
             } else if (errorContext.upstream_reason === "instagram.post_unavailable") {
               event = EmbedlyErrors.InstagramPostUnavailable;
@@ -303,19 +309,21 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           return c.json(problem, problem.status);
         }
 
-        try {
-          await cache.put(cacheKey, JSON.stringify(data), {
-            expirationTtl: 60 * 60 * 24,
-          });
-          logContext.cache_status = "stored";
-        } catch (cause) {
-          logContext.cache_status = "write_error";
-          c.executionCtx.waitUntil(
-            log(c.env.OTEL_ENDPOINT, "warn", EmbedlyErrors.CacheWriteFailed, {
-              ...logContext,
-              ...getErrorContext(cause),
-            }),
-          );
+        if (!isStory) {
+          try {
+            await cache.put(cacheKey, JSON.stringify(data), {
+              expirationTtl: 60 * 60 * 24,
+            });
+            logContext.cache_status = "stored";
+          } catch (cause) {
+            logContext.cache_status = "write_error";
+            c.executionCtx.waitUntil(
+              log(c.env.OTEL_ENDPOINT, "warn", EmbedlyErrors.CacheWriteFailed, {
+                ...logContext,
+                ...getErrorContext(cause),
+              }),
+            );
+          }
         }
 
         return c.json(data, 200);

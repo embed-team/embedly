@@ -67,6 +67,18 @@ export const EmbedlyErrors = {
     detail: "Instagram requires login to view this post. Embedly can only access public posts.",
     status: 403,
   },
+  InstagramStoryAuthRequired: {
+    type: "instagram.story_auth_required",
+    title: "Couldn't access this story.",
+    detail: "Embedly's Instagram session is missing or expired.",
+    status: 403,
+  },
+  InstagramStoryUnavailable: {
+    type: "instagram.story_unavailable",
+    title: "Story unavailable.",
+    detail: "This story expired, was deleted, or isn't public.",
+    status: 404,
+  },
   InstagramPostUnavailable: {
     type: "instagram.post_unavailable",
     title: "Post unavailable.",

@@ -171,22 +171,19 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
     );
     return;
   }
-  embed
-    .addSeparatorComponents((sep) => sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small))
-    .addTextDisplayComponents(
-      (stats) =>
-        stats.setContent(
-          subtext(
-            Object.entries(post.stats ?? {})
-              .map(([key, val]) => `${getEmojiByName(key)} ${NumberFormatter.format(val)}`)
-              .join("     "),
-          ),
-        ),
-      (footer) =>
-        footer.setContent(
-          `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${platformName}`, post.url)}`,
-        ),
-    );
+  const stats = Object.entries(post.stats ?? {})
+    .filter(([, value]) => value !== undefined)
+    .map(([key, value]) => `${getEmojiByName(key)} ${NumberFormatter.format(value)}`)
+    .join("     ");
+  embed.addSeparatorComponents((sep) =>
+    sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small),
+  );
+  if (stats) embed.addTextDisplayComponents((display) => display.setContent(subtext(stats)));
+  embed.addTextDisplayComponents((footer) =>
+    footer.setContent(
+      `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${platformName}`, post.url)}`,
+    ),
+  );
 }
 
 export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {

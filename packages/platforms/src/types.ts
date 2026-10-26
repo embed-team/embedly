@@ -30,6 +30,7 @@ interface TransformOptions {
 interface FetchEnv {
   EMBED_USER_AGENT: string;
   INSTAGRAM_FETCH?: typeof fetch;
+  INSTAGRAM_COOKIE?: string;
   FACEBOOK_MARKETPLACE_COOKIE?: string;
   TRUTH_SOCIAL_ACCESS_TOKEN?: string;
   REDDIT_COOKIE?: string;

@@ -5,12 +5,17 @@ export interface InstagramImageCandidate {
 export interface InstagramMedia {
   __typename?: string;
   code: string;
+  pk?: string;
+  expiring_at?: number;
+  audience?: string | null;
+  custom_list_info?: object | null;
   taken_at: number;
   caption?: { text?: string } | null;
   user: {
     username: string;
     full_name?: string;
     profile_pic_url: string;
+    is_private?: boolean;
   };
   like_count?: number;
   comment_count?: number;
