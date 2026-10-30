@@ -266,11 +266,14 @@ export const Instagram: Platform<"Instagram", InstagramMedia, {}> = {
       : undefined;
     if (
       !media ||
-      (isStory ? media.product_type !== "story" : media.code !== shortcode) ||
       media.user?.is_private !== false ||
       media.audience != null ||
       media.custom_list_info != null ||
-      (isStory && (!media.expiring_at || media.expiring_at <= Date.now() / 1000))
+      (isStory
+        ? media.product_type !== "story" ||
+          !media.expiring_at ||
+          media.expiring_at <= Date.now() / 1000
+        : media.code !== shortcode)
     ) {
       throw {
         code: 404,
