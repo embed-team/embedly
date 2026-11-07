@@ -217,16 +217,16 @@ function addPostComponents(
     );
     return;
   }
+  const stats = Object.entries(post.stats ?? {})
+    .filter(([, value]) => value !== undefined)
+    .map(([key, value]) => `${getEmojiByName(key)} ${NumberFormatter.format(value)}`)
+    .join("     ");
   if (!flags?.Compact) {
-    const stats = Object.entries(post.stats ?? {})
-      .filter(([, value]) => value !== undefined)
-      .map(([key, value]) => `${getEmojiByName(key)} ${NumberFormatter.format(value)}`)
-      .join("     ");
     embed.addSeparatorComponents((sep) =>
       sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small),
     );
-    if (stats) embed.addTextDisplayComponents((display) => display.setContent(subtext(stats)));
   }
+  if (stats) embed.addTextDisplayComponents((display) => display.setContent(subtext(stats)));
   const footer = `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${platformName}`, post.url)}`;
   embed.addTextDisplayComponents((display) =>
     display.setContent(flags?.Compact ? subtext(footer) : footer),
