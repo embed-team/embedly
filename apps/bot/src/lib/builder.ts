@@ -2,7 +2,6 @@ import { Platforms, type NormalizedPost } from "@embedly/platforms";
 import {
   ContainerBuilder,
   TextDisplayBuilder,
-  escapeMarkdown,
   heading,
   HeadingLevel,
   hyperlink,
@@ -17,7 +16,7 @@ import {
 
 import { getEmojiByName } from "./emojis";
 import { signProxyURL } from "./proxy";
-import { truncate } from "./utils";
+import { escapeMarkdown, truncate } from "./utils";
 
 const NumberFormatter = new Intl.NumberFormat("en", {
   roundingMode: "ceil",
