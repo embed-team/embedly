@@ -119,7 +119,9 @@ function addPostComponents(
       parent.author.handle ? `@${parent.author.handle}` : parent.author.name,
     );
     textComponents.push(
-      new TextDisplayBuilder().setContent(subtext(`Replying to ${hyperlink(name, parent.url)}`)),
+      new TextDisplayBuilder().setContent(
+        subtext(`${getEmojiByName("reply")} ${hyperlink(name, parent.url)}`),
+      ),
     );
   }
   if (post.platform === "FacebookMarketplace" && post.price) {
@@ -177,13 +179,19 @@ function addPostComponents(
     embed.addTextDisplayComponents((display) =>
       display.setContent(
         blockQuote(
-          `**Quoting ${hyperlink(author, quote.url)}**${quote.text ? `\n${truncate(escapeMarkdown(quote.text), 1500)}` : ""}`,
+          `${getEmojiByName("quote")} **${hyperlink(author, quote.url)}**${quote.text ? `\n${truncate(escapeMarkdown(quote.text), 1500)}` : ""}`,
         ),
       ),
     );
   }
-  if (post.media.length > 0) {
-    embed.addMediaGalleryComponents(buildMediaEmbed(post)!);
+  const mediaPost =
+    flags?.Compact && !flags.SourceOnly && post.media.length === 0
+      ? post.quote?.media.length
+        ? post.quote
+        : (post.reply_to ?? post)
+      : post;
+  if (mediaPost.media.length > 0) {
+    embed.addMediaGalleryComponents(buildMediaEmbed(mediaPost)!);
   }
   if (post.platform === "FacebookMarketplace") {
     const { location, map } = post;
