@@ -6,6 +6,7 @@ import { handleUrls, parseMessageURLs, type EmbedURLRequest } from "../lib/handl
 function hasSameOptions(left: EmbedURLRequest, right: EmbedURLRequest) {
   return (
     left.force === right.force &&
+    left.flags?.Compact === right.flags?.Compact &&
     left.flags?.MediaOnly === right.flags?.MediaOnly &&
     left.flags?.SourceOnly === right.flags?.SourceOnly &&
     left.flags?.Spoiler === right.flags?.Spoiler

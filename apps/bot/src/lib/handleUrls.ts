@@ -79,6 +79,7 @@ export function parseMessageURLs(content: string) {
     }
 
     const flags: Partial<EmbedFlags> = {
+      Compact: /-(?:\?[@!]?|[@!])?$/.test(before),
       Spoiler: before.split("||").length % 2 === 0,
     };
     let force = false;

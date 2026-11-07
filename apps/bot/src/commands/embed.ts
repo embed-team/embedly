@@ -26,6 +26,9 @@ export class EmbedCommand extends Command {
             opt.setName("url").setDescription("Link to content").setRequired(true),
           )
           .addBooleanOption((opt) =>
+            opt.setName("compact").setDescription("Show a compact embed without avatars or stats"),
+          )
+          .addBooleanOption((opt) =>
             opt.setName("media_only").setDescription("Display the media only"),
           )
           .addBooleanOption((opt) =>
@@ -81,6 +84,7 @@ export class EmbedCommand extends Command {
       extractURLs(url).map(({ url }) => ({
         url,
         flags: {
+          Compact: interaction.options.getBoolean("compact") ?? false,
           MediaOnly: interaction.options.getBoolean("media_only") ?? false,
           SourceOnly: interaction.options.getBoolean("source_only") ?? false,
           Spoiler: interaction.options.getBoolean("spoiler") ?? false,

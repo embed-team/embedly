@@ -1,6 +1,7 @@
 import { Platforms, type NormalizedPost } from "@embedly/platforms";
 import {
   ContainerBuilder,
+  TextDisplayBuilder,
   escapeMarkdown,
   heading,
   HeadingLevel,
@@ -30,6 +31,7 @@ const MAX_GALLERY_ITEMS = 10;
 const POLL_BAR_SIZE = 20;
 
 export interface EmbedFlags {
+  Compact: boolean;
   MediaOnly: boolean;
   SourceOnly: boolean;
   Spoiler: boolean;
@@ -77,7 +79,12 @@ function buildMediaEmbed(post: NormalizedPost, spoiler?: EmbedFlags["Spoiler"]) 
   return gallery.toJSON();
 }
 
-function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefix?: string) {
+function addPostComponents(
+  embed: ContainerBuilder,
+  post: PostData,
+  flags?: Partial<EmbedFlags>,
+  headingPrefix?: string,
+) {
   const platformName = post.platform === "TruthSocial" ? "Truth Social" : post.platform;
   const poll = post.platform === "Twitter" ? post.poll : undefined;
   const translation =
@@ -95,39 +102,57 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
   const authorName =
     post.platform === "FacebookMarketplace"
       ? truncate(escapeMarkdown(post.author.name), 250)
-      : post.author.name;
+      : flags?.Compact
+        ? escapeMarkdown(post.author.name)
+        : post.author.name;
   const authorHeading = [headingPrefix, authorName, authorHandle].filter(Boolean).join(" ");
 
-  embed.addSectionComponents((section) => {
-    section
-      .setThumbnailAccessory((thumbnail) =>
-        thumbnail.setURL(
-          post.platform === "TruthSocial" ? signProxyURL(post.author.avatar) : post.author.avatar,
-        ),
-      )
-      .addTextDisplayComponents((author) =>
-        author.setContent(heading(authorHeading, HeadingLevel.Three)),
-      );
-    if (post.platform === "FacebookMarketplace" && post.price) {
-      const price = post.price;
-      section.addTextDisplayComponents((display) => display.setContent(escapeMarkdown(price)));
-    }
-    if (post.text && post.text.length > 0) {
-      section.addTextDisplayComponents((text) =>
-        text.setContent(
-          truncate(
-            escapeMarkdown(
-              translation
-                ? `${getEmojiByName("translation", `${translation.provider}_${translation.source_lang}_${translation.target_lang}`)} ${translation.text}`
-                : (post.text ?? ""),
-            ),
-            1500,
+  const textComponents = [
+    new TextDisplayBuilder().setContent(
+      flags?.Compact
+        ? `**${authorName}** ${authorHandle}`.trimEnd()
+        : heading(authorHeading, HeadingLevel.Three),
+    ),
+  ];
+  if (flags?.Compact && !flags.SourceOnly && post.reply_to) {
+    const parent = post.reply_to;
+    const name = escapeMarkdown(
+      parent.author.handle ? `@${parent.author.handle}` : parent.author.name,
+    );
+    textComponents.push(
+      new TextDisplayBuilder().setContent(subtext(`Replying to ${hyperlink(name, parent.url)}`)),
+    );
+  }
+  if (post.platform === "FacebookMarketplace" && post.price) {
+    textComponents.push(new TextDisplayBuilder().setContent(escapeMarkdown(post.price)));
+  }
+  if (post.text && post.text.length > 0) {
+    textComponents.push(
+      new TextDisplayBuilder().setContent(
+        truncate(
+          escapeMarkdown(
+            translation
+              ? `${getEmojiByName("translation", `${translation.provider}_${translation.source_lang}_${translation.target_lang}`)} ${translation.text}`
+              : (post.text ?? ""),
           ),
+          1500,
         ),
-      );
-    }
-    return section;
-  });
+      ),
+    );
+  }
+  if (flags?.Compact) {
+    embed.addTextDisplayComponents(textComponents);
+  } else {
+    embed.addSectionComponents((section) =>
+      section
+        .setThumbnailAccessory((thumbnail) =>
+          thumbnail.setURL(
+            post.platform === "TruthSocial" ? signProxyURL(post.author.avatar) : post.author.avatar,
+          ),
+        )
+        .addTextDisplayComponents(textComponents),
+    );
+  }
   if (poll?.choices.length) {
     embed.addTextDisplayComponents((display) => display.setContent(renderPoll(poll)));
   }
@@ -142,6 +167,21 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
         ),
       );
     }
+  }
+  if (flags?.Compact && !flags.SourceOnly && post.quote) {
+    const quote = post.quote;
+    const author = escapeMarkdown(
+      [quote.author.name, quote.author.handle ? `(@${quote.author.handle})` : ""]
+        .filter(Boolean)
+        .join(" "),
+    );
+    embed.addTextDisplayComponents((display) =>
+      display.setContent(
+        blockQuote(
+          `**Quoting ${hyperlink(author, quote.url)}**${quote.text ? `\n${truncate(escapeMarkdown(quote.text), 1500)}` : ""}`,
+        ),
+      ),
+    );
   }
   if (post.media.length > 0) {
     embed.addMediaGalleryComponents(buildMediaEmbed(post)!);
@@ -164,25 +204,25 @@ function addPostComponents(embed: ContainerBuilder, post: PostData, headingPrefi
         }),
       );
     }
-    embed.addTextDisplayComponents((footer) =>
-      footer.setContent(
-        `${time(post.timestamp, TimestampStyles.RelativeTime)} • ${hyperlink("View on Facebook Marketplace", post.url)}`,
-      ),
+    const footer = `${time(post.timestamp, TimestampStyles.RelativeTime)} • ${hyperlink("View on Facebook Marketplace", post.url)}`;
+    embed.addTextDisplayComponents((display) =>
+      display.setContent(flags?.Compact ? subtext(footer) : footer),
     );
     return;
   }
-  const stats = Object.entries(post.stats ?? {})
-    .filter(([, value]) => value !== undefined)
-    .map(([key, value]) => `${getEmojiByName(key)} ${NumberFormatter.format(value)}`)
-    .join("     ");
-  embed.addSeparatorComponents((sep) =>
-    sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small),
-  );
-  if (stats) embed.addTextDisplayComponents((display) => display.setContent(subtext(stats)));
-  embed.addTextDisplayComponents((footer) =>
-    footer.setContent(
-      `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${platformName}`, post.url)}`,
-    ),
+  if (!flags?.Compact) {
+    const stats = Object.entries(post.stats ?? {})
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => `${getEmojiByName(key)} ${NumberFormatter.format(value)}`)
+      .join("     ");
+    embed.addSeparatorComponents((sep) =>
+      sep.setDivider(false).setSpacing(SeparatorSpacingSize.Small),
+    );
+    if (stats) embed.addTextDisplayComponents((display) => display.setContent(subtext(stats)));
+  }
+  const footer = `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${platformName}`, post.url)}`;
+  embed.addTextDisplayComponents((display) =>
+    display.setContent(flags?.Compact ? subtext(footer) : footer),
   );
 }
 
@@ -198,8 +238,8 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
     embed.setSpoiler(true);
   }
 
-  if (flags?.SourceOnly) {
-    addPostComponents(embed, post);
+  if (flags?.SourceOnly || flags?.Compact) {
+    addPostComponents(embed, post, flags);
     return embed.toJSON();
   }
 
@@ -213,6 +253,7 @@ export function buildEmbed(post: PostData, flags?: Partial<EmbedFlags>) {
   addPostComponents(
     embed,
     post,
+    undefined,
     post.reply_to ? getEmojiByName("reply") : post.quote ? getEmojiByName("quote") : undefined,
   );
 
