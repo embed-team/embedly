@@ -2,6 +2,7 @@ import { Platforms, type NormalizedPost } from "@embedly/platforms";
 import {
   ContainerBuilder,
   TextDisplayBuilder,
+  escapeMarkdown,
   heading,
   HeadingLevel,
   hyperlink,
@@ -16,7 +17,7 @@ import {
 
 import { getEmojiByName } from "./emojis";
 import { signProxyURL } from "./proxy";
-import { escapeMarkdown, truncate } from "./utils";
+import { truncate } from "./utils";
 
 const NumberFormatter = new Intl.NumberFormat("en", {
   roundingMode: "ceil",
@@ -131,11 +132,9 @@ function addPostComponents(
     textComponents.push(
       new TextDisplayBuilder().setContent(
         truncate(
-          escapeMarkdown(
-            translation
-              ? `${getEmojiByName("translation", `${translation.provider}_${translation.source_lang}_${translation.target_lang}`)} ${translation.text}`
-              : (post.text ?? ""),
-          ),
+          translation
+            ? `${getEmojiByName("translation", `${translation.provider}_${translation.source_lang}_${translation.target_lang}`)} ${escapeMarkdown(translation.text)}`
+            : escapeMarkdown(post.text ?? ""),
           1500,
         ),
       ),
