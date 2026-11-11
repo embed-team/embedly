@@ -27,6 +27,8 @@ export interface TikTokItem {
 }
 
 export interface TikTokPlayerResponse {
+  status_code?: number;
+  status_msg?: string;
   items?: TikTokItem[] | null;
   results?: Array<{
     id_str: string;

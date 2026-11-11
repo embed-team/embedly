@@ -54,6 +54,16 @@ export const TikTok: Platform<"TikTok", TikTokItem, {}> = {
   },
   async fetch(id, env) {
     const tiktok_id = id.split("/")[2];
+    const embed = await fetch(`https://www.tiktok.com/embed/v2/${tiktok_id}`, {
+      headers: {
+        "User-Agent": env?.EMBED_USER_AGENT ?? "curl/8.7.1",
+        Referer: "https://embedly.embed.team/",
+      },
+    });
+    if (!embed.ok) throw { code: embed.status, message: embed.statusText };
+    const token = (await embed.text()).match(/"embedToken":"([^"]+)"/)?.[1];
+    if (!token) throw { code: 502, message: "TikTok embed token missing" };
+
     const url = new URL("https://www.tiktok.com/player/api/v1/items");
     url.searchParams.set("item_ids", tiktok_id);
     url.searchParams.set("language", "en-US");
@@ -64,6 +74,8 @@ export const TikTok: Platform<"TikTok", TikTokItem, {}> = {
       method: "GET",
       headers: {
         "User-Agent": env?.EMBED_USER_AGENT ?? "curl/8.7.1",
+        "X-TT-Embed-Token": token,
+        Referer: `https://www.tiktok.com/player/v1/${tiktok_id}`,
       },
     });
     if (!resp.ok) {
@@ -76,8 +88,8 @@ export const TikTok: Platform<"TikTok", TikTokItem, {}> = {
     if (!item) {
       const result = data.results?.find((result) => result.id_str === tiktok_id);
       throw {
-        code: 500,
-        message: result?.code ?? "TikTok player API returned no item data",
+        code: data.status_code || 500,
+        message: data.status_msg || (result?.code ?? "TikTok player API returned no item data"),
       };
     }
     return item;
