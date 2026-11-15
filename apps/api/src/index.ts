@@ -40,6 +40,8 @@ interface ApiLogContext extends LogContext {
   instagram_fetch_colo?: string;
   instagram_fetch_region?: string;
   instagram_fetch_status?: number;
+  instagram_public_status?: number;
+  instagram_public_error?: string;
   duration_ms?: number;
 }
 
@@ -49,26 +51,30 @@ async function fetchInstagram(
   env: CloudflareBindings,
   logContext: ApiLogContext,
 ) {
-  const directResponse = await trace
-    .getTracer("instagram")
-    .startActiveSpan("instagram.direct", async (span) => {
-      try {
-        const response = await fetch(input, init);
-        logContext.instagram_direct_status = response.status;
-        if (response.status !== 429 && response.status < 500) return response;
+  const url = new URL(input instanceof Request ? input.url : input);
+  const isPublic = /^\/(?:p|reel)\//.test(url.pathname);
+  if (!isPublic) {
+    const directResponse = await trace
+      .getTracer("instagram")
+      .startActiveSpan("instagram.direct", async (span) => {
+        try {
+          const response = await fetch(input, init);
+          logContext.instagram_direct_status = response.status;
+          if (response.status !== 429 && response.status < 500) return response;
 
-        span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${response.status}` });
-        await response.body?.cancel();
-      } catch (cause) {
-        const error = getErrorContext(cause).error_message;
-        logContext.instagram_direct_error = error;
-        span.recordException(error);
-        span.setStatus({ code: SpanStatusCode.ERROR, message: error });
-      } finally {
-        span.end();
-      }
-    });
-  if (directResponse) return directResponse;
+          span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${response.status}` });
+          await response.body?.cancel();
+        } catch (cause) {
+          const error = getErrorContext(cause).error_message;
+          logContext.instagram_direct_error = error;
+          span.recordException(error);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: error });
+        } finally {
+          span.end();
+        }
+      });
+    if (directResponse) return directResponse;
+  }
 
   const fetchers = [
     ["us-west", env.INSTAGRAM_FETCH_US_WEST],
@@ -253,7 +259,36 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
         let raw: unknown;
         try {
-          raw = await p.fetch(id, {
+          if (platform === "Instagram" && !isStory) {
+            const [type, shortcode] = id.includes("/") ? id.split("/") : ["p", id];
+            try {
+              const response = await fetchInstagram(
+                `https://www.instagram.com/${type === "reels" ? "reel" : type}/${shortcode}/`,
+                {
+                  redirect: "manual",
+                  headers: {
+                    "User-Agent": c.env.EMBED_USER_AGENT,
+                    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.5",
+                  },
+                },
+                c.env,
+                logContext,
+              );
+              logContext.instagram_public_status = response.status;
+              if (
+                response.ok &&
+                response.headers.get("Content-Type")?.includes("application/json")
+              ) {
+                raw = await response.json();
+              } else {
+                await response.body?.cancel();
+              }
+            } catch (cause) {
+              logContext.instagram_public_error = getErrorContext(cause).error_message;
+            }
+          }
+          raw ??= await p.fetch(id, {
             EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
             INSTAGRAM_COOKIE: c.env.INSTAGRAM_COOKIE,
             INSTAGRAM_FETCH:
