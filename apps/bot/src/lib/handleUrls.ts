@@ -194,6 +194,7 @@ export async function handleUrls(
         if (options.updateTargets && !options.updateTargets.has(requestIndex)) return null;
         try {
           const match = await matchURL(request.url);
+          if (msg && match?.platform === "Music") return null;
           return match ? { ...request, ...match, requestIndex } : null;
         } catch (error) {
           matchFailures++;
