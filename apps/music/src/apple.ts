@@ -75,6 +75,7 @@ export async function readApple(ref: MusicReference): Promise<MusicItem> {
       artists: track.artistName ? [track.artistName] : artists,
       artwork,
       releaseDate,
+      albumTitle: header.title,
       durationMs: track.duration,
       explicit: track.showExplicitBadge,
       album: albumRef,

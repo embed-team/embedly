@@ -76,6 +76,7 @@ export async function readTidal(ref: MusicReference, token: string): Promise<Mus
     artists,
     artwork,
     releaseDate: album?.attributes.releaseDate,
+    albumTitle: ref.type === "track" ? album?.attributes.title : undefined,
     durationMs: resource.attributes.duration ? durationMs(resource.attributes.duration) : undefined,
     explicit: resource.attributes.explicit,
     isrc: resource.attributes.isrc,
