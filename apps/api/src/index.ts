@@ -215,15 +215,15 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         platform,
         post_id: id,
         force: force ?? false,
-        cache_status: force || isStory ? "skipped" : "miss",
+        cache_status: force || isStory || platform === "Music" ? "skipped" : "miss",
         outcome: "success",
         status_code: 200,
       };
 
       try {
         const cache = c.env.CACHE;
-        const cacheKey = `${platform}:${platform === "Music" ? "v2:" : ""}${id}`;
-        if (!force && !isStory) {
+        const cacheKey = `${platform}:${id}`;
+        if (!force && !isStory && platform !== "Music") {
           try {
             const cachedItem = await cache.get<ScrapeResponse>(cacheKey, "json");
             if (cachedItem) {
@@ -349,7 +349,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
           return c.json(problem, problem.status);
         }
 
-        if (!isStory) {
+        if (!isStory && platform !== "Music") {
           try {
             await cache.put(cacheKey, JSON.stringify(data), {
               expirationTtl: 60 * 60 * 24,
