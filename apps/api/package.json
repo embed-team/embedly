@@ -27,6 +27,6 @@
     "@types/node": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
-    "wrangler": "^4.135.0"
+    "wrangler": "^4.162.0"
   }
 }

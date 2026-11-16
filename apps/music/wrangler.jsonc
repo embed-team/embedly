@@ -5,6 +5,10 @@
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "dev": {
+    "port": 8000,
+    "inspector_port": 9000,
+  },
   "routes": [{ "pattern": "music.embeds.media", "custom_domain": true }],
   "secrets": {
     "required": [
