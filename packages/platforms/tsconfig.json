@@ -15,6 +15,9 @@
   "exclude": ["node_modules", "dist"],
   "references": [
     {
+      "path": "../../apps/music"
+    },
+    {
       "path": "../../packages/config"
     },
     {

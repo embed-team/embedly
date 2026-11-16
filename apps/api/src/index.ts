@@ -222,7 +222,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
       try {
         const cache = c.env.CACHE;
-        const cacheKey = `${platform}:${id}`;
+        const cacheKey = `${platform}:${platform === "Music" ? "v2:" : ""}${id}`;
         if (!force && !isStory) {
           try {
             const cachedItem = await cache.get<ScrapeResponse>(cacheKey, "json");
@@ -289,6 +289,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
             }
           }
           raw ??= await p.fetch(id, {
+            MUSIC_FETCH: (input, init) => {
+              const request = new Request(input, init);
+              if (force) request.headers.set("Cache-Control", "no-cache");
+              return c.env.MUSIC.fetch(request);
+            },
             EMBED_USER_AGENT: c.env.EMBED_USER_AGENT,
             INSTAGRAM_COOKIE: c.env.INSTAGRAM_COOKIE,
             INSTAGRAM_FETCH:
