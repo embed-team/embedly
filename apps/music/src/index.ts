@@ -21,27 +21,47 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
     const preview = await deezerPreview(c.req.param("isrc"));
     if (!preview) return c.notFound();
     const headers = new Headers({ "Accept-Encoding": "identity" });
-    const range = c.req.header("Range");
-    if (range) headers.set("Range", range);
     const response = await fetch(preview, { headers, signal: AbortSignal.timeout(15_000) });
-    if (!response.ok && response.status !== 416)
-      throw new UpstreamError("Deezer preview request failed", response.status);
-    if (response.ok && !response.headers.get("Content-Type")?.startsWith("audio/")) {
+    if (!response.ok) throw new UpstreamError("Deezer preview request failed", response.status);
+    if (!response.headers.get("Content-Type")?.startsWith("audio/")) {
       await response.body?.cancel();
       throw new UpstreamError("Deezer returned unexpected preview content");
     }
-    const output = new Headers();
-    for (const key of [
-      "Content-Type",
-      "Content-Length",
-      "Content-Range",
-      "Accept-Ranges",
-      "Cache-Control",
-    ]) {
-      const value = response.headers.get(key);
-      if (value) output.set(key, value);
+    const length = Number(response.headers.get("Content-Length"));
+    if (!Number.isSafeInteger(length) || length <= 0 || length > 2_000_000) {
+      await response.body?.cancel();
+      throw new UpstreamError("Deezer returned an invalid preview size");
     }
-    return new Response(response.body, { status: response.status, headers: output });
+    const audio = new Uint8Array(await response.arrayBuffer());
+    // Discord rejects Deezer's empty ID3v2.4 tag; leave other tags and audio frames intact.
+    const emptyTag = [0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 0].every(
+      (byte, index) => audio[index] === byte,
+    );
+    const body = emptyTag ? audio.subarray(10) : audio;
+    const output = new Headers({
+      "Content-Type": response.headers.get("Content-Type")!,
+      "Content-Length": String(body.byteLength),
+      "Accept-Ranges": "bytes",
+      "Cache-Control": response.headers.get("Cache-Control") ?? "no-store",
+    });
+    const range = c.req.header("Range")?.match(/^bytes=(\d*)-(\d*)$/);
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, body.byteLength - Number(range[2]));
+      const end =
+        range[1] && range[2]
+          ? Math.min(Number(range[2]), body.byteLength - 1)
+          : body.byteLength - 1;
+      if (start >= body.byteLength || end < start) {
+        return new Response(null, {
+          status: 416,
+          headers: { "Content-Range": `bytes */${body.byteLength}` },
+        });
+      }
+      output.set("Content-Range", `bytes ${start}-${end}/${body.byteLength}`);
+      output.set("Content-Length", String(end - start + 1));
+      return new Response(body.subarray(start, end + 1), { status: 206, headers: output });
+    }
+    return new Response(body, { headers: output });
   })
   .on("GET", ["/v1/links", "/:platform/*"], async (c) => {
     const share = c.req.path !== "/v1/links";
@@ -98,7 +118,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
         }
       }
       if (isrc && (await deezerPreview(isrc)))
-        audio = new URL(`/preview/${encodeURIComponent(isrc)}`, c.req.url).href;
+        audio = new URL(`/preview/${encodeURIComponent(isrc)}?v=2`, c.req.url).href;
     } catch (error) {
       console.warn(
         formatLog("warn", EmbedlyErrors.PlatformFetchFailed, {
