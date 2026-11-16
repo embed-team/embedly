@@ -321,6 +321,31 @@ importers:
         specifier: ^4.135.0
         version: 4.135.0(@types/node@25.9.7)
 
+  apps/music:
+    dependencies:
+      '@embedly/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
+      hono:
+        specifier: ^4.13.8
+        version: 4.13.8
+    devDependencies:
+      '@embedly/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.7
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.47.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0
+      wrangler:
+        specifier: ^4.135.0
+        version: 4.135.0(@types/node@25.9.7)
+
   packages/config:
     devDependencies:
       '@oxlint/plugins':
