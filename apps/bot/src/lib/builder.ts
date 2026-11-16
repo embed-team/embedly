@@ -249,12 +249,10 @@ function addPostComponents(
   }
   if (stats) embed.addTextDisplayComponents((display) => display.setContent(subtext(stats)));
   const footer = [
-    post.platform === "Music" ? undefined : getEmojiByName(post.platform),
+    getEmojiByName(post.platform),
     time(post.timestamp, TimestampStyles.LongDateShortTime),
     hyperlink(`View on ${post.platform === "Music" ? "Songlink" : platformName}`, post.url),
-  ]
-    .filter(Boolean)
-    .join(" • ");
+  ].join(" • ");
   embed.addTextDisplayComponents((display) =>
     display.setContent(flags?.Compact ? subtext(footer) : footer),
   );
