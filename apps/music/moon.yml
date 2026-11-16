@@ -1,0 +1,6 @@
+layer: "library"
+language: "typescript"
+
+project:
+  title: "@embedly/music"
+  description: "Cross-platform music metadata and verified links."
