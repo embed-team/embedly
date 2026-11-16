@@ -15,3 +15,5 @@ Verified mappings are cached under each provider ID and their shared recording o
 For local development, configure the four variables in `.env.example` in `apps/music/.env`, then run `pnpm --filter @embedly/music dev`. The Worker listens on `127.0.0.1:8791` and uses local KV storage. Spotify and Tidal use client credentials. Apple Music uses its public web data; Amazon Music uses guest search and public structured metadata.
 
 The Wrangler configuration prepares `music.embeds.media` and a `CACHE` KV binding. Neither is provisioned by local development. Deploying requires those resources and the provider secrets.
+
+Embedly's API calls the `embedly-music` Worker through its `MUSIC` service binding. For local embeds, keep this Worker running alongside `pnpm --filter @embedly/api dev`; Wrangler connects the binding locally. The bot continues to use Embedly's existing API.

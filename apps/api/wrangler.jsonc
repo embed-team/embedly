@@ -34,6 +34,10 @@
   ],
   "services": [
     {
+      "binding": "MUSIC",
+      "service": "embedly-music",
+    },
+    {
       "binding": "INSTAGRAM_FETCH_US_WEST",
       "service": "instagram-fetcher-us-west",
     },

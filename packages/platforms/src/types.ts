@@ -28,6 +28,7 @@ interface TransformOptions {
 }
 
 interface FetchEnv {
+  MUSIC_FETCH: typeof fetch;
   EMBED_USER_AGENT: string;
   INSTAGRAM_FETCH?: typeof fetch;
   INSTAGRAM_COOKIE?: string;
