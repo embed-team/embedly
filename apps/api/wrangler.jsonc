@@ -6,6 +6,20 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": true,
+  "dev": {
+    "port": 8787,
+  },
+  "secrets": {
+    "required": [
+      "AUTH_SECRET",
+      "EMBED_USER_AGENT",
+      "OTEL_ENDPOINT",
+      "FACEBOOK_MARKETPLACE_COOKIE",
+      "TRUTH_SOCIAL_ACCESS_TOKEN",
+      "REDDIT_COOKIE",
+      "INSTAGRAM_COOKIE",
+    ],
+  },
   "routes": [
     {
       "pattern": "embedly.embed.team",
