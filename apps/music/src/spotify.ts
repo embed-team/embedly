@@ -36,6 +36,7 @@ export async function readSpotify(ref: MusicReference, token: string): Promise<M
       artists: track.artists.map((artist) => artist.name),
       artwork: track.album.images[0]?.url,
       releaseDate: track.album.release_date,
+      albumTitle: track.album.name,
       durationMs: track.duration_ms,
       explicit: track.explicit,
       isrc: track.external_ids?.isrc,

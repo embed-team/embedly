@@ -11,7 +11,7 @@ interface AmazonMusicData {
   duration?: string;
   timeRequired?: string;
   isrcCode?: string;
-  inAlbum?: { url: string };
+  inAlbum?: { url: string; name: string };
   track?: {
     name: string;
     url: string;
@@ -41,6 +41,7 @@ export async function readAmazon(ref: MusicReference): Promise<MusicItem> {
         ? durationMs((data.duration ?? data.timeRequired)!)
         : undefined,
     isrc: data.isrcCode,
+    albumTitle: data.inAlbum?.name,
     album: album ?? undefined,
     tracks: data.track?.map((track) => {
       const item = parseMusicURL(track.url);

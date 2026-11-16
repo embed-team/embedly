@@ -28,6 +28,7 @@ export interface MusicItem extends MusicReference {
   explicit?: boolean;
   tracks?: MusicTrack[];
   album?: MusicReference;
+  albumTitle?: string;
 }
 
 export type MusicLink =
