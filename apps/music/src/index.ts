@@ -87,7 +87,15 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
       let isrc = item.isrc;
       if (!isrc && item.type === "album" && item.tracks?.[0]) {
         const track = parseMusicURL(item.tracks[0].url);
-        if (track) isrc = (await resolveMusic(track, c.env, force)).item.isrc;
+        if (track) {
+          const cachedTrack = force
+            ? null
+            : await c.env.CACHE.get<MusicLinks>(
+                `v1:${track.provider}:${track.type}:${track.id}`,
+                "json",
+              );
+          isrc = (cachedTrack ?? (await resolveMusic(track, c.env, force))).item.isrc;
+        }
       }
       if (isrc && (await deezerPreview(isrc)))
         audio = new URL(`/preview/${encodeURIComponent(isrc)}`, c.req.url).href;
