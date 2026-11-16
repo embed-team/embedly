@@ -10,9 +10,9 @@ import { resolveMusic } from "./resolve";
 
 const platforms = new Map([
   ["spotify", { host: "open.spotify.com", name: "Spotify" }],
-  ["appleMusic", { host: "music.apple.com", name: "Apple Music" }],
+  ["applemusic", { host: "music.apple.com", name: "Apple Music" }],
   ["tidal", { host: "tidal.com", name: "TIDAL" }],
-  ["amazonMusic", { host: "music.amazon.com", name: "Amazon Music" }],
+  ["amazonmusic", { host: "music.amazon.com", name: "Amazon Music" }],
 ]);
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
@@ -45,7 +45,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
   })
   .on("GET", ["/v1/links", "/:platform/*"], async (c) => {
     const share = c.req.path !== "/v1/links";
-    const platform = platforms.get(c.req.param("platform") ?? "");
+    const platform = platforms.get(c.req.param("platform")?.toLowerCase() ?? "");
     if (share && !platform) return c.notFound();
     const url = share
       ? `https://${platform!.host}/${c.req.path.split("/").slice(2).join("/")}${new URL(c.req.url).search}`
