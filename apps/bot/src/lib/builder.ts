@@ -31,6 +31,12 @@ const VoteNumberFormatter = new Intl.NumberFormat("en");
 
 const MAX_GALLERY_ITEMS = 10;
 const POLL_BAR_SIZE = 20;
+const MusicEmojiNames = new Map([
+  ["Spotify", "spotify"],
+  ["Apple Music", "appleMusic"],
+  ["TIDAL", "tidal"],
+  ["Amazon Music", "amazonMusic"],
+]);
 
 export interface EmbedFlags {
   Compact: boolean;
@@ -198,11 +204,12 @@ function addPostComponents(
     for (let i = 0; i < post.links.length; i += 5) {
       embed.addActionRowComponents((row) =>
         row.addComponents(
-          post.links
-            .slice(i, i + 5)
-            .map((link) =>
-              new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(link.name).setURL(link.url),
-            ),
+          post.links.slice(i, i + 5).map((link) =>
+            new ButtonBuilder()
+              .setStyle(ButtonStyle.Link)
+              .setEmoji(getEmojiByName(MusicEmojiNames.get(link.name)!))
+              .setURL(link.url),
+          ),
         ),
       );
     }
