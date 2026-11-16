@@ -195,6 +195,19 @@ export const Music: Platform<"Music", MusicData[], MusicMeta> = {
   async transform(raw) {
     const entity = raw[0]!.entityData;
     const date = entity.releaseDate;
+    const links = new Map(
+      raw
+        .flatMap((page) => page.sections)
+        .filter(
+          (section) => section.show !== false && section.sectionId === "section|auto|links|listen",
+        )
+        .flatMap((section) => section.links ?? [])
+        .flatMap((link) =>
+          link.show !== false && link.url?.startsWith("https://")
+            ? [[link.platform, { name: link.displayName, url: link.url }] as const]
+            : [],
+        ),
+    );
     return {
       platform: this.type,
       author: { name: entity.artistName, avatar: entity.thumbnailUrl },
@@ -202,22 +215,10 @@ export const Music: Platform<"Music", MusicData[], MusicMeta> = {
       url: raw[0]!.pageUrl,
       timestamp: Date.UTC(date.year, (date.month ?? 1) - 1, date.day ?? 1) / 1000,
       media: [],
-      links: [
-        ...new Map(
-          raw
-            .flatMap((page) => page.sections)
-            .filter(
-              (section) =>
-                section.show !== false && section.sectionId === "section|auto|links|listen",
-            )
-            .flatMap((section) => section.links ?? [])
-            .flatMap((link) =>
-              link.show !== false && link.url?.startsWith("https://")
-                ? [[link.platform, { name: link.displayName, url: link.url }] as const]
-                : [],
-            ),
-        ).values(),
-      ],
+      links: ["spotify", "appleMusic", "tidal", "amazonMusic"].flatMap((platform) => {
+        const link = links.get(platform);
+        return link ? [link] : [];
+      }),
     };
   },
 };
