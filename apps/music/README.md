@@ -10,10 +10,4 @@ The response contains the requested `source`, normalized `item` metadata, and a 
 
 Tracks match by ISRC. When a provider does not expose ISRCs, tracks can match through their position in a verified album. Albums match by UPC or by their full ordered tracklist, including durations and explicit-content markers where available. Different UPCs can still match the same tracklist.
 
-Verified mappings are cached under each provider ID and their shared recording or album identity. Send `Cache-Control: no-cache` to refresh a mapping. Catalog lookups use the US storefront internally; the API has no country parameter.
-
-For local development, configure the four variables in `.env.example` in `apps/music/.env`, then run `pnpm --filter @embedly/music dev`. Wrangler chooses an available local port and uses local KV storage. Spotify and Tidal use client credentials. Apple Music uses its public web data; Amazon Music uses guest search and public structured metadata.
-
-The Wrangler configuration prepares `music.embeds.media` and a `CACHE` KV binding. Neither is provisioned by local development. Deploying requires those resources and the provider secrets.
-
-Embedly's API calls the `embedly-music` Worker through its `MUSIC` service binding. For local embeds, keep this Worker running alongside `pnpm --filter @embedly/api dev`; Wrangler connects the binding locally. The bot continues to use Embedly's existing API.
+Mappings are cached by provider ID and recording or album identity. Send `Cache-Control: no-cache` to refresh a mapping. Catalog lookups use the US storefront.
