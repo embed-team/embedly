@@ -13,6 +13,8 @@ import {
   SeparatorSpacingSize,
   blockQuote,
   underline,
+  ButtonBuilder,
+  ButtonStyle,
 } from "discord.js";
 
 import { getEmojiByName } from "./emojis";
@@ -192,6 +194,19 @@ function addPostComponents(
   if (mediaPost.media.length > 0) {
     embed.addMediaGalleryComponents(buildMediaEmbed(mediaPost)!);
   }
+  if (post.platform === "Music") {
+    for (let i = 0; i < post.links.length; i += 5) {
+      embed.addActionRowComponents((row) =>
+        row.addComponents(
+          post.links
+            .slice(i, i + 5)
+            .map((link) =>
+              new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(link.name).setURL(link.url),
+            ),
+        ),
+      );
+    }
+  }
   if (post.platform === "FacebookMarketplace") {
     const { location, map } = post;
     if (location) {
@@ -226,7 +241,13 @@ function addPostComponents(
     );
   }
   if (stats) embed.addTextDisplayComponents((display) => display.setContent(subtext(stats)));
-  const footer = `${getEmojiByName(post.platform)} • ${time(post.timestamp, TimestampStyles.LongDateShortTime)} • ${hyperlink(`View on ${platformName}`, post.url)}`;
+  const footer = [
+    post.platform === "Music" ? undefined : getEmojiByName(post.platform),
+    time(post.timestamp, TimestampStyles.LongDateShortTime),
+    hyperlink(`View on ${post.platform === "Music" ? "Songlink" : platformName}`, post.url),
+  ]
+    .filter(Boolean)
+    .join(" • ");
   embed.addTextDisplayComponents((display) =>
     display.setContent(flags?.Compact ? subtext(footer) : footer),
   );

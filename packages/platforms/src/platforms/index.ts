@@ -6,3 +6,4 @@ export { TikTok } from "./tiktok";
 export { Threads } from "./threads";
 export { FacebookMarketplace } from "./facebook-marketplace";
 export { TruthSocial } from "./truth-social";
+export { Music } from "./music";
