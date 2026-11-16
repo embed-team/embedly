@@ -76,7 +76,7 @@ export async function resolveMusic(
 
   async function find(provider: MusicProvider, item: MusicItem) {
     const refs = await search(provider, item);
-    const results = await Promise.all(
+    const results = await Promise.allSettled(
       refs.slice(0, 5).map(async (ref) => {
         let candidate: MusicItem;
         try {
@@ -89,13 +89,17 @@ export async function resolveMusic(
         return match ? { item: candidate, match } : null;
       }),
     );
-    return results
-      .filter((result) => result !== null)
-      .sort(
-        (a, b) =>
-          Number(b.match === "upc") - Number(a.match === "upc") ||
-          a.item.id.localeCompare(b.item.id),
-      )[0];
+    const matches = results.flatMap((result) =>
+      result.status === "fulfilled" && result.value ? [result.value] : [],
+    );
+    if (matches.length === 0) {
+      const failure = results.find((result) => result.status === "rejected");
+      if (failure) throw failure.reason;
+    }
+    return matches.sort(
+      (a, b) =>
+        Number(b.match === "upc") - Number(a.match === "upc") || a.item.id.localeCompare(b.item.id),
+    )[0];
   }
 
   const source = await read(ref);
