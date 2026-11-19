@@ -30,6 +30,22 @@ export async function readAmazon(ref: MusicReference): Promise<MusicItem> {
     throw new UpstreamError("Amazon Music returned invalid music data");
   const artists = Array.isArray(data.byArtist) ? data.byArtist : [data.byArtist];
   const album = data.inAlbum ? parseMusicURL(data.inAlbum.url) : null;
+  const tracks = await Promise.all(
+    (data.track ?? []).map(async (track) => {
+      const ref = parseMusicURL(track.url);
+      if (!ref || ref.provider !== "amazonMusic" || ref.type !== "track")
+        throw new UpstreamError("Amazon Music returned an invalid track URL");
+      const item = await readAmazon(ref);
+      return {
+        id: item.id,
+        url: item.url,
+        title: item.title,
+        durationMs: item.durationMs,
+        isrc: item.isrc,
+        explicit: track.isFamilyFriendly === undefined ? undefined : !track.isFamilyFriendly,
+      };
+    }),
+  );
   return {
     ...ref,
     title: data.name,
@@ -43,18 +59,7 @@ export async function readAmazon(ref: MusicReference): Promise<MusicItem> {
     isrc: data.isrcCode,
     albumTitle: data.inAlbum?.name,
     album: album ?? undefined,
-    tracks: data.track?.map((track) => {
-      const item = parseMusicURL(track.url);
-      if (!item || item.provider !== "amazonMusic" || item.type !== "track")
-        throw new UpstreamError("Amazon Music returned an invalid track URL");
-      return {
-        id: item.id,
-        url: item.url,
-        title: track.name,
-        durationMs: durationMs(track.duration),
-        explicit: track.isFamilyFriendly === undefined ? undefined : !track.isFamilyFriendly,
-      };
-    }),
+    tracks: data.track ? tracks : undefined,
   };
 }
 

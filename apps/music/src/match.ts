@@ -26,13 +26,20 @@ export function matchMusic(
   )
     return "upc";
   if (
-    normalizeTitle(source.title) !== normalizeTitle(candidate.title) ||
     source.artists.map(normalizeTitle).sort().join(",") !==
       candidate.artists.map(normalizeTitle).sort().join(",") ||
     !source.tracks?.length ||
     source.tracks.length !== candidate.tracks?.length
   )
     return null;
+  const recordingMatch = source.tracks.every(
+    (track, index) =>
+      track.isrc &&
+      candidate.tracks![index]!.isrc &&
+      track.isrc.toUpperCase() === candidate.tracks![index]!.isrc!.toUpperCase(),
+  );
+  if (recordingMatch) return "tracklist";
+  if (normalizeTitle(source.title) !== normalizeTitle(candidate.title)) return null;
   const matches = source.tracks.every((track, index) => {
     const other = candidate.tracks![index]!;
     if (track.isrc && other.isrc) return track.isrc.toUpperCase() === other.isrc.toUpperCase();

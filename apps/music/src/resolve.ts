@@ -1,7 +1,7 @@
 import { EmbedlyErrors, formatLog, getErrorContext } from "@embedly/logging";
 
 import { readAmazon, searchAmazon } from "./amazon";
-import { readApple, searchApple } from "./apple";
+import { appleToken, readApple, searchApple } from "./apple";
 import type { MusicItem, MusicLink, MusicLinks, MusicProvider, MusicReference } from "./client";
 import { clientToken, UpstreamError } from "./http";
 import { matchMusic, normalizeTitle } from "./match";
@@ -30,10 +30,12 @@ export async function resolveMusic(
   force: boolean,
 ): Promise<MusicLinks> {
   let spotifyAccess: Promise<string> | undefined;
+  let appleAccess: Promise<string> | undefined;
   let tidalAccess: Promise<string> | undefined;
   let sourceAlbum: Promise<MusicItem> | undefined;
 
   const tokens = {
+    appleMusic: () => (appleAccess ??= appleToken()),
     spotify: () =>
       (spotifyAccess ??= clientToken(
         "https://accounts.spotify.com/api/token",
@@ -53,7 +55,7 @@ export async function resolveMusic(
       case "spotify":
         return readSpotify(ref, await tokens.spotify());
       case "appleMusic":
-        return readApple(ref);
+        return readApple(ref, await tokens.appleMusic());
       case "tidal":
         return readTidal(ref, await tokens.tidal());
       case "amazonMusic":
@@ -66,7 +68,7 @@ export async function resolveMusic(
       case "spotify":
         return searchSpotify(item, await tokens.spotify());
       case "appleMusic":
-        return searchApple(item);
+        return searchApple(item, await tokens.appleMusic());
       case "tidal":
         return searchTidal(item, await tokens.tidal());
       case "amazonMusic":
@@ -75,12 +77,19 @@ export async function resolveMusic(
   }
 
   async function find(provider: MusicProvider, item: MusicItem) {
-    const refs = await search(provider, item);
+    const track =
+      item.type === "album" && !item.upc ? item.tracks?.find((track) => track.isrc) : undefined;
+    const searchItem = track ? { ...item, ...track, type: "track" as const } : item;
+    const refs = await search(provider, searchItem);
     const results = await Promise.allSettled(
       refs.slice(0, 5).map(async (ref) => {
         let candidate: MusicItem;
         try {
           candidate = await read(ref);
+          if (track) {
+            if (!matchMusic(searchItem, candidate) || !candidate.album) return null;
+            candidate = await read(candidate.album);
+          }
         } catch (error) {
           if (error instanceof UpstreamError && error.status === 404) return null;
           throw error;
@@ -112,7 +121,7 @@ export async function resolveMusic(
   const results = await Promise.allSettled(
     PROVIDERS.map(async (provider) => {
       if (provider === ref.provider) return { item: source, match: "source" as const };
-      if (source.type === "album" || (source.isrc && provider !== "appleMusic")) {
+      if (source.type === "album" || source.isrc) {
         const match = await find(provider, source);
         if (match) return match;
         if (source.type === "album") return null;

@@ -1,118 +1,157 @@
 import { parseMusicURL, type MusicItem, type MusicReference } from "./client";
-import { readScripts, UpstreamError } from "./http";
+import { request, UpstreamError } from "./http";
 import { normalizeTitle } from "./match";
 
-interface AppleDescriptor {
-  kind: string;
-  identifiers: { storeAdamID: string };
-  url: string;
-}
-
-interface AppleItem {
-  title?: string;
-  titleLinks?: { title: string }[];
-  subtitleLinks?: { title: string }[];
-  artistName?: string;
-  duration?: number;
-  showExplicitBadge?: boolean;
-  contentDescriptor?: AppleDescriptor;
-  artwork?: { dictionary: { url: string } };
-}
-
-interface ApplePage {
-  data?: { data: { sections: { itemKind: string; items: AppleItem[] }[] } }[];
-  datePublished?: string;
-}
-
-export async function readApple(ref: MusicReference): Promise<MusicItem> {
-  const scripts = await readScripts(
-    ref.url,
-    'script#serialized-server-data, script[type="application/ld+json"]',
-  );
-  // SAFETY: The selected Apple scripts contain page sections or schema.org release metadata.
-  const pages = scripts.map((script) => JSON.parse(script) as ApplePage);
-  const sections = pages.find((page) => page.data)?.data?.[0]?.data.sections;
-  const releaseDate = pages.find((page) => page.datePublished)?.datePublished;
-  const song = sections?.find((section) => section.itemKind === "songDetailHeader")?.items[0]
-    ?.contentDescriptor;
-  if (song) {
-    const albumTrack = parseMusicURL(song.url);
-    if (
-      !albumTrack ||
-      albumTrack.provider !== "appleMusic" ||
-      albumTrack.type !== "track" ||
-      albumTrack.id !== ref.id ||
-      !new URL(albumTrack.url).pathname.includes("/album/")
-    ) {
-      throw new UpstreamError("Apple Music returned an invalid song URL");
-    }
-    return readApple(albumTrack);
-  }
-  const header = sections?.find((section) => section.itemKind === "containerDetailHeaderLockup")
-    ?.items[0];
-  const tracks =
-    sections
-      ?.filter((section) => section.itemKind === "trackLockup")
-      .flatMap((section) => section.items) ?? [];
-  if (!header?.title || !header.contentDescriptor || tracks.length === 0) {
-    throw new UpstreamError("Apple Music returned incomplete album data");
-  }
-  const artwork = header.artwork?.dictionary.url
-    .replace("{w}", "640")
-    .replace("{h}", "640")
-    .replace("{f}", "jpg");
-  const artists = header.subtitleLinks?.map((link) => link.title) ?? [];
-  const albumRef = parseMusicURL(header.contentDescriptor.url);
-  if (!albumRef || albumRef.type !== "album")
-    throw new UpstreamError("Apple Music returned an invalid album URL");
-  if (ref.type === "track") {
-    const track = tracks.find((item) => item.contentDescriptor?.identifiers.storeAdamID === ref.id);
-    if (!track?.title)
-      throw new UpstreamError("Apple Music did not return the requested track", 404);
-    return {
-      ...ref,
-      title: track.title,
-      artists: track.artistName ? [track.artistName] : artists,
-      artwork,
-      releaseDate,
-      albumTitle: header.title,
-      durationMs: track.duration,
-      explicit: track.showExplicitBadge,
-      album: albumRef,
-    };
-  }
-  return {
-    ...ref,
-    title: header.title,
-    artists,
-    artwork,
-    releaseDate,
-    durationMs: tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
-    tracks: tracks.map((track) => ({
-      id: track.contentDescriptor!.identifiers.storeAdamID,
-      url: track.contentDescriptor!.url,
-      title: track.title!,
-      durationMs: track.duration,
-      explicit: track.showExplicitBadge,
-    })),
+interface AppleResource {
+  id: string;
+  attributes: {
+    name: string;
+    artistName: string;
+    url: string;
+    artwork?: { url: string };
+    releaseDate?: string;
+    durationInMillis?: number;
+    contentRating?: string;
+    isrc?: string;
+    upc?: string;
+    albumName?: string;
+  };
+  relationships?: {
+    albums?: ApplePage;
+    artists?: ApplePage;
+    tracks?: ApplePage;
   };
 }
 
-export async function searchApple(item: MusicItem) {
-  const url = new URL("https://music.apple.com/us/search");
-  url.searchParams.set("term", `${item.artists.join(" ")} ${item.title}`);
-  const scripts = await readScripts(url.href, "script#serialized-server-data");
-  // SAFETY: Apple's public search uses the same serialized section and content descriptor shape as album pages.
-  const page = JSON.parse(scripts[0]!) as ApplePage;
-  const refs = new Map<string, MusicReference>();
-  for (const section of page.data?.[0]?.data.sections ?? []) {
-    for (const result of section.items) {
-      if (!result.contentDescriptor) continue;
-      const title = result.title ?? result.titleLinks?.[0]?.title;
-      if (!title || normalizeTitle(title) !== normalizeTitle(item.title)) continue;
-      const ref = parseMusicURL(result.contentDescriptor.url);
-      if (ref?.provider === "appleMusic" && ref.type === item.type) refs.set(ref.id, ref);
-    }
+interface ApplePage {
+  data: AppleResource[];
+  next?: string;
+  results?: { songs?: ApplePage; albums?: ApplePage };
+}
+
+export async function appleToken() {
+  const response = await request("https://music.apple.com/us/new", {
+    headers: { Accept: "text/html" },
+  });
+  let script: string | null = null;
+  const rewritten = new HTMLRewriter()
+    .on('script[src^="/assets/index"]', {
+      element(element) {
+        script = element.getAttribute("src");
+      },
+    })
+    .transform(response);
+  await rewritten.body!.pipeTo(new WritableStream());
+  if (!script) throw new UpstreamError("Apple Music returned no web player script");
+  const bundle = await request(new URL(script, "https://music.apple.com"));
+  // Apple's anonymous web player ships its public catalog token in this bundle.
+  const token = (await bundle.text())
+    .match(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)
+    ?.find((token) => {
+      // SAFETY: The matched JWT payload contains its expiration time in seconds.
+      const payload = JSON.parse(Buffer.from(token.split(".")[1]!, "base64url").toString()) as {
+        exp: number;
+      };
+      return payload.exp > Date.now() / 1000 + 60;
+    });
+  if (!token) throw new UpstreamError("Apple Music returned no valid catalog token");
+  return token;
+}
+
+async function appleRequest(url: URL, token: string) {
+  if (url.origin !== "https://amp-api.music.apple.com")
+    throw new UpstreamError("Apple Music returned an invalid catalog URL");
+  const response = await request(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Origin: "https://music.apple.com",
+      Referer: "https://music.apple.com/",
+    },
+  });
+  // SAFETY: Apple's web catalog returns resources and relationships in data arrays.
+  return (await response.json()) as ApplePage;
+}
+
+export async function readApple(ref: MusicReference, token: string): Promise<MusicItem> {
+  const url = new URL(
+    `https://amp-api.music.apple.com/v1/catalog/us/${ref.type === "track" ? "songs" : "albums"}/${ref.id}`,
+  );
+  url.searchParams.set("include", ref.type === "track" ? "artists,albums" : "artists,tracks");
+  const page = await appleRequest(url, token);
+  const resource = page.data[0];
+  if (!resource) throw new UpstreamError("Apple Music did not return the requested item", 404);
+  const artists = resource.relationships?.artists?.data;
+  if (resource.id !== ref.id || !resource.attributes?.name || !artists?.length)
+    throw new UpstreamError("Apple Music returned invalid music data");
+  const attributes = resource.attributes;
+  const album = resource.relationships?.albums?.data[0];
+  const albumRef = album && parseMusicURL(album.attributes.url);
+  if (album && (!albumRef || albumRef.provider !== "appleMusic" || albumRef.type !== "album"))
+    throw new UpstreamError("Apple Music returned an invalid album URL");
+  const tracks = [...(resource.relationships?.tracks?.data ?? [])];
+  let next = resource.relationships?.tracks?.next;
+  while (next) {
+    const page = await appleRequest(new URL(next, url), token);
+    tracks.push(...page.data);
+    next = page.next;
   }
-  return [...refs.values()];
+  if (ref.type === "album" && tracks.length === 0)
+    throw new UpstreamError("Apple Music returned an incomplete tracklist");
+  return {
+    ...ref,
+    title: attributes.name,
+    artists: artists.map((artist) => artist.attributes.name),
+    artwork: attributes.artwork?.url.replace("{w}", "640").replace("{h}", "640"),
+    releaseDate: attributes.releaseDate,
+    albumTitle: attributes.albumName,
+    durationMs:
+      ref.type === "track"
+        ? attributes.durationInMillis
+        : tracks.reduce((sum, track) => sum + (track.attributes.durationInMillis ?? 0), 0),
+    explicit: attributes.contentRating === "explicit",
+    isrc: attributes.isrc,
+    upc: attributes.upc,
+    album: albumRef ?? undefined,
+    tracks:
+      ref.type === "album"
+        ? tracks.map((track) => ({
+            id: track.id,
+            url: track.attributes.url,
+            title: track.attributes.name,
+            durationMs: track.attributes.durationInMillis,
+            isrc: track.attributes.isrc,
+            explicit: track.attributes.contentRating === "explicit",
+          }))
+        : undefined,
+  };
+}
+
+export async function searchApple(item: MusicItem, token: string) {
+  const kind = item.type === "track" ? "songs" : "albums";
+  const identifier = item.type === "track" ? item.isrc : item.upc;
+  const url = new URL(
+    `https://amp-api.music.apple.com/v1/catalog/us/${identifier ? kind : "search"}`,
+  );
+  if (identifier) {
+    url.searchParams.set(item.type === "track" ? "filter[isrc]" : "filter[upc]", identifier);
+  } else {
+    url.search = new URLSearchParams({
+      term: `${item.artists.join(" ")} ${item.title}`,
+      types: kind,
+      limit: "10",
+    }).toString();
+  }
+  const page = await appleRequest(url, token);
+  const results = identifier ? page.data : (page.results?.[kind]?.data ?? []);
+  return results
+    .filter(
+      (result) =>
+        identifier || normalizeTitle(result.attributes.name) === normalizeTitle(item.title),
+    )
+    .map((result) => {
+      const ref = parseMusicURL(result.attributes.url);
+      if (!ref || ref.provider !== "appleMusic" || ref.type !== item.type)
+        throw new UpstreamError("Apple Music returned an invalid search URL");
+      return ref;
+    });
 }

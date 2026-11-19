@@ -72,13 +72,27 @@ export async function readSpotify(ref: MusicReference, token: string): Promise<M
     releaseDate: album.release_date,
     upc: album.external_ids.upc,
     durationMs: tracks.reduce((sum, track) => sum + track.duration_ms, 0),
-    tracks: tracks.map((track) => ({
-      id: track.id,
-      url: `https://open.spotify.com/track/${track.id}`,
-      title: track.name,
-      durationMs: track.duration_ms,
-      explicit: track.explicit,
-    })),
+    tracks: await Promise.all(
+      tracks.map(async (track) => {
+        const item = await readSpotify(
+          {
+            provider: "spotify",
+            type: "track",
+            id: track.id,
+            url: `https://open.spotify.com/track/${track.id}`,
+          },
+          token,
+        );
+        return {
+          id: track.id,
+          url: item.url,
+          title: track.name,
+          durationMs: track.duration_ms,
+          explicit: track.explicit,
+          isrc: item.isrc,
+        };
+      }),
+    ),
   };
 }
 
@@ -86,7 +100,9 @@ export async function searchSpotify(item: MusicItem, token: string) {
   const query =
     item.type === "track" && item.isrc
       ? `isrc:${item.isrc}`
-      : `artist:${item.artists.join(" ")} ${item.type}:${item.title}`;
+      : item.type === "album" && item.upc
+        ? `upc:${item.upc}`
+        : `artist:${item.artists.join(" ")} ${item.type}:${item.title}`;
   const url = new URL("https://api.spotify.com/v1/search");
   url.search = new URLSearchParams({
     q: query,
@@ -101,7 +117,10 @@ export async function searchSpotify(item: MusicItem, token: string) {
     albums?: { items: SpotifyAlbum[] };
   };
   return (item.type === "track" ? (data.tracks?.items ?? []) : (data.albums?.items ?? []))
-    .filter((result) => item.isrc || normalizeTitle(result.name) === normalizeTitle(item.title))
+    .filter(
+      (result) =>
+        item.isrc || item.upc || normalizeTitle(result.name) === normalizeTitle(item.title),
+    )
     .map((result) => ({
       provider: "spotify" as const,
       type: item.type,
