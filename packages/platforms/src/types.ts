@@ -1,4 +1,19 @@
 import type * as platforms from "./platforms";
+
+export interface PlatformHTMLRewriter {
+  on(
+    selector: string,
+    handlers: {
+      element?(element: {
+        getAttribute(name: string): string | null;
+        onEndTag(handler: () => void): void;
+      }): void;
+      text?(chunk: { text: string }): void;
+    },
+  ): PlatformHTMLRewriter;
+  transform(response: Response): Response;
+}
+
 export type PlatformType = (typeof platforms)[keyof typeof platforms]["type"];
 export interface NormalizedPost {
   platform: PlatformType;

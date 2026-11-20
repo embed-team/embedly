@@ -1,12 +1,14 @@
-import * as cheerio from "cheerio";
+import he from "he";
 
-import type { Platform } from "../types";
+import type { Platform, PlatformHTMLRewriter } from "../types";
 import type {
   MarketplaceData,
   MarketplaceListing,
   MarketplaceMeta,
   MarketplacePhotos,
 } from "./facebook-marketplace.d";
+
+declare const HTMLRewriter: { new (): PlatformHTMLRewriter };
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:www\.|m\.)?facebook\.com\/marketplace\/item\/(\d+)\/?(?:[?#].*)?$/;
@@ -40,53 +42,72 @@ export const FacebookMarketplace: Platform<
     });
     if (!response.ok) throw { code: response.status, message: response.statusText };
 
-    const html = await response.text();
-    const $ = cheerio.load(html);
     let listing: MarketplaceListing | undefined;
     let photos: MarketplacePhotos | undefined;
     let mapTemplate: string | undefined;
-
-    for (const element of $('script[type="application/json"][data-sjs]').toArray()) {
-      const text = $(element).text();
-      if (
-        !text.includes(LISTING_PREFIX) &&
-        !text.includes(PHOTOS_PREFIX) &&
-        !text.includes('"TilesMapConfig"')
-      )
-        continue;
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw { code: 500, message: "Failed to parse Marketplace data" };
-      }
-      for (const requireItem of data.require ?? []) {
-        if (requireItem[0] !== "ScheduledServerJS") continue;
-        for (const payload of requireItem[3] ?? []) {
-          const box = payload.__bbox;
-          for (const definition of box?.define ?? []) {
-            if (definition[0] === "TilesMapConfig") {
-              mapTemplate = definition[2]?.STATIC_MAP_URL_TEMPLATE;
+    let pageTitle = "";
+    let listingPreloader = false;
+    let photosPreloader = false;
+    let chunks: string[] = [];
+    const rewritten = new HTMLRewriter()
+      .on("title", {
+        text(chunk) {
+          pageTitle += chunk.text;
+        },
+      })
+      .on('script[type="application/json"][data-sjs]', {
+        element(element) {
+          chunks = [];
+          element.onEndTag(() => {
+            const text = chunks.join("");
+            listingPreloader ||= text.includes(LISTING_PREFIX);
+            photosPreloader ||= text.includes(PHOTOS_PREFIX);
+            if (
+              !text.includes(LISTING_PREFIX) &&
+              !text.includes(PHOTOS_PREFIX) &&
+              !text.includes('"TilesMapConfig"')
+            )
+              return;
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch {
+              throw { code: 500, message: "Failed to parse Marketplace data" };
             }
-          }
-          for (const item of box?.require ?? []) {
-            if (item[0] !== "RelayPrefetchedStreamCache") continue;
-            const [key, value] = item[3];
-            const target =
-              value?.__bbox?.result?.data?.viewer?.marketplace_product_details_page?.target;
-            if (target?.id !== id) continue;
-            if (key.startsWith(LISTING_PREFIX)) {
-              // SAFETY: this preloader's target matches the requested listing ID and observed listing shape.
-              listing = target as MarketplaceListing;
+            for (const requireItem of data.require ?? []) {
+              if (requireItem[0] !== "ScheduledServerJS") continue;
+              for (const payload of requireItem[3] ?? []) {
+                const box = payload.__bbox;
+                for (const definition of box?.define ?? []) {
+                  if (definition[0] === "TilesMapConfig") {
+                    mapTemplate = definition[2]?.STATIC_MAP_URL_TEMPLATE;
+                  }
+                }
+                for (const item of box?.require ?? []) {
+                  if (item[0] !== "RelayPrefetchedStreamCache") continue;
+                  const [key, value] = item[3];
+                  const target =
+                    value?.__bbox?.result?.data?.viewer?.marketplace_product_details_page?.target;
+                  if (target?.id !== id) continue;
+                  if (key.startsWith(LISTING_PREFIX)) {
+                    // SAFETY: this preloader's target matches the requested listing ID and observed listing shape.
+                    listing = target as MarketplaceListing;
+                  }
+                  if (key.startsWith(PHOTOS_PREFIX)) {
+                    // SAFETY: this preloader's target matches the requested listing ID and observed photo shape.
+                    photos = target as MarketplacePhotos;
+                  }
+                }
+              }
             }
-            if (key.startsWith(PHOTOS_PREFIX)) {
-              // SAFETY: this preloader's target matches the requested listing ID and observed photo shape.
-              photos = target as MarketplacePhotos;
-            }
-          }
-        }
-      }
-    }
+          });
+        },
+        text(chunk) {
+          chunks.push(chunk.text);
+        },
+      })
+      .transform(response);
+    await rewritten.body?.pipeTo(new WritableStream());
     if (!listing || !photos) {
       throw {
         code: 500,
@@ -96,10 +117,9 @@ export const FacebookMarketplace: Platform<
           upstream_http_status: response.status,
           upstream_url: response.url,
           upstream_content_type: response.headers.get("content-type"),
-          upstream_html_length: html.length,
-          upstream_page_title: $("title").text().slice(0, 250),
-          upstream_listing_preloader: html.includes(LISTING_PREFIX),
-          upstream_photos_preloader: html.includes(PHOTOS_PREFIX),
+          upstream_page_title: he.decode(pageTitle).slice(0, 250),
+          upstream_listing_preloader: listingPreloader,
+          upstream_photos_preloader: photosPreloader,
           upstream_listing_found: Boolean(listing),
           upstream_photos_found: Boolean(photos),
         },

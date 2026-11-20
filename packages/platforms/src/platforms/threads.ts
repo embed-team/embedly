@@ -1,7 +1,7 @@
-import * as cheerio from "cheerio";
-
-import { NormalizedPost, Platform } from "../types";
+import type { NormalizedPost, Platform, PlatformHTMLRewriter } from "../types";
 import type { ThreadsPost, ThreadsResponse } from "./threads.d";
+
+declare const HTMLRewriter: { new (): PlatformHTMLRewriter };
 
 const MATCH_RE =
   /^(?:https?:\/\/)?(?:[\w-]+\.)*threads\.(?:com|net)\/@.*\/post\/(?<thread_shortcode>[A-Za-z0-9-_]+)/;
@@ -89,19 +89,34 @@ export const Threads: Platform<
       ? decodeURIComponent(csrfCookie.split(";")[0].slice("csrftoken=".length))
       : undefined;
 
-    const sessionHTML = await sessionResp.text();
-    const $SESSION = cheerio.load(sessionHTML);
-    let lsd: string;
+    let lsd: string | undefined;
+    let chunks: string[] = [];
     try {
-      lsd = $SESSION(`script[type="application/json"][data-sjs]`)
-        .map((_ind, el) => JSON.parse($SESSION(el).text()).require)
-        .filter((_ind, el) => el.includes("ScheduledServerJS"))
-        .toArray()[0]
-        .at(-1)
-        .map((item: any) => item.__bbox)
-        .filter((item: any) => Object.hasOwn(item, "define"))[0]
-        .define.filter((item: any[]) => item[0] === "LSD")[0]
-        .filter((item: any) => Object.hasOwn(item, "token"))[0].token;
+      const rewritten = new HTMLRewriter()
+        .on('script[type="application/json"][data-sjs]', {
+          element(element) {
+            chunks = [];
+            element.onEndTag(() => {
+              if (lsd) return;
+              const requireItem = JSON.parse(chunks.join("")).require?.find((item: any[]) =>
+                item.includes("ScheduledServerJS"),
+              );
+              if (!requireItem) return;
+              lsd = requireItem
+                .at(-1)
+                .map((item: any) => item.__bbox)
+                .filter((item: any) => Object.hasOwn(item, "define"))[0]
+                .define.filter((item: any[]) => item[0] === "LSD")[0]
+                .filter((item: any) => Object.hasOwn(item, "token"))[0].token;
+            });
+          },
+          text(chunk) {
+            chunks.push(chunk.text);
+          },
+        })
+        .transform(sessionResp);
+      await rewritten.body?.pipeTo(new WritableStream());
+      if (!lsd) throw new Error("Missing LSD token");
     } catch {
       throw {
         code: 500,
