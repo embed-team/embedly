@@ -220,14 +220,18 @@ export async function handleUrls(
     await reactToFailure();
   }
 
-  if (matches.some((match) => match.platform === "FacebookMarketplace")) {
+  for (const [platform, flag] of [
+    ["FacebookMarketplace", "facebook-marketplace"],
+    ["Apartments", "apartments"],
+  ] as const) {
+    if (!matches.some((match) => match.platform === platform)) continue;
     let hasAccess = false;
     if (container.posthog) {
       try {
         const flags = await container.posthog.evaluateFlags(matchContext.user_id, {
-          flagKeys: ["facebook-marketplace"],
+          flagKeys: [flag],
         });
-        hasAccess = flags.getFlag("facebook-marketplace") === true;
+        hasAccess = flags.getFlag(flag) === true;
       } catch (error) {
         container.logger.warn(
           formatLog("warn", EmbedlyErrors.FeatureFlagFailed, {
@@ -238,7 +242,7 @@ export async function handleUrls(
       }
     }
     if (!hasAccess) {
-      matches = matches.filter((match) => match.platform !== "FacebookMarketplace");
+      matches = matches.filter((match) => match.platform !== platform);
     }
   }
 

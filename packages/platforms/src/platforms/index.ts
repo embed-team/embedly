@@ -5,5 +5,6 @@ export { Reddit } from "./reddit";
 export { TikTok } from "./tiktok";
 export { Threads } from "./threads";
 export { FacebookMarketplace } from "./facebook-marketplace";
+export { Apartments } from "./apartments";
 export { TruthSocial } from "./truth-social";
 export { Music } from "./music";

@@ -108,7 +108,7 @@ function addPostComponents(
       ? `(${hyperlink(`@${post.author.handle}`, post.author.url)})`
       : "";
   const authorName =
-    post.platform === "FacebookMarketplace"
+    post.platform === "FacebookMarketplace" || post.platform === "Apartments"
       ? truncate(escapeMarkdown(post.author.name), 250)
       : flags?.Compact
         ? escapeMarkdown(post.author.name)
@@ -136,6 +136,13 @@ function addPostComponents(
   if (post.platform === "FacebookMarketplace" && post.price) {
     textComponents.push(new TextDisplayBuilder().setContent(escapeMarkdown(post.price)));
   }
+  if (post.platform === "Apartments") {
+    textComponents.push(
+      new TextDisplayBuilder().setContent(
+        `${escapeMarkdown(post.details.join(" · "))}\n${escapeMarkdown(post.location)}`,
+      ),
+    );
+  }
   if (post.text && post.text.length > 0) {
     textComponents.push(
       new TextDisplayBuilder().setContent(
@@ -143,12 +150,16 @@ function addPostComponents(
           translation
             ? `${getEmojiByName("translation", `${translation.provider}_${translation.source_lang}_${translation.target_lang}`)} ${escapeMarkdown(translation.text)}`
             : escapeMarkdown(post.text ?? ""),
-          1500,
+          post.platform === "Apartments" ? 650 : 1500,
         ),
       ),
     );
   }
-  if (flags?.Compact || (post.platform === "Music" && !post.author.avatar)) {
+  if (
+    flags?.Compact ||
+    post.platform === "Apartments" ||
+    (post.platform === "Music" && !post.author.avatar)
+  ) {
     embed.addTextDisplayComponents(textComponents);
   } else {
     embed.addSectionComponents((section) =>
@@ -197,6 +208,25 @@ function addPostComponents(
         ? post.quote
         : (post.reply_to ?? post)
       : post;
+  if (post.platform === "Apartments") {
+    const details = [
+      ["Pets", post.pets],
+      ["Parking", post.parking],
+      ["Features", post.features.join(" · ")],
+      ["Amenities", post.amenities.join(" · ")],
+    ]
+      .filter(([, value]) => value)
+      .map(([label, value]) => `**${label}**\n${truncate(escapeMarkdown(value), 450)}`)
+      .join("\n\n");
+    if (details) {
+      embed.addTextDisplayComponents((display) => display.setContent(details));
+    }
+    if (post.propertyPhotos && post.media.length) {
+      embed.addTextDisplayComponents((display) =>
+        display.setContent("Property photos / floor plan"),
+      );
+    }
+  }
   if (mediaPost.media.length > 0) {
     embed.addMediaGalleryComponents(buildMediaEmbed(mediaPost)!);
   }
@@ -233,6 +263,13 @@ function addPostComponents(
       );
     }
     const footer = `${time(post.timestamp, TimestampStyles.RelativeTime)} • ${hyperlink("View on Facebook Marketplace", post.url)}`;
+    embed.addTextDisplayComponents((display) =>
+      display.setContent(flags?.Compact ? subtext(footer) : footer),
+    );
+    return;
+  }
+  if (post.platform === "Apartments") {
+    const footer = hyperlink("View on Apartments.com", post.url);
     embed.addTextDisplayComponents((display) =>
       display.setContent(flags?.Compact ? subtext(footer) : footer),
     );
