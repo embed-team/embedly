@@ -13,7 +13,6 @@ export interface ApartmentRental {
   Description: string;
   AvailableDateText: string;
   ImageUri?: string;
-  HasUnitPhoto: boolean;
   InteriorAmenities?: {
     SubCategories: { Amenities: { Name: string }[] }[];
   };

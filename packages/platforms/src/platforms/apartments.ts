@@ -36,9 +36,8 @@ export const Apartments: Platform<"Apartments", ApartmentData, ApartmentMeta> = 
     if (!response.ok) throw { code: response.status, message: response.statusText };
 
     let startup = "";
-    let awcToken = "";
-    let csrfToken = "";
     let scriptChunks: string[] = [];
+    const photos = new Map<string, ApartmentData["media"][number]>();
     const content = {
       name: "",
       location: "",
@@ -57,14 +56,29 @@ export const Apartments: Platform<"Apartments", ApartmentData, ApartmentMeta> = 
           element.onEndTag(() => {
             const script = scriptChunks.join("");
             if (/require\(\s*\[['"]ProfileStartup['"]\]/.test(script)) startup = script;
-            awcToken ||= script.match(/\bantiWebCrawlerToken:\s*'([^']+)'/)?.[1] ?? "";
-            csrfToken ||= script.match(/\baft:\s*'([^']+)'/)?.[1] ?? "";
           });
         },
         text(chunk) {
           scriptChunks.push(chunk.text);
         },
       })
+      .on(
+        "#carouselSection [data-mediatypeid='1'] img, .galleryItemImage[data-attachmenttypeid='4;'] meta[property='image']",
+        {
+          element(element) {
+            const image = element.getAttribute("src") || element.getAttribute("content");
+            if (!image) return;
+            const key = new URL(image).pathname.split("/")[2];
+            if (photos.has(key)) return;
+            photos.set(key, {
+              url: image,
+              type: "photo",
+              description:
+                element.getAttribute("alt") || element.getAttribute("title") || undefined,
+            });
+          },
+        },
+      )
       .on("#amenitiesSection h2", {
         element() {
           amenityGroup++;
@@ -111,56 +125,7 @@ export const Apartments: Platform<"Apartments", ApartmentData, ApartmentMeta> = 
       throw { code: 404, message: "This apartment unit or floor plan is no longer listed" };
     }
     const model = rental && rentals.find((item) => item.RentalKey === rental.ModelKey);
-    const photoRental = rental?.HasUnitPhoto ? rental : model?.HasUnitPhoto ? model : undefined;
-    if (!awcToken || !csrfToken) {
-      throw { code: 502, message: "Apartments.com gallery tokens are unavailable" };
-    }
-    const galleryResponse = await fetch(
-      "https://www.apartments.com/services/property/mediagallery/render",
-      {
-        method: "POST",
-        headers: {
-          "User-Agent": env?.EMBED_USER_AGENT ?? "",
-          Accept: "application/json, text/javascript, */*; q=0.01",
-          "Accept-Language": "en-US,en;q=0.9",
-          "Content-Type": "application/json",
-          Referer: `${url.origin}${url.pathname}`,
-          Origin: url.origin,
-          "X-AWC-TOKEN": awcToken,
-          "X-CSRF-TOKEN": csrfToken,
-          "X-Requested-With": "XMLHttpRequest",
-          "Sec-Fetch-Dest": "empty",
-          "Sec-Fetch-Mode": "cors",
-          "Sec-Fetch-Site": "same-origin",
-          Pragma: "no-cache",
-          "Cache-Control": "no-cache",
-        },
-        body: JSON.stringify({
-          ListingKey: url.pathname.split("/")[2],
-          RentalKey: photoRental?.RentalKey,
-          RentalType: photoRental?.RentalType ?? 0,
-          HasViewFromUnit: false,
-          UnitNumber: photoRental?.UnitNumber ?? "",
-        }),
-      },
-    );
-    if (!galleryResponse.ok) {
-      throw { code: galleryResponse.status, message: "Apartments.com gallery request failed" };
-    }
-    const gallery = await galleryResponse.json();
-    // SAFETY: the gallery endpoint serializes media groups in its Json field.
-    const groups = JSON.parse(gallery.Json) as {
-      Key: number;
-      Value: { Uri: string; AltText?: string; Caption?: string }[];
-    }[];
-    const media = groups
-      .filter((group) => group.Key === 1)
-      .flatMap((group) => group.Value)
-      .map((photo) => ({
-        url: photo.Uri,
-        type: "photo",
-        description: photo.AltText || photo.Caption,
-      }));
+    const media = [...photos.values()];
     const rentalImage = rental?.ImageUri || model?.ImageUri;
     if (rentalImage) {
       media.unshift({ url: rentalImage, type: "photo", description: rental?.Name });
@@ -237,7 +202,7 @@ export const Apartments: Platform<"Apartments", ApartmentData, ApartmentMeta> = 
       features: raw.features,
       pets: raw.pets,
       parking: raw.parking,
-      propertyPhotos: Boolean(rental && !rental.HasUnitPhoto),
+      propertyPhotos: Boolean(rental),
     };
   },
 };
