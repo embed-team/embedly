@@ -15,6 +15,7 @@
     "@embedly/config": "workspace:*",
     "@types/node": "catalog:",
     "oxfmt": "catalog:",
-    "oxlint": "catalog:"
+    "oxlint": "catalog:",
+    "vitest": "catalog:"
   }
 }

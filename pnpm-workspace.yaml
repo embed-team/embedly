@@ -13,6 +13,7 @@ catalogs:
     oxfmt: ^0.47.0
     oxlint: 1.78.0
     typescript: ^6.0.3
+    vitest: ^4.1.12
 
 minimumReleaseAgeExclude:
   - '@cloudflare/workerd-darwin-64@1.20260918.1'

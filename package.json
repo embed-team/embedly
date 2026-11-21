@@ -5,8 +5,9 @@
   "scripts": {
     "postinstall": "moon sync hooks",
     "dev": "moon run :dev",
-    "ci": "moon ci :lint :fmt/check",
+    "ci": "moon ci :lint :fmt/check :test",
     "lint": "moon run :lint",
+    "test": "moon run :test",
     "fmt": "moon run :fmt",
     "fmt:check": "moon run :fmt/check",
     "changeset": "changeset",

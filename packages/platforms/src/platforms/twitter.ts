@@ -5,7 +5,7 @@ import { NormalizedPost, Platform } from "../types";
 import type { APITwitterStatus, FxTweetResponse, RawText } from "./twitter.d";
 
 const MATCH_RE =
-  /^(?:https?:\/\/)?(?:[\w-]+\.)*(?:twitter|x)\.com\/.*\/status(?:es)?\/(?<tweet_id>[^/?]+)/;
+  /^(?:https?:\/\/)?(?:[\w-]+\.)*(?:twitter|x)\.com\/.*\/status(?:es)?\/(?<tweet_id>\d+)/;
 const MAX_CONTEXT_DEPTH = 1;
 
 const RENDERED_FACET_TYPES = ["url", "hashtag", "media", "mention"];
